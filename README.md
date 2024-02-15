@@ -1,3 +1,60 @@
-# CayumanDjango
+# Cayuman - School workshops inscription web form for students enrollment
 
-Empty repo for django porting and development. See [CayumanFlask](https://github.com/tomgranuja/CayumanFlask).
+## Install
+
+Cayuman makes use of poetry and python3.10 or superior. Let's go step by step
+
+## Installing python3.10
+
+If you don't have the required python version installed then you can do so by following these instructions. Otherwise You can skip this section.
+
+Start by installing `pyenv`, a python module that makes it easy to manage several different python versions.
+
+```console
+$ curl https://pyenv.run | bash
+```
+
+Then add `pyenv` to `.bash_profile` or your shell's profile file
+
+```console
+# pyenv
+export PYENV_ROOT="$HOME/.pyenv"
+command -v pyenv >/dev/null || export PATH="$PYENV_ROOT/bin:$PATH"
+eval "$(pyenv init -)"
+eval "$(pyenv virtualenv-init -)"
+```
+
+> Remember to run `source ~/.bash_profile` (or whatever's the name of your shell profile file) after adding the lines above.
+
+Now install python3.10 by doing
+
+```console
+$ pyenv install 3.8
+```
+
+## Instaling poetry and getting your dev instance ready
+
+Now it's time to install poetry
+
+```console
+$ pip install poetry
+```
+
+Then clone the repo
+
+```console
+$ git clone git@github.com:XXXX/CayumanDjangogit
+```
+
+and install the dev environment
+
+```console
+$ cd CayumanDjango
+$ poetry install --with test
+```
+
+Install pre-commit hooks (to enforce coding standards)
+
+```console
+$ poetry run pre-commit install
+```
