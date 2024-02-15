@@ -1,2 +1,3 @@
 # CayumanDjango
-School workshops inscription web form for students enrollment.
+
+Empty repo for django porting and development. See [CayumanFlask](https://github.com/tomgranuja/CayumanFlask).
