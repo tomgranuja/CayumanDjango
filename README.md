@@ -43,7 +43,7 @@ $ pip install poetry
 Then clone the repo
 
 ```console
-$ git clone git@github.com:XXXX/CayumanDjangogit
+$ git clone git@github.com:tomgranuja/CayumanDjango.git
 ```
 
 and install the dev environment
