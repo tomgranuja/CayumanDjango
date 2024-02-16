@@ -58,3 +58,11 @@ Install pre-commit hooks (to enforce coding standards)
 ```console
 $ poetry run pre-commit install
 ```
+
+## Running Tests
+
+In order to run our tests you just have to do
+
+```console
+$ poetry run pytest
+```
