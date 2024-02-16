@@ -12,27 +12,27 @@ class Member(models.Model):
 
     @property
     def is_student(self):
-        return self.groups.filter(name=settings.STUDENTS_GROUP).exists()
+        return self.user.groups.filter(name=settings.STUDENTS_GROUP).exists()
 
     @property
     def is_teacher(self):
-        return self.groups.filter(name=settings.TEACHERS_GROUP).exists()
+        return self.user.groups.filter(name=settings.TEACHERS_GROUP).exists()
 
     def save(self, *args, **kwargs):
-        if not self.is_student and not self.is_teacher and not self.is_staff:
+        if not self.is_student and not self.is_teacher and not self.user.is_staff:
             raise ValueError("Non students and teachers should be staff members. Get sure to check that box.")
 
         if self.is_student and self.is_teacher:
             raise ValueError("Member cannot be both a student and a teacher")
 
-        if self.is_student and self.is_staff:
+        if self.is_student and self.user.is_staff:
             raise ValueError("Member cannot be both a student and a staff member")
 
         super().save(*args, **kwargs)
 
 
 class Workshop(models.Model):
-    name = models.CharField(max_length=50, required=True)
+    name = models.CharField(max_length=50)
     description = models.TextField()
 
     def __str__(self):
@@ -40,7 +40,7 @@ class Workshop(models.Model):
 
 
 class Cycle(models.Model):
-    name = models.CharField(max_length=50, required=True)
+    name = models.CharField(max_length=50)
     description = models.TextField()
 
     def __str__(self):

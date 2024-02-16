@@ -97,3 +97,5 @@ zappa_settings.py
 .secret
 .pg_service.conf
 .pg_pass
+
+cayuman.db

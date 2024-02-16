@@ -15,6 +15,11 @@ optional = true
 [tool.poetry.group.test.dependencies]
 pytest = "^8.0.0"
 pre-commit = "^3.6.1"
+pytest-django = "^4.8.0"
+
+[tool.pytest.ini_options]
+DJANGO_SETTINGS_MODULE = "cayuman.settings"
+python_files = ["test_*.py"]
 
 [build-system]
 requires = ["poetry-core"]

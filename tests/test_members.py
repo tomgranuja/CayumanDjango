@@ -4,10 +4,13 @@ from django.conf import settings
 from cayuman.models import Member
 
 
+pytestmark = pytest.mark.django_db
+
+
 @pytest.fixture(scope='function')
 def create_user():
     """Fixture to create a basic user."""
-    return User.objects.create_user(username='testuser', password='12345')
+    return User.objects.create_user(username='11111111', password='12345')
 
 
 @pytest.fixture
