@@ -66,3 +66,27 @@ In order to run our tests you just have to do
 ```console
 $ poetry run pytest
 ```
+
+## Applying migrations
+
+```console
+$ poetry run python manage.py migrate
+```
+
+## Creating First Super User
+
+```console
+$ poetry run python manage.py createsuperuser
+```
+
+## Running dev server
+
+```console
+$ poetry run python manage.py runserver
+```
+
+## Generating new migrations
+
+```console
+$ poetry run python manage.py makemigrations
+```

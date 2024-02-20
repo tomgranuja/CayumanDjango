@@ -4,6 +4,7 @@ import pytest
 from django.conf import settings
 from django.contrib.auth.models import Group
 from django.contrib.auth.models import User
+from django.core.exceptions import ValidationError
 from django.utils import timezone
 
 from cayuman.models import Member
@@ -74,7 +75,7 @@ def test_fail_create_workshop_period_student_as_teacher(create_student, create_w
     # create workshop
     date_start = timezone.make_aware(datetime(2024, 3, 13), timezone.get_default_timezone())
     date_end = timezone.make_aware(datetime(2024, 6, 1), timezone.get_default_timezone())
-    with pytest.raises(ValueError, match=r"Teacher must be a member of the .+"):
+    with pytest.raises(ValidationError, match=r"Teacher must be a member of the .+"):
         WorkshopPeriod.objects.create(workshop=workshops[0], date_start=date_start, date_end=date_end, teacher=student)
 
 

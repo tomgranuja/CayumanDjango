@@ -4,6 +4,7 @@ import pytest
 from django.conf import settings
 from django.contrib.auth.models import Group
 from django.contrib.auth.models import User
+from django.core.exceptions import ValidationError
 from django.utils import timezone
 
 from cayuman.models import Cycle
@@ -127,7 +128,7 @@ def test_student_cycle_fail_no_cycle_coincidence(create_student, create_teacher,
     sc = StudentCycle.objects.create(student=student, cycle=cycles[2], date_joined=timezone.now())  # no cycle coincidence
 
     # assign workshop periods to student cycle
-    with pytest.raises(ValueError, match="StudentCycle must be in one of the workshop period's cycles"):
+    with pytest.raises(ValidationError, match="StudentCycle must be in one of the workshop period's cycles"):
         sc.workshop_periods.add(wp1, wp2)
 
 
@@ -162,7 +163,7 @@ def test_student_cycle_fail_schedule_collision(create_student, create_teacher, c
     sc = StudentCycle.objects.create(student=student, cycle=cycles[0], date_joined=timezone.now())  # no cycle coincidence
 
     # assign workshop periods to student cycle
-    with pytest.raises(ValueError, match="Workshop periods are overlapping"):
+    with pytest.raises(ValidationError, match="Workshop periods are overlapping"):
         sc.workshop_periods.add(wp1, wp2)
 
 
@@ -199,7 +200,7 @@ def test_student_cycle_fail_max_students(create_teacher, create_workshops, creat
 
         if i > 2:
             # assign workshop periods to student cycle
-            with pytest.raises(ValueError, match="Workshop period is already full"):
+            with pytest.raises(ValidationError, match="Workshop period is already full"):
                 sc.workshop_periods.add(wp1)
         else:
             sc.workshop_periods.add(wp1)

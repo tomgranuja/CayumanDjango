@@ -1,4 +1,5 @@
 import pytest
+from django.core.exceptions import ValidationError
 from django.utils import timezone
 
 from cayuman.models import Schedule
@@ -21,7 +22,7 @@ def test_schedule_create_invalid():
     """Tests invalid Schedule instantiation because time_end comes before time_start"""
     time_end = timezone.now()
     time_start = timezone.now() + timezone.timedelta(hours=1)
-    with pytest.raises(ValueError, match="Start time must be before end time"):
+    with pytest.raises(ValidationError, match="Start time must be before end time"):
         Schedule.objects.create(day="Lunes", time_start=time_start, time_end=time_end)
 
 
@@ -48,7 +49,7 @@ def test_schedule_creation_fail():
     time_start_2 = timezone.now() + timezone.timedelta(hours=1)
     time_end_2 = timezone.now() + timezone.timedelta(hours=3)
 
-    with pytest.raises(ValueError, match="There's already another schedule overlapping with current one"):
+    with pytest.raises(ValidationError, match="There's already another schedule overlapping with current one"):
         Schedule.objects.create(day="Lunes", time_start=time_start_2, time_end=time_end_2)
 
 

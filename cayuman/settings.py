@@ -24,7 +24,7 @@ SECRET_KEY = "django-insecure-j!7w^n8_w_!3y3y553-@%k)9@ni!19+k*x)3y2wy3k7oaev1r!
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ["localhost", "127.0.0.1"]
 
 
 # Application definition
@@ -124,5 +124,5 @@ STATIC_URL = "static/"
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 # Cayuman specific settings
-STUDENTS_GROUP = "Estudiantes"
-TEACHERS_GROUP = "Profesores"
+STUDENTS_GROUP = "Students"
+TEACHERS_GROUP = "Teachers"
