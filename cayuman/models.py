@@ -171,7 +171,7 @@ class StudentCycle(models.Model):
     workshop_periods = models.ManyToManyField(WorkshopPeriod)
 
     def __str__(self):
-        return f"{self.student} @ {self.cycle} on {self.date_joined.year}"
+        return f"{self.student} @ {self.cycle} {self.date_joined.year}"
 
     def clean(self):
         if not self.student.is_student:
@@ -198,24 +198,19 @@ def student_cycle_workshop_period_changed(sender, instance, action, *args, **kwa
                 raise ValidationError(f"Workshop period is already assigned to this student cycle: `{wp}`")
             wps.add(wp)
 
-        # check that max_students for each workshop period is not exceeded
+        # apply validations
         for wp in wps:
+            # check if workshop period is full
             if wp.max_students > 0 and wp.max_students <= wp.studentcycle_set.count():
                 raise ValidationError(f"Workshop period is already full: `{wp}`")
 
-        # check for collitions between this student's cycle's workshop_period's schedules and incoming workshop_period's schedules
-        for wp_1 in wps:
-            for wp_2 in wps:
-                if wp_1 == wp_2:
-                    continue
-                if wp_1 & wp_2:
-                    raise ValidationError(f"Workshop periods are overlapping: `{wp_1}` and `{wp_2}`")
+            # check if workshop periods' cycles all belong to the same student cycle's cycle
+            if instance.cycle not in wp.cycles.all():
+                raise ValidationError(f"StudentCycle cycle not in workshop period's cycles: `{instance.cycle}` not in {wp.cycles.all()}")
 
-        # validating this student's cycle is part of the workshop period's cycles
-        # gather all cycles from workshop periods, including incoming one
-        cycles = set()
-        for wp in wps:
-            for cycle in wp.cycles.all():
-                cycles.add(cycle)
-        if instance.cycle not in cycles:
-            raise ValidationError(f"StudentCycle must be in one of the workshop period's cycles: `{instance.cycle}`")
+            # check for collitions between this student's cycle's workshop_period's schedules and incoming workshop_period's schedules
+            for wp_2 in wps:
+                if wp == wp_2:
+                    continue
+                if wp & wp_2:
+                    raise ValidationError(f"Workshop periods are overlapping: `{wp}` and `{wp_2}`")

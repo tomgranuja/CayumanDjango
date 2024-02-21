@@ -72,7 +72,7 @@ def test_student_cycle_ok(create_student, create_teacher, create_workshops, crea
 
     # add cycles
     wp1.cycles.add(cycles[0])
-    wp2.cycles.add(cycles[1])
+    wp2.cycles.add(cycles[0])
 
     # create schedule for wp1
     time_start = timezone.now()
@@ -128,7 +128,7 @@ def test_student_cycle_fail_no_cycle_coincidence(create_student, create_teacher,
     sc = StudentCycle.objects.create(student=student, cycle=cycles[2], date_joined=timezone.now())  # no cycle coincidence
 
     # assign workshop periods to student cycle
-    with pytest.raises(ValidationError, match="StudentCycle must be in one of the workshop period's cycles"):
+    with pytest.raises(ValidationError, match="StudentCycle cycle not in workshop period's cycles"):
         sc.workshop_periods.add(wp1, wp2)
 
 

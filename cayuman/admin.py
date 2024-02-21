@@ -1,4 +1,6 @@
 from django.contrib import admin
+from django.core.exceptions import ValidationError
+from django.forms import ModelForm
 from django.utils.html import format_html
 
 from .models import Cycle
@@ -89,10 +91,38 @@ class WorkshopPeriodAdmin(admin.ModelAdmin):
 admin.site.register(WorkshopPeriod, WorkshopPeriodAdmin)
 
 
+class StudentCycleForm(ModelForm):
+    def clean_workshop_periods(self):
+        # clean workshop_periods m2m relation
+        # this breaks DRY principle with respect to m2m_changed signal handler for model StudentCycle
+        # but it's necessary so validation works ok in django admin as well as directly using the model
+        # {'student': Member(...), 'cycle': <Cycle: ...>, 'workshop_periods': <QuerySet [<WorkshopPeriod: ...>, <WorkshopPeriod: ...>]>}
+        for wp in self.cleaned_data["workshop_periods"]:
+            if wp.max_students > 0 and wp.max_students <= wp.studentcycle_set.count():
+                raise ValidationError(f"Workshop period is already full: `{wp}`")
+
+            if self.cleaned_data["cycle"] not in wp.cycles.all():
+                raise ValidationError(f"StudentCycle cycle not in workshop period's cycles: `{self.cleaned_data['cycle']}` not in {wp.cycles.all()}")
+
+            for wp_2 in self.cleaned_data["workshop_periods"]:
+                if wp == wp_2:
+                    continue
+
+                if wp & wp_2:
+                    raise ValidationError(f"Workshop periods are overlapping: `{wp}` and `{wp_2}`")
+
+        return self.cleaned_data["workshop_periods"]
+
+    class Meta:
+        fields = ("student", "cycle", "workshop_periods")
+        model = StudentCycle
+
+
 class StudentCycleAdmin(admin.ModelAdmin):
     list_display = ("id", "student", "cycle", "workshop_periods_list", "date_joined")
     list_per_page = 20
     filter_horizontal = ("workshop_periods",)
+    form = StudentCycleForm
 
     def workshop_periods_list(self, obj):
         return format_html("<ul><li>{}</li></ul>".format("</li><li>".join([str(period) for period in obj.workshop_periods.all()])))
