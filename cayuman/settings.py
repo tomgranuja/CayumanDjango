@@ -72,6 +72,15 @@ TEMPLATES = [
 WSGI_APPLICATION = "cayuman.wsgi.application"
 
 
+# Caches
+CACHES = {
+    "default": {
+        "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
+        "LOCATION": "unique-snowflake",
+    }
+}
+
+
 # Database
 # https://docs.djangoproject.com/en/5.0/ref/settings/#databases
 
@@ -104,8 +113,17 @@ AUTH_PASSWORD_VALIDATORS = [
 
 # Internationalization
 # https://docs.djangoproject.com/en/5.0/topics/i18n/
+from django.utils.translation import gettext_lazy as _
 
-LANGUAGE_CODE = "es-cl"
+LANGUAGES = [
+    ("en", _("English")),
+    ("es", _("Spanish")),
+]
+LOCALE_PATHS = [
+    BASE_DIR / "cayuman/locale",
+]
+
+LANGUAGE_CODE = "es"
 
 TIME_ZONE = "America/Santiago"
 
@@ -125,5 +143,5 @@ STATIC_URL = "static/"
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 # Cayuman specific settings
-STUDENTS_GROUP = "Students"
-TEACHERS_GROUP = "Teachers"
+STUDENTS_GROUP = _("Students")
+TEACHERS_GROUP = _("Teachers")

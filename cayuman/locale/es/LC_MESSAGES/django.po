@@ -1,0 +1,56 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2024-02-26 13:38-0300\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: Spanish\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=3; plural=n == 1 ? 0 : n != 0 && n % 1000000 == 0 ? "
+"1 : 2;\n"
+
+#: cayuman/models.py:79
+msgid "Monday"
+msgstr "Lunes"
+
+#: cayuman/models.py:80
+msgid "Tuesday"
+msgstr "Martes"
+
+#: cayuman/models.py:81
+msgid "Wednesday"
+msgstr "Miércoles"
+
+#: cayuman/models.py:82
+msgid "Thursday"
+msgstr "Jueves"
+
+#: cayuman/models.py:83
+msgid "Friday"
+msgstr "Viernes"
+
+#: cayuman/settings.py:118
+msgid "English"
+msgstr "Inglés"
+
+#: cayuman/settings.py:119
+msgid "Spanish"
+msgstr "Español"
+
+#: cayuman/settings.py:145
+msgid "Students"
+msgstr "Estudiantes"
+
+#: cayuman/settings.py:146
+msgid "Teachers"
+msgstr "Profesores"
