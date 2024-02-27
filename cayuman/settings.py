@@ -119,9 +119,6 @@ LANGUAGES = [
     ("en", _("English")),
     ("es", _("Spanish")),
 ]
-LOCALE_PATHS = [
-    BASE_DIR / "cayuman/locale",
-]
 
 LANGUAGE_CODE = "es"
 
@@ -129,8 +126,13 @@ TIME_ZONE = "America/Santiago"
 
 USE_I18N = True
 
+USE_L10N = True
+
 USE_TZ = True
 
+LOCALE_PATHS = [
+    BASE_DIR / "cayuman/locale",
+]
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.0/howto/static-files/

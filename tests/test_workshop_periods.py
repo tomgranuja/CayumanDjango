@@ -3,11 +3,11 @@ from datetime import datetime
 import pytest
 from django.conf import settings
 from django.contrib.auth.models import Group
-from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
 from django.utils import timezone
 
 from cayuman.models import Member
+from cayuman.models import Period
 from cayuman.models import Schedule
 from cayuman.models import Workshop
 from cayuman.models import WorkshopPeriod
@@ -19,23 +19,19 @@ pytestmark = pytest.mark.django_db
 @pytest.fixture()
 def create_student():
     """Fixture to create a student"""
-    user = User.objects.create_user(username="11111111", password="12345")
+    user = Member.objects.create_user(username="11111111", password="12345")
     group, _ = Group.objects.get_or_create(name=settings.STUDENTS_GROUP)
     user.groups.add(group)
-    m = Member(user=user)
-    m.save()
-    return m
+    return user
 
 
 @pytest.fixture
 def create_teacher():
     """Fixture to create a teacher"""
-    user = User.objects.create_user(username="22222222", password="12345")
+    user = Member.objects.create_user(username="22222222", password="12345")
     group, _ = Group.objects.get_or_create(name=settings.TEACHERS_GROUP)
     user.groups.add(group)
-    m = Member(user=user)
-    m.save()
-    return m
+    return user
 
 
 @pytest.fixture
@@ -47,50 +43,55 @@ def create_workshops():
     return Workshop.objects.all()
 
 
-def test_ok_workshop_period_with_teacher(create_teacher, create_workshops):
+@pytest.fixture
+def create_period():
+    """Fixture to create a sample Period"""
+    # Period
+    Period.objects.create(name="Period 1", date_start=datetime(2023, 1, 1), date_end=datetime(2023, 12, 31), enrollment_start=datetime(2022, 12, 23))
+    return Period.objects.all()[0]
+
+
+def test_ok_workshop_period_with_teacher(create_teacher, create_workshops, create_period):
     """
     Test creating a WorkshopPeriod with a teacher
     """
     # fetch teacher and workshops data
     teacher = create_teacher
     workshops = create_workshops
+    period = create_period
 
     # create workshop
-    date_start = timezone.make_aware(datetime(2024, 3, 13), timezone.get_default_timezone())
-    date_end = timezone.make_aware(datetime(2024, 6, 1), timezone.get_default_timezone())
-    wp = WorkshopPeriod.objects.create(workshop=workshops[0], date_start=date_start, date_end=date_end, teacher=teacher)
+    wp = WorkshopPeriod.objects.create(workshop=workshops[0], period=period, teacher=teacher)
     wp.save()
 
     assert wp.teacher == teacher
 
 
-def test_fail_create_workshop_period_student_as_teacher(create_student, create_workshops):
+def test_fail_create_workshop_period_student_as_teacher(create_student, create_workshops, create_period):
     """
     Test that shows saving a WorkshopPeriod with a student as a teacher fails
     """
     # fetch student and workshops data
     student = create_student
     workshops = create_workshops
+    period = create_period
 
     # create workshop
-    date_start = timezone.make_aware(datetime(2024, 3, 13), timezone.get_default_timezone())
-    date_end = timezone.make_aware(datetime(2024, 6, 1), timezone.get_default_timezone())
     with pytest.raises(ValidationError, match=r"Teacher must be a member of the .+"):
-        WorkshopPeriod.objects.create(workshop=workshops[0], date_start=date_start, date_end=date_end, teacher=student)
+        WorkshopPeriod.objects.create(workshop=workshops[0], period=period, teacher=student)
 
 
-def test_workshop_period_non_overlapping(create_workshops, create_teacher):
+def test_workshop_period_non_overlapping(create_workshops, create_teacher, create_period):
     """Tests 2 workshop periods non overlapping"""
     workshops = create_workshops
     teacher = create_teacher
+    period = create_period
 
     # create workshop period
-    date_start = timezone.make_aware(datetime(2024, 3, 13), timezone.get_default_timezone())
-    date_end = timezone.make_aware(datetime(2024, 6, 1), timezone.get_default_timezone())
-    wp1 = WorkshopPeriod.objects.create(workshop=workshops[0], date_start=date_start, date_end=date_end, teacher=teacher)
+    wp1 = WorkshopPeriod.objects.create(workshop=workshops[0], period=period, teacher=teacher)
 
     # create workshop period
-    wp2 = WorkshopPeriod.objects.create(workshop=workshops[1], date_start=date_start, date_end=date_end, teacher=teacher)
+    wp2 = WorkshopPeriod.objects.create(workshop=workshops[1], period=period, teacher=teacher)
 
     # create schedule for wp1
     time_start = timezone.now()
@@ -107,18 +108,17 @@ def test_workshop_period_non_overlapping(create_workshops, create_teacher):
     assert not wp1 & wp2
 
 
-def test_workshop_period_overlapping(create_workshops, create_teacher):
+def test_workshop_period_overlapping(create_workshops, create_teacher, create_period):
     """Tests overlapping between 2 workshop periods based on their schedules"""
     workshops = create_workshops
     teacher = create_teacher
+    period = create_period
 
     # create workshop period
-    date_start = timezone.make_aware(datetime(2024, 3, 13), timezone.get_default_timezone())
-    date_end = timezone.make_aware(datetime(2024, 6, 1), timezone.get_default_timezone())
-    wp1 = WorkshopPeriod.objects.create(workshop=workshops[0], date_start=date_start, date_end=date_end, teacher=teacher)
+    wp1 = WorkshopPeriod.objects.create(workshop=workshops[0], period=period, teacher=teacher)
 
     # create workshop period
-    wp2 = WorkshopPeriod.objects.create(workshop=workshops[1], date_start=date_start, date_end=date_end, teacher=teacher)
+    wp2 = WorkshopPeriod.objects.create(workshop=workshops[1], period=period, teacher=teacher)
 
     # create schedule for wp1
     time_start = timezone.now()

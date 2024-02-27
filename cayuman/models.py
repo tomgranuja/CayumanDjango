@@ -1,7 +1,9 @@
 from datetime import datetime
 
 from django.conf import settings
+from django.contrib.auth.models import Group
 from django.contrib.auth.models import User
+from django.contrib.auth.models import UserManager
 from django.core.exceptions import ValidationError
 from django.db import models
 from django.db.models.signals import m2m_changed
@@ -15,14 +17,15 @@ class Member(User):
     At the time of writing this we have STUDENTS, TEACHERS and regular users outside both groups
     """
 
+    # use manager from User model
+    objects = UserManager()
+
     @property
     def is_student(self):
         return self.groups.filter(name=settings.STUDENTS_GROUP).exists()
 
     @property
     def is_teacher(self):
-        print(settings.TEACHERS_GROUP)
-        print(self.groups.filter(name=settings.TEACHERS_GROUP))
         return self.groups.filter(name=settings.TEACHERS_GROUP).exists()
 
     @property
@@ -35,24 +38,36 @@ class Member(User):
     def __repr__(self):
         return f"{self.__class__.__name__}(username='{self.username}', first_name='{self.first_name}', last_name='{self.last_name}')"
 
-    def clean(self):
-        if not self.is_student and not self.is_teacher and not self.is_staff:
-            raise ValidationError("Non students and teachers should be staff members. Get sure to check that box.")
-
-        if self.is_student and self.is_teacher:
-            raise ValidationError("Member cannot be both a student and a teacher")
-
-        if self.is_student and self.is_staff:
-            raise ValidationError("Member cannot be both a student and a staff member")
-
-        super().clean()
-
-    def save(self, *args, **kwargs):
-        self.clean()
-        super().save(*args, **kwargs)
-
     class Meta:
         proxy = True
+        verbose_name = _("Member")
+        verbose_name_plural = _("Members")
+
+
+@receiver(m2m_changed, sender=Member.groups.through)
+def member_groups_changed(sender, instance, action, *args, **kwargs):
+    if action == "pre_add":
+        # Get all groups associated with current member, including previous ones
+        groups = set()
+        for g in instance.groups.all():
+            groups.add(g)
+        for g in Group.objects.filter(id__in=kwargs.get("pk_set")):
+            if g in groups:
+                raise ValidationError(_("Group is already assigned to this member"))
+            groups.add(g)
+
+        is_teacher = Group.objects.get(name=settings.TEACHERS_GROUP) in groups
+        is_student = Group.objects.get(name=settings.STUDENTS_GROUP) in groups
+
+        if not instance.is_staff:
+            if not is_student and not is_teacher:
+                raise ValidationError(_("User must be either Student or Teacher, or a staff member"))
+        else:
+            if is_student:
+                raise ValidationError(_("Student cannot be staff member"))
+
+        if is_student and is_teacher:
+            raise ValidationError(_("User must not be both Student and Teacher"))
 
 
 class Workshop(models.Model):
@@ -65,6 +80,10 @@ class Workshop(models.Model):
     def __repr__(self):
         return f"{self.__class__.__name__}(name='{self.name}')"
 
+    class Meta:
+        verbose_name = _("Workshop")
+        verbose_name_plural = _("Workshops")
+
 
 class Cycle(models.Model):
     name = models.CharField(max_length=50)
@@ -75,6 +94,10 @@ class Cycle(models.Model):
 
     def __repr__(self):
         return f"{self.__class__.__name__}(name='{self.name}')"
+
+    class Meta:
+        verbose_name = _("Cycle")
+        verbose_name_plural = _("Cycles")
 
 
 class Schedule(models.Model):
@@ -133,6 +156,10 @@ class Schedule(models.Model):
     def __str__(self):
         return f"{self.day} @ {self.time_start} - {self.time_end}"
 
+    class Meta:
+        verbose_name = _("Schedule")
+        verbose_name_plural = _("Schedules")
+
 
 class Period(models.Model):
     """Represent a period of time"""
@@ -160,14 +187,18 @@ class Period(models.Model):
         self.clean()
         super().save(*args, **kwargs)
 
+    class Meta:
+        verbose_name = _("Period")
+        verbose_name_plural = _("Periods")
+
 
 class WorkshopPeriod(models.Model):
     workshop = models.ForeignKey(Workshop, on_delete=models.CASCADE)
     period = models.ForeignKey(Period, on_delete=models.CASCADE)
     teacher = models.ForeignKey(Member, on_delete=models.CASCADE)
+    max_students = models.PositiveIntegerField(default=0)
     cycles = models.ManyToManyField(Cycle)
     schedules = models.ManyToManyField(Schedule)
-    max_students = models.PositiveIntegerField(default=0)
 
     def __str__(self):
         return f"{self.workshop.name} @ {self.period}"
@@ -193,7 +224,7 @@ class WorkshopPeriod(models.Model):
         Workshop period overlapping is defined based on intersection between their date_start and date_end and their schedules
         """
         # check if date_start and date_end do not overlap
-        if self.date_start >= other.date_end or self.date_end <= other.date_start:
+        if self.period.date_start >= other.period.date_end or self.period.date_end <= other.period.date_start:
             return False
 
         # check overlapping due to schedules
@@ -207,6 +238,8 @@ class WorkshopPeriod(models.Model):
 
     class Meta:
         unique_together = [["workshop", "period"], ["workshop", "period", "teacher"]]
+        verbose_name = _("Workshop's Period")
+        verbose_name_plural = _("Workshops' Periods")
 
 
 class StudentCycle(models.Model):
@@ -231,6 +264,8 @@ class StudentCycle(models.Model):
     class Meta:
         ordering = ["date_joined"]  # Order the results by cycle name in ascending order
         get_latest_by = "date_joined"  # Get the latest cycle for each student
+        verbose_name = _("Students Cycle")
+        verbose_name_plural = _("Students Cycles")
 
 
 @receiver(m2m_changed, sender=StudentCycle.workshop_periods.through)

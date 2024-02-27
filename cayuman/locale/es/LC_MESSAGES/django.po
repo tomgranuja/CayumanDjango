@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2024-02-26 13:38-0300\n"
+"POT-Creation-Date: 2024-02-27 17:19-0300\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -19,38 +19,114 @@ msgstr ""
 "Plural-Forms: nplurals=3; plural=n == 1 ? 0 : n != 0 && n % 1000000 == 0 ? "
 "1 : 2;\n"
 
-#: cayuman/models.py:79
+#: cayuman/admin.py:27 cayuman/models.py:64
+msgid "User must be either Student or Teacher, or a staff member"
+msgstr ""
+"Los usuarios deben pertenecer al grupo de estudiantes o profesores o ser "
+"miembros del staff"
+
+#: cayuman/admin.py:30 cayuman/models.py:67 tests/test_members.py:57
+msgid "Student cannot be staff member"
+msgstr "Un estudiante no puede ser miembro del staff"
+
+#: cayuman/admin.py:33 cayuman/models.py:70 tests/test_members.py:47
+msgid "User must not be both Student and Teacher"
+msgstr ""
+"Los usuarios no pueden ser miembros del grupo de estudiantes y profesores al "
+"mismo tiempo"
+
+#: cayuman/models.py:43
+msgid "Member"
+msgstr "Miembro"
+
+#: cayuman/models.py:44
+msgid "Members"
+msgstr "Miembros"
+
+#: cayuman/models.py:56
+msgid "Group is already assigned to this member"
+msgstr ""
+
+#: cayuman/models.py:84
+msgid "Workshop"
+msgstr "Taller"
+
+#: cayuman/models.py:85
+msgid "Workshops"
+msgstr "Talleres"
+
+#: cayuman/models.py:99
+msgid "Cycle"
+msgstr "Ciclo"
+
+#: cayuman/models.py:100
+msgid "Cycles"
+msgstr "Ciclos"
+
+#: cayuman/models.py:107
 msgid "Monday"
 msgstr "Lunes"
 
-#: cayuman/models.py:80
+#: cayuman/models.py:108
 msgid "Tuesday"
 msgstr "Martes"
 
-#: cayuman/models.py:81
+#: cayuman/models.py:109
 msgid "Wednesday"
 msgstr "Miércoles"
 
-#: cayuman/models.py:82
+#: cayuman/models.py:110
 msgid "Thursday"
 msgstr "Jueves"
 
-#: cayuman/models.py:83
+#: cayuman/models.py:111
 msgid "Friday"
 msgstr "Viernes"
 
-#: cayuman/settings.py:118
+#: cayuman/models.py:160
+msgid "Schedule"
+msgstr "Bloque Horario"
+
+#: cayuman/models.py:161
+msgid "Schedules"
+msgstr "Bloques Horarios"
+
+#: cayuman/models.py:191
+msgid "Period"
+msgstr "Periodo"
+
+#: cayuman/models.py:192
+msgid "Periods"
+msgstr "Periodos"
+
+#: cayuman/models.py:241
+msgid "Workshop's Period"
+msgstr "Taller por periodo"
+
+#: cayuman/models.py:242
+msgid "Workshops' Periods"
+msgstr "Talleres por periodo"
+
+#: cayuman/models.py:267
+msgid "Students Cycle"
+msgstr "Estudiante en ciclo"
+
+#: cayuman/models.py:268
+msgid "Students Cycles"
+msgstr "Estudiantes en ciclos"
+
+#: cayuman/settings.py:119
 msgid "English"
 msgstr "Inglés"
 
-#: cayuman/settings.py:119
+#: cayuman/settings.py:120
 msgid "Spanish"
 msgstr "Español"
 
-#: cayuman/settings.py:145
+#: cayuman/settings.py:148
 msgid "Students"
 msgstr "Estudiantes"
 
-#: cayuman/settings.py:146
+#: cayuman/settings.py:149
 msgid "Teachers"
 msgstr "Profesores"

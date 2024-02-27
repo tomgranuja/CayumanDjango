@@ -90,3 +90,15 @@ $ poetry run python manage.py runserver
 ```console
 $ poetry run python manage.py makemigrations
 ```
+
+## Manage translation
+
+```console
+# Update translation fieles
+$ poetry run python manage.py makemessages -l es
+
+# Compile translation file
+$ poetry run python manage.py compilemessages
+
+# restart django server or webserver for changes to take effect
+```

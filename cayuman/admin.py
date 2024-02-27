@@ -1,7 +1,12 @@
+from django.conf import settings
 from django.contrib import admin
+from django.contrib.auth.admin import UserAdmin
+from django.contrib.auth.admin import UserChangeForm
+from django.contrib.auth.models import Group
 from django.core.exceptions import ValidationError
 from django.forms import ModelForm
 from django.utils.html import format_html
+from django.utils.translation import gettext as _
 
 from .models import Cycle
 from .models import Member
@@ -12,14 +17,31 @@ from .models import Workshop
 from .models import WorkshopPeriod
 
 
-class MemberAdmin(admin.ModelAdmin):
-    date_hierarchy = "date_joined"
+class MemberChangeForm(UserChangeForm):
+    def clean_groups(self):
+        is_student = Group.objects.get(name=settings.STUDENTS_GROUP) in self.cleaned_data["groups"]
+        is_teacher = Group.objects.get(name=settings.TEACHERS_GROUP) in self.cleaned_data["groups"]
+
+        if not self.cleaned_data["is_staff"]:
+            if not is_student and not is_teacher:
+                raise ValidationError(_("User must be either Student or Teacher, or a staff member"))
+        else:
+            if is_student:
+                raise ValidationError(_("Student cannot be staff member"))
+
+        if is_student and is_teacher:
+            raise ValidationError(_("User must not be both Student and Teacher"))
+
+        return self.cleaned_data["groups"]
+
+
+class MemberAdmin(UserAdmin):
+    ordering = ("-date_joined",)
     list_display = ("id", "name", "cycle", "date_joined", "is_student", "is_teacher", "is_staff", "is_active")
-    filter_horizontal = ("groups",)
-    # exclude = ["shared"]
-    # search_fields = ['url', 'entity_url', 'entity_ancestor_url', 'entity_url_type', 'entity_ancestor_url_type', 'entity', 'session']
+    filter_horizontal = ("groups", "user_permissions")
     list_per_page = 20
-    # list_filter = ["entity_url_type", "entity_ancestor_url_type"]
+
+    form = MemberChangeForm
 
     def name(self, obj):
         return f"{obj.first_name} {obj.last_name}"
@@ -27,25 +49,13 @@ class MemberAdmin(admin.ModelAdmin):
     def date_joined(self, obj):
         return format_html(str(obj.date_joined.strftime("%B %d, %Y"))) if obj.date_joined else "-"
 
+    @admin.display(boolean=True)
     def is_student(self, obj):
-        return format_html(
-            '<img src="/static/admin/img/icon-yes.svg" alt="True">' if obj.is_student else '<img src="/static/admin/img/icon-no.svg" alt="False">'
-        )
+        return obj.is_student
 
+    @admin.display(boolean=True)
     def is_teacher(self, obj):
-        return format_html(
-            '<img src="/static/admin/img/icon-yes.svg" alt="True">' if obj.is_teacher else '<img src="/static/admin/img/icon-no.svg" alt="False">'
-        )
-
-    def is_staff(self, obj):
-        return format_html(
-            '<img src="/static/admin/img/icon-yes.svg" alt="True">' if obj.is_staff else '<img src="/static/admin/img/icon-no.svg" alt="False">'
-        )
-
-    def is_active(self, obj):
-        return format_html(
-            '<img src="/static/admin/img/icon-yes.svg" alt="True">' if obj.is_active else '<img src="/static/admin/img/icon-no.svg" alt="False">'
-        )
+        return obj.is_teacher
 
     def cycle(self, obj):
         return format_html(obj.current_cycle.cycle.name if obj.is_student and obj.current_cycle else "-")
@@ -71,7 +81,7 @@ admin.site.register(Schedule, ScheduleAdmin)
 
 
 class PeriodAdmin(admin.ModelAdmin):
-    list_display = ("id", "name", "description")
+    list_display = ("id", "name", "date_start", "date_end")
     list_per_page = 20
 
 
@@ -86,10 +96,23 @@ class WorkshopAdmin(admin.ModelAdmin):
 admin.site.register(Workshop, WorkshopAdmin)
 
 
+class WorkshopPeriodAdminForm(ModelForm):
+    def __init__(self, *args, **kwargs):
+        super(WorkshopPeriodAdminForm, self).__init__(*args, **kwargs)
+        teachers_group = Group.objects.get(name=settings.TEACHERS_GROUP)
+        self.fields["teacher"].queryset = Member.objects.filter(groups=teachers_group)
+
+    class Meta:
+        fields = "__all__"
+        model = WorkshopPeriod
+
+
 class WorkshopPeriodAdmin(admin.ModelAdmin):
     list_display = ("id", "workshop", "teacher", "period", "cycles_list", "schedules_list", "max_students")
     list_per_page = 20
     filter_horizontal = ("cycles", "schedules")
+
+    form = WorkshopPeriodAdminForm
 
     def cycles_list(self, obj):
         return ", ".join([cycle.name for cycle in obj.cycles.all()])
@@ -101,7 +124,7 @@ class WorkshopPeriodAdmin(admin.ModelAdmin):
 admin.site.register(WorkshopPeriod, WorkshopPeriodAdmin)
 
 
-class StudentCycleForm(ModelForm):
+class StudentCycleAdminForm(ModelForm):
     def clean_workshop_periods(self):
         # clean workshop_periods m2m relation
         # this breaks DRY principle with respect to m2m_changed signal handler for model StudentCycle
@@ -126,19 +149,27 @@ class StudentCycleForm(ModelForm):
 
         return self.cleaned_data["workshop_periods"]
 
+    def __init__(self, *args, **kwargs):
+        super(StudentCycleAdminForm, self).__init__(*args, **kwargs)
+        students_group = Group.objects.get(name=settings.STUDENTS_GROUP)
+        self.fields["student"].queryset = Member.objects.filter(groups=students_group)
+
     class Meta:
-        fields = ("student", "cycle", "workshop_periods")
+        fields = "__all__"
         model = StudentCycle
 
 
 class StudentCycleAdmin(admin.ModelAdmin):
+    ordering = ("-date_joined",)
     list_display = ("id", "student", "cycle", "workshop_periods_list", "date_joined")
     list_per_page = 20
     filter_horizontal = ("workshop_periods",)
-    form = StudentCycleForm
+
+    form = StudentCycleAdminForm
 
     def workshop_periods_list(self, obj):
-        return format_html("<ul><li>{}</li></ul>".format("</li><li>".join([str(period) for period in obj.workshop_periods.all()])))
+        wps = obj.workshop_periods.all()
+        return format_html("<ul><li>{}</li></ul>".format("</li><li>".join([str(period) for period in wps]))) if wps else "-"
 
 
 admin.site.register(StudentCycle, StudentCycleAdmin)
