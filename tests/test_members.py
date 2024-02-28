@@ -2,7 +2,6 @@ import pytest
 from django.conf import settings
 from django.contrib.auth.models import Group
 from django.core.exceptions import ValidationError
-from django.utils.translation import gettext as _
 
 from cayuman.models import Member
 
@@ -12,17 +11,17 @@ pytestmark = pytest.mark.django_db
 
 @pytest.fixture
 def create_user():
-    """Fixture to create a basic user."""
-    return Member.objects.create_user(username="11111111", password="12345", first_name="test", last_name="user")
-    # Member.objects.all().delete()
+    # Create a basic user
+    user = Member.objects.create_user(username="11111111", password="12345", first_name="test", last_name="user")
+    return user
 
 
 @pytest.fixture
 def create_groups():
-    """Fixture to create student and teacher groups."""
+    # Create student and teacher groups
     students_group, _ = Group.objects.get_or_create(name=settings.STUDENTS_GROUP)
     teachers_group, _ = Group.objects.get_or_create(name=settings.TEACHERS_GROUP)
-    return students_group, teachers_group
+    return students_group, teachers_group  # Groups are available to the test function
 
 
 def test_member_can_be_student(create_user, create_groups):
@@ -44,7 +43,7 @@ def test_member_can_be_teacher(create_user, create_groups):
 def test_member_cannot_be_both_student_and_teacher(create_user, create_groups):
     student_group, teacher_group = create_groups
     user = create_user
-    with pytest.raises(ValidationError, match=_("User must not be both Student and Teacher")):
+    with pytest.raises(ValidationError, match="User must not be both Student and Teacher"):
         user.groups.add(student_group, teacher_group)
 
 
@@ -54,8 +53,7 @@ def test_member_cannot_be_student_and_staff(create_user, create_groups):
     user.is_staff = True
     user.save()
     user.groups.clear()
-    with pytest.raises(ValidationError, match=_("Student cannot be staff member")):
-        # user.groups.clear()
+    with pytest.raises(ValidationError, match="Student cannot be staff member"):
         user.groups.add(student_group)
 
 

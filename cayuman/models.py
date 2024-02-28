@@ -53,21 +53,27 @@ def member_groups_changed(sender, instance, action, *args, **kwargs):
             groups.add(g)
         for g in Group.objects.filter(id__in=kwargs.get("pk_set")):
             if g in groups:
-                raise ValidationError(_("Group is already assigned to this member"))
+                raise ValidationError("Group is already assigned to this member")
             groups.add(g)
 
-        is_teacher = Group.objects.get(name=settings.TEACHERS_GROUP) in groups
-        is_student = Group.objects.get(name=settings.STUDENTS_GROUP) in groups
+        try:
+            is_teacher = Group.objects.get(name=settings.TEACHERS_GROUP) in groups
+        except Group.DoesNotExist:
+            is_teacher = False
+        try:
+            is_student = Group.objects.get(name=settings.STUDENTS_GROUP) in groups
+        except Group.DoesNotExist:
+            is_student = False
 
         if not instance.is_staff:
             if not is_student and not is_teacher:
-                raise ValidationError(_("User must be either Student or Teacher, or a staff member"))
+                raise ValidationError("User must be either Student or Teacher, or a staff member")
         else:
             if is_student:
-                raise ValidationError(_("Student cannot be staff member"))
+                raise ValidationError("Student cannot be staff member")
 
         if is_student and is_teacher:
-            raise ValidationError(_("User must not be both Student and Teacher"))
+            raise ValidationError("User must not be both Student and Teacher")
 
 
 class Workshop(models.Model):

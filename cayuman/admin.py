@@ -19,8 +19,14 @@ from .models import WorkshopPeriod
 
 class MemberChangeForm(UserChangeForm):
     def clean_groups(self):
-        is_student = Group.objects.get(name=settings.STUDENTS_GROUP) in self.cleaned_data["groups"]
-        is_teacher = Group.objects.get(name=settings.TEACHERS_GROUP) in self.cleaned_data["groups"]
+        try:
+            is_student = Group.objects.get(name=settings.STUDENTS_GROUP) in self.cleaned_data["groups"]
+        except Group.DoesNotExist:
+            is_student = False
+        try:
+            is_teacher = Group.objects.get(name=settings.TEACHERS_GROUP) in self.cleaned_data["groups"]
+        except Group.DoesNotExist:
+            is_teacher = False
 
         if not self.cleaned_data["is_staff"]:
             if not is_student and not is_teacher:
