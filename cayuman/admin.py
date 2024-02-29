@@ -120,9 +120,9 @@ class WorkshopPeriodAdminForm(ModelForm):
                 for sched in wp.schedules.all():
                     other_schedules.add(sched)
 
-        # check overlapping due to schedules
-        if any(sched in other_schedules for sched in self.cleaned_data["schedules"]):
-            raise ValidationError("There's already another workshop period overlapping with current one")
+            # check overlapping due to schedules
+            if any(sched in other_schedules for sched in self.cleaned_data["schedules"]):
+                raise ValidationError("There's already another workshop period overlapping with current one")
 
         return self.cleaned_data["schedules"]
 
