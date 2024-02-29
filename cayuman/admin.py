@@ -108,6 +108,24 @@ class WorkshopPeriodAdminForm(ModelForm):
         teachers_group = Group.objects.get(name=settings.TEACHERS_GROUP)
         self.fields["teacher"].queryset = Member.objects.filter(groups=teachers_group)
 
+    def clean_schedules(self):
+        # Get schedules for same teacher and period
+        if self.cleaned_data["teacher"] and self.cleaned_data["period"]:
+            other_wps = WorkshopPeriod.objects.filter(teacher=self.cleaned_data["teacher"], period=self.cleaned_data["period"])
+            other_schedules = set()
+            for wp in other_wps:
+                if self.instance:
+                    if self.instance.id == wp.id:
+                        continue
+                for sched in wp.schedules.all():
+                    other_schedules.add(sched)
+
+        # check overlapping due to schedules
+        if any(sched in other_schedules for sched in self.cleaned_data["schedules"]):
+            raise ValidationError("There's already another workshop period overlapping with current one")
+
+        return self.cleaned_data["schedules"]
+
     class Meta:
         fields = "__all__"
         model = WorkshopPeriod

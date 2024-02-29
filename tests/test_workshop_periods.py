@@ -77,7 +77,7 @@ def test_fail_create_workshop_period_student_as_teacher(create_student, create_w
     period = create_period
 
     # create workshop
-    with pytest.raises(ValidationError, match=r"Teacher must be a member of the .+"):
+    with pytest.raises(ValidationError, match=r"Teacher must be"):
         WorkshopPeriod.objects.create(workshop=workshops[0], period=period, teacher=student)
 
 

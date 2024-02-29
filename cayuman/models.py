@@ -211,15 +211,7 @@ class WorkshopPeriod(models.Model):
 
     def clean(self):
         if not self.teacher.is_teacher:
-            raise ValidationError({"teacher": f"Teacher must be a member of the `{settings.TEACHERS_GROUP}` group"})
-
-        # validate no other workshop related to this teacher have colliding schedules
-        for wp in WorkshopPeriod.objects.filter(teacher=self.teacher):
-            if wp.id == self.id:
-                # do not compare against self
-                continue
-            if wp & self:
-                raise ValidationError("There's already another workshop period overlapping with current one")
+            raise ValidationError({"teacher": "Teacher must be a teacher"})
 
     def save(self, *args, **kwargs):
         self.clean()
@@ -230,20 +222,26 @@ class WorkshopPeriod(models.Model):
         Workshop period overlapping is defined based on intersection between their date_start and date_end and their schedules
         """
         # check if date_start and date_end do not overlap
-        if self.period.date_start >= other.period.date_end or self.period.date_end <= other.period.date_start:
+        if not self.id or not other.id:
             return False
+
+        if self.period != other.period:
+            return False
+
+        self_schedules = self.schedules.all()
+        other_schedules = other.schedules.all()
 
         # check overlapping due to schedules
         # To-do check based on date_start and end
-        for schedule in self.schedules.all():
-            for other_schedule in other.schedules.all():
+        for schedule in self_schedules:
+            for other_schedule in other_schedules:
                 if schedule & other_schedule:
                     return True
 
         return False
 
     class Meta:
-        unique_together = [["workshop", "period"], ["workshop", "period", "teacher"]]
+        # unique_together = [["workshop", "period"], ["workshop", "period", "teacher"]]
         verbose_name = _("Workshop's Period")
         verbose_name_plural = _("Workshops' Periods")
 
