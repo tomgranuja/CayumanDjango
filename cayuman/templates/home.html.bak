@@ -19,19 +19,15 @@ No enrollment available at this time
 
 <form method="POST" action="">
 {% for sched, workshop_periods in schedules.items %}
-<h4>{{ sched.day }}</h4>
-<fieldset class="row mb-3 border-bottom border-primary">
-    <legend class="col-form-label col-sm-2 pt-0">{{sched.time_start}} - {{sched.time_end}}</legend>
-    <div class="col-sm-10">
-      {% for wp in workshop_periods %}
-      <div class="form-check">
-        <input class="form-check-input" type="radio" name="{{sched.id}}" id="{{sched.id}}-{{wp.id}}" value="{{wp.id}}">
-        <label class="form-check-label" for="{{sched.id}}-{{wp.id}}">
-            {{wp.workshop.name}} <small class="text-muted">con {{wp.teacher}}</small> <span class="badge bg-secondary">5</span>
-        </label>
-      </div>
-      {% endfor %}
-    </div>
+<fieldset class="p-3 border border-primary">
+    <h4>{{ sched.day }} {{sched.time_start}} - {{sched.time_end}}</h4>
+    <ul>
+    {% for wp in workshop_periods %}
+        <li>
+            <input class="form-check-input" type="radio" name="{{sched.id}}" value="{{wp.id}}"> <label class="form-check-label" for="{{sched.id}}">{{wp.workshop.name}} con {{wp.teacher}}</label>
+        </li>
+    {% endfor %}
+    </ul>
 </fieldset>
 {% endfor %}
 <div class="mt-3 mb-5 text-center">
