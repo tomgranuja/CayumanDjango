@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+
+{% block title %}{{member.name}}'s Weekly Schedule{% endblock %}
+
+{% block content %}
+<table class="table">
+    <thead>
+        <tr>
+            <th scope="col">Hour</th>
+            {% for day in days %}
+            <th scope="col">{{ day.1 }}</th>
+            {% endfor %}
+        </tr>
+    </thead>
+    <tbody>
+        {% for block in blocks %}
+            <tr>
+                <td scope="row">{{ block.0 }} - {{ block.1 }}</td>
+
+            {% for sched, wp in data.items %}
+                    {% if sched.time_start == block.0 %}
+                        {% if wp %}
+                        <td>
+                            {{wp.workshop.name}}
+                            <br /><small>{{wp.teacher.name}}</small>
+                        </td>
+                        {% else %}
+                        <td></td>
+                        {% endif %}
+                    {% endif %}
+            {% endfor %}
+            </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}

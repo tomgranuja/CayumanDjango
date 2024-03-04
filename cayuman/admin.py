@@ -64,7 +64,7 @@ class MemberAdmin(UserAdmin):
         return obj.is_teacher
 
     def cycle(self, obj):
-        return format_html(obj.current_cycle.cycle.name if obj.is_student and obj.current_cycle else "-")
+        return format_html(obj.current_student_cycle.cycle.name if obj.is_student and obj.current_student_cycle else "-")
 
 
 admin.site.register(Member, MemberAdmin)

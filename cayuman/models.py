@@ -1,4 +1,5 @@
 from datetime import datetime
+from functools import lru_cache
 
 from django.conf import settings
 from django.contrib.auth.models import Group
@@ -6,6 +7,10 @@ from django.contrib.auth.models import User
 from django.contrib.auth.models import UserManager
 from django.core.exceptions import ValidationError
 from django.db import models
+from django.db.models import Case
+from django.db.models import IntegerField
+from django.db.models import Value
+from django.db.models import When
 from django.db.models.signals import m2m_changed
 from django.dispatch import receiver
 from django.utils.translation import gettext as _
@@ -29,7 +34,11 @@ class Member(User):
         return self.groups.filter(name=settings.TEACHERS_GROUP).exists()
 
     @property
-    def current_cycle(self):
+    def name(self):
+        return f"{self.first_name} {self.last_name}"
+
+    @property
+    def current_student_cycle(self):
         return StudentCycle.objects.filter(student=self).order_by("-date_joined").first()
 
     def __str__(self):
@@ -144,6 +153,21 @@ class Schedule(models.Model):
         self.clean()
         super().save(*args, **kwargs)
 
+    @classmethod
+    @lru_cache(maxsize=128)
+    def ordered(cls):
+        ordering = Case(
+            When(day="monday", then=Value(1)),
+            When(day="tuesday", then=Value(2)),
+            When(day="wednesday", then=Value(3)),
+            When(day="thursday", then=Value(4)),
+            When(day="friday", then=Value(5)),
+            default=Value(6),
+            output_field=IntegerField(),
+        )
+
+        return Schedule.objects.annotate(day_ordering=ordering).order_by("day_ordering", "time_start")
+
     def __and__(self, other):
         """
         Returns True if the schedules overlap, False otherwise
@@ -188,6 +212,16 @@ class Period(models.Model):
 
         if self.enrollment_start and self.enrollment_start > self.date_start:
             raise ValidationError({"enrollment": "Enrollment start date must be before start date"})
+
+    @classmethod
+    @lru_cache(maxsize=128)
+    def current(cls):
+        now = datetime.now().date()
+        try:
+            p = Period.objects.get(enrollment_start__lte=now, date_end__gt=now)
+        except Period.DoesNotExist:
+            p = None
+        return p
 
     def save(self, *args, **kwargs):
         self.clean()
@@ -260,6 +294,21 @@ class StudentCycle(models.Model):
     def clean(self):
         if not self.student.is_student:
             raise ValidationError({"student": f"Student must be a member of the `{settings.STUDENTS_GROUP}` group"})
+
+    def workshop_periods_by_period(self, period):
+        output = set()
+        wps = self.workshop_periods.all()
+        for wp in wps:
+            if wp.period == period:
+                output.add(wp)
+        return output
+
+    def workshop_periods_by_schedule(self):
+        output = dict()
+        for wp in self.workshop_periods.all():
+            for schedule in wp.schedules.all():
+                output[schedule] = wp
+        return output
 
     def save(self, *args, **kwargs):
         self.clean()
