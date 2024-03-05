@@ -316,20 +316,12 @@ class StudentCycle(models.Model):
             for sched in wp.schedules.all():
                 if schedule is None or sched == schedule:
                     output[sched] = wp
-        print("workshop_periods_by_schedule")
-        print(output)
-        print(len(output))
-        print("/workshop_periods_by_schedule")
         return output
 
     def is_schedule_full(self, period: Period) -> bool:
         """Returns True or False depending if current student has a full schedule"""
         scount = Schedule.objects.all().count()
         lwps = len(self.workshop_periods_by_schedule(period=period))
-        print("is_schedule_full")
-        print(scount)
-        print(lwps)
-        print("/is_schedule_full")
         return scount == lwps
 
     def save(self, *args, **kwargs):
