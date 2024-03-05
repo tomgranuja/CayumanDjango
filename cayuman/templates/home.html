@@ -3,14 +3,13 @@
 {% block title %}Home{% endblock %}
 
 {% block content %}
-<h1>Hi {{ user.first_name }} {{ user.last_name }}!</h1>
+<h2>Hi {{ member.name }}!</h2>
 
 {% if not period %}
 No enrollment available at this time
 {% else %}
 <p>Available Workshops for {{member.current_student_cycle.cycle.name}} from {{period.date_start}} to {{period.date_end}}</p>
 <p>Elige una opcion por cada bloque horario. Es posible que al hacer tu eleccion el taller elegido no est&eacute; disponible debido a que se hayan ocupado todos los cupos.</p>
-
 
 <form method="POST" action="">
     {% csrf_token %}
@@ -31,13 +30,13 @@ No enrollment available at this time
                     {% endfor %}
                 </div>
             {% endif %}
-            <div class="{{ field.name }}-wrapper" style="padding: 5px;">
+            <div class="{{ field.name }}-wrapper lh-lg" style="padding: 5px;">
                 {{ field }}
             </div>
         </div>
     {% endfor %}
     <div style="text-align: center;">
-        <button type="submit" class="btn btn-lg btn-outline-primary"  class="btn btn-success">Save my workshops</button>
+        <button type="submit" class="btn btn-outline-success btn-lg">Save my workshops</button>
     </div>
 </form>
 

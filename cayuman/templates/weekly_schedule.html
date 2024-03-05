@@ -3,6 +3,7 @@
 {% block title %}{{member.name}}'s Weekly Schedule{% endblock %}
 
 {% block content %}
+<h2>Weekly Workshop Schedule for {{member.name}} <small>({{ period.date_start }} - {{ period.date_end }})</small></h2>
 <table class="table">
     <thead>
         <tr>
@@ -18,19 +19,20 @@
                 <td scope="row">{{ block.0 }} - {{ block.1 }}</td>
 
             {% for sched, wp in data.items %}
-                    {% if sched.time_start == block.0 %}
+                {% if sched.time_start == block.0 %}
+                    <td>
                         {% if wp %}
-                        <td>
-                            {{wp.workshop.name}}
-                            <br /><small>{{wp.teacher.name}}</small>
-                        </td>
-                        {% else %}
-                        <td></td>
+                        {{wp.workshop.name}}
+                        <br /><small>{{wp.teacher.name}}</small>
                         {% endif %}
-                    {% endif %}
+                    </td>
+                {% endif %}
             {% endfor %}
             </tr>
         {% endfor %}
     </tbody>
 </table>
+<div style="text-align: center;">
+    <a href="/?force=true" class="btn btn-outline-warning btn-lg">&larr; Change my Workshops</a>
+</div>
 {% endblock %}

@@ -1,5 +1,8 @@
 from datetime import datetime
 from functools import lru_cache
+from typing import Dict
+from typing import Optional
+from typing import Set
 
 from django.conf import settings
 from django.contrib.auth.models import Group
@@ -295,7 +298,8 @@ class StudentCycle(models.Model):
         if not self.student.is_student:
             raise ValidationError({"student": f"Student must be a member of the `{settings.STUDENTS_GROUP}` group"})
 
-    def workshop_periods_by_period(self, period):
+    def workshop_periods_by_period(self, period: Period) -> Set:
+        """Return this student's workshop_periods given a period"""
         output = set()
         wps = self.workshop_periods.all()
         for wp in wps:
@@ -303,12 +307,30 @@ class StudentCycle(models.Model):
                 output.add(wp)
         return output
 
-    def workshop_periods_by_schedule(self):
+    def workshop_periods_by_schedule(self, schedule: Optional[Schedule] = None, period: Optional[Period] = None) -> Dict[Schedule, "WorkshopPeriod"]:
+        """Return this student's workshop_periods given a schedule, or all of them if no schedule given"""
         output = dict()
         for wp in self.workshop_periods.all():
-            for schedule in wp.schedules.all():
-                output[schedule] = wp
+            if period and wp.period != period:
+                continue
+            for sched in wp.schedules.all():
+                if schedule is None or sched == schedule:
+                    output[sched] = wp
+        print("workshop_periods_by_schedule")
+        print(output)
+        print(len(output))
+        print("/workshop_periods_by_schedule")
         return output
+
+    def is_schedule_full(self, period: Period) -> bool:
+        """Returns True or False depending if current student has a full schedule"""
+        scount = Schedule.objects.all().count()
+        lwps = len(self.workshop_periods_by_schedule(period=period))
+        print("is_schedule_full")
+        print(scount)
+        print(lwps)
+        print("/is_schedule_full")
+        return scount == lwps
 
     def save(self, *args, **kwargs):
         self.clean()
@@ -323,6 +345,7 @@ class StudentCycle(models.Model):
 
 @receiver(m2m_changed, sender=StudentCycle.workshop_periods.through)
 def student_cycle_workshop_period_changed(sender, instance, action, *args, **kwargs):
+    """Validation procedure for the StudentCycle.workshop_periods m2m relation"""
     if action == "pre_add":
         # Get all workshop periods for this student's cycle, including incoming ones
         wps = set()

@@ -81,6 +81,7 @@ admin.site.register(Cycle, CycleAdmin)
 class ScheduleAdmin(admin.ModelAdmin):
     list_display = ("id", "day", "time_start", "time_end")
     list_per_page = 20
+    list_filter = ("day",)
 
 
 admin.site.register(Schedule, ScheduleAdmin)
@@ -135,6 +136,9 @@ class WorkshopPeriodAdmin(admin.ModelAdmin):
     list_display = ("id", "workshop", "teacher", "period", "cycles_list", "schedules_list", "max_students")
     list_per_page = 20
     filter_horizontal = ("cycles", "schedules")
+    list_filter = [
+        ("teacher", admin.RelatedOnlyFieldListFilter),
+    ]
 
     form = WorkshopPeriodAdminForm
 
@@ -187,6 +191,9 @@ class StudentCycleAdmin(admin.ModelAdmin):
     ordering = ("-date_joined",)
     list_display = ("id", "student", "cycle", "workshop_periods_list", "date_joined")
     list_per_page = 20
+    list_filter = [
+        ("student", admin.RelatedOnlyFieldListFilter),
+    ]
     filter_horizontal = ("workshop_periods",)
 
     form = StudentCycleAdminForm

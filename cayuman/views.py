@@ -36,7 +36,7 @@ def available_workshop_periods(member: Member) -> Dict[Schedule, WorkshopPeriod]
 
 
 class WorkshopSelectionForm(forms.Form):
-    def __init__(self, *args, schedules_with_workshops: Optional[Dict[Schedule, WorkshopPeriod]] = None, member=None, **kwargs):
+    def __init__(self, *args, schedules_with_workshops: Optional[Dict[Schedule, WorkshopPeriod]] = None, member: Member = None, **kwargs) -> None:
         super().__init__(*args, **kwargs)
         self.member = member
         self.period = Period.current()
@@ -51,12 +51,11 @@ class WorkshopSelectionForm(forms.Form):
                     widget=forms.RadioSelect,
                 )
 
-    def clean(self):
+    def clean(self) -> None:
         cleaned_data = super().clean()
 
         # get available workshops for this user
         schedules = available_workshop_periods(self.member)
-
         schedules_by_wp_id = dict()
 
         # walk through responses
@@ -75,28 +74,11 @@ class WorkshopSelectionForm(forms.Form):
         # one query to get all workshop period objects
         workshop_periods = WorkshopPeriod.objects.filter(id__in=schedules_by_wp_id.keys())
 
-        # Security/Consistency checks:
+        # Security/Consistency checks
         for wp in workshop_periods:
             # ensure each workshop_period lives in the correct schedules
             if set(wp.schedules.all()) != set(schedules_by_wp_id[str(wp.id)]):
                 raise ValidationError(f"Workshop period {wp.workshop.name} has not been assigned the correct schedules")
-
-            # ensure each workshop is accesible to this user's cycle
-            # if self.member.current_student_cycle.cycle not in wp.cycles.all():
-            #    raise ValidationError(f"Workshop {wp.workshop.name} is not available to cycle {self.member.current_student_cycle.cycle.name}")
-
-            # check if there are available spots for each workshop
-            # if wp.max_students > 0:
-            #    # Count students in this cycle without counting current student
-            #    # curr_count = wp.studentcycle_set.filter(student__id__ne=instance.student.id).count()
-            #    curr_count = wp.studentcycle_set.exclude(student__id=self.member.id).count()
-            #    if wp.max_students <= curr_count:
-            #        raise ValidationError(f"Workshop period {wp.workshop.name} is already full")
-
-            # ensure no collisions between workshops
-            # for wp2 in workshop_periods:
-            #    if wp.id != wp2.id and wp & wp2:
-            #        raise ValidationError(f"Two chosen workshops are colliding: {wp.workshop.name} and {wp2.workshop.name}")
 
 
 class HomeView(LoginRequiredMixin, View):
@@ -104,6 +86,7 @@ class HomeView(LoginRequiredMixin, View):
     redirect_field_name = "redirect_to"
 
     def get(self, request, *args, **kwargs):
+        """GET view for the enrollment form"""
         p = Period.current()
         if not p:
             return HttpResponse("No active period")
@@ -112,25 +95,29 @@ class HomeView(LoginRequiredMixin, View):
         wps_by_schedule = available_workshop_periods(m)
         student_cycle = m.current_student_cycle
 
-        data = {f"schedule_{sched.id}": wp.id for sched, wp in student_cycle.workshop_periods_by_schedule().items()}
+        if not request.GET.get("force") and student_cycle.is_schedule_full(p):
+            return HttpResponseRedirect("/weekly-schedule/")
 
+        # current data
+        data = {f"schedule_{sched.id}": wp.id for sched, wp in student_cycle.workshop_periods_by_schedule(period=p).items()}
         form = WorkshopSelectionForm(initial=data, schedules_with_workshops=wps_by_schedule, member=m)
+
         return render(request, "home.html", {"form": form, "period": p, "member": m})
 
     def post(self, request, *args, **kwargs):
+        """Save workshop periods for current student cycle"""
         p = Period.current()
         if not p:
             return HttpResponse("No active period")
         m = Member.objects.get(id=request.user.id)
 
         wps_by_schedule = available_workshop_periods(m)
+        student_cycle = m.current_student_cycle
 
         # Pass schedules_with_workshops when instantiating the form for POST
         form = WorkshopSelectionForm(request.POST, schedules_with_workshops=wps_by_schedule, member=m)
         if form.is_valid():
             # Form is valid, proceed with saving data or other post-submission processes
-            student_cycle = m.current_student_cycle
-
             workshop_period_ids = set()
             for schedule in wps_by_schedule:
                 field_name = f"schedule_{schedule.id}"
@@ -140,7 +127,7 @@ class HomeView(LoginRequiredMixin, View):
             workshop_periods = list(WorkshopPeriod.objects.filter(id__in=workshop_period_ids))
 
             # Associate workshop periods with student cycle
-            # Wrap the operations in a transaction.atomic block
+            # Wrap the operations in a transaction.atomic block to rollback db operation if it fails due to additional validation
             try:
                 with transaction.atomic():
                     # Clear existing workshop periods
@@ -170,14 +157,7 @@ def weekly_schedule(request):
 
     schedules = Schedule.ordered()
     this_user_wps = m.current_student_cycle.workshop_periods_by_schedule()
-    data = dict()
-
-    for sched in schedules:
-        if sched not in this_user_wps:
-            data[sched] = None
-        else:
-            data[sched] = this_user_wps[sched]
-
+    data = {sched: this_user_wps.get(sched) for sched in schedules}
     days = [t for t in Schedule.CHOICES]
     raw_blocks = [(block.time_start, block.time_end) for block in schedules]
     blocks = []
