@@ -19,6 +19,14 @@ pytest = "^8.0.0"
 pre-commit = "^3.6.1"
 pytest-django = "^4.8.0"
 
+[tool.poetry.group.odftable]
+optional = true
+
+[tool.poetry.group.odftable.dependencies]
+pandas = "^2.2.1"
+odfpy = "^1.4.1"
+
+
 [tool.pytest.ini_options]
 DJANGO_SETTINGS_MODULE = "cayuman.settings"
 python_files = ["test_*.py"]
