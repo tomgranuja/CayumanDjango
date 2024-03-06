@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+
+{% block title %}Home{% endblock %}
+
+{% block content %}
+<div class="mt-3 mb-5" style="float: right">
+    <form action="{% url 'logout' %}" method="post">
+        {% csrf_token %}
+        <button class="btn btn-lg btn-outline-primary" type="submit">Log Out</button>
+    </form>
+</div>
+<h1>Hi {{ user.first_name }} {{ user.last_name }}!</h1>
+
+{% if not period %}
+No enrollment available at this time
+{% else %}
+<p class="lead>Available Workshops for {{member.current_student_cycle.cycle.name}} from {{period.date_start}} to {{period.date_end}}</p>
+<p>Elige una opcion por cada bloque horario. Es posible que al hacer tu eleccion el taller elegido no est&eacute; disponible debido a que se hayan ocupado todos los cupos.</p>
+
+<form method="POST" action="">
+{% for sched, workshop_periods in schedules.items %}
+<fieldset class="p-3 border border-primary">
+    <h4>{{ sched.day }} {{sched.time_start}} - {{sched.time_end}}</h4>
+    <ul>
+    {% for wp in workshop_periods %}
+        <li>
+            <input class="form-check-input" type="radio" name="{{sched.id}}" value="{{wp.id}}"> <label class="form-check-label" for="{{sched.id}}">{{wp.workshop.name}} con {{wp.teacher}}</label>
+        </li>
+    {% endfor %}
+    </ul>
+</fieldset>
+{% endfor %}
+<div class="mt-3 mb-5 text-center">
+    <input type="submit" class="btn btn-lg btn-outline-primary" name="submit" value="Save my workshops" />
+</div>
+</form>
+{% endif %}
+{% endblock %}

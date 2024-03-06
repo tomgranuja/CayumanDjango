@@ -9,6 +9,13 @@ https://docs.djangoproject.com/en/5.0/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.0/ref/settings/
 """
+import json
+import os
+
+from dotenv import load_dotenv
+
+load_dotenv()
+
 from pathlib import Path
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -19,14 +26,21 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/5.0/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = "django-insecure-j!7w^n8_w_!3y3y553-@%k)9@ni!19+k*x)3y2wy3k7oaev1r!"
+SECRET_KEY = os.getenv("SECRET_KEY")
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+try:
+    DEBUG = True if int(os.getenv("DEBUG", "")) else False
+except ValueError:
+    DEBUG = False
 
-ALLOWED_HOSTS = ["localhost", "127.0.0.1", "tolerant-globally-pup.ngrok-free.app"]
-CSRF_TRUSTED_ORIGINS = ["https://tolerant-globally-pup.ngrok-free.app", "http://127.0.0.1:8000", "http://localhost:8000"]
+ALLOWED_HOSTS = ["localhost", "127.0.0.1"]
+if os.getenv("ALLOWED_HOST"):
+    ALLOWED_HOSTS.append(os.getenv("ALLOWED_HOST"))
 
+CSRF_TRUSTED_ORIGINS = ["http://127.0.0.1:8000", "http://localhost:8000"]
+if os.getenv("CSRF_TRUSTED_ORIGIN"):
+    CSRF_TRUSTED_ORIGINS.append(os.getenv("CSRF_TRUSTED_ORIGIN"))
 
 # Application definition
 
@@ -56,7 +70,9 @@ ROOT_URLCONF = "cayuman.urls"
 TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",
-        "DIRS": [],
+        "DIRS": [
+            BASE_DIR / "cayuman/templates",
+        ],
         "APP_DIRS": True,
         "OPTIONS": {
             "context_processors": [
@@ -84,12 +100,7 @@ CACHES = {
 # Database
 # https://docs.djangoproject.com/en/5.0/ref/settings/#databases
 
-DATABASES = {
-    "default": {
-        "ENGINE": "django.db.backends.sqlite3",
-        "NAME": BASE_DIR / "cayuman.db",
-    }
-}
+DATABASES = {"default": json.loads(os.getenv("DATABASE", "{}"))}
 
 
 # Password validation
@@ -143,6 +154,9 @@ STATIC_URL = "static/"
 # https://docs.djangoproject.com/en/5.0/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+
+LOGIN_REDIRECT_URL = "/"
+LOGOUT_REDIRECT_URL = "/"
 
 # Cayuman specific settings
 STUDENTS_GROUP = _("Students")

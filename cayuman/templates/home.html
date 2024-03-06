@@ -1,0 +1,84 @@
+{% extends "base.html" %}
+
+{% block title %}Home{% endblock %}
+
+{% block content %}
+<h2>Hi {{ member.name }}!</h2>
+
+{% if not period %}
+No enrollment available at this time
+{% else %}
+<p>Available Workshops for {{member.current_student_cycle.cycle.name}} from {{period.date_start}} to {{period.date_end}}</p>
+<p>Elige una opcion por cada bloque horario. Es posible que al hacer tu eleccion el taller elegido no est&eacute; disponible debido a que se hayan ocupado todos los cupos.</p>
+
+<form method="POST" action="">
+    {% csrf_token %}
+    {% if form.non_field_errors %}
+    <div class="alert alert-danger" role="alert">
+        {% for error in form.non_field_errors %}
+            {{ error }}
+        {% endfor %}
+    </div>
+    {% endif %}
+    {% for field in form %}
+        <div class="form-group" style="margin-bottom: 20px;">
+            <label class="form-check-label" for="{{ field.id_for_label }}" style="font-weight: bold;">{{ field.label }}</label>
+            {% if field.errors %}
+                <div class="field-errors" style="color: red; margin-bottom: 5px;">
+                    {% for error in field.errors %}
+                        <p>{{ error }}</p>
+                    {% endfor %}
+                </div>
+            {% endif %}
+            <div class="{{ field.name }}-wrapper lh-lg" style="padding: 5px;">
+                {{ field }}
+            </div>
+        </div>
+    {% endfor %}
+    <div style="text-align: center;">
+        <button type="submit" class="btn btn-outline-success btn-lg">Save my workshops</button>
+    </div>
+</form>
+
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const radios = document.querySelectorAll('input[type="radio"]');
+        let radioStates = {};
+
+        // Initialize the tracking object with the current state of each radio button
+        radios.forEach(radio => {
+            radioStates[radio.value] = radio.checked;
+        });
+
+        radios.forEach(radio => {
+            radio.addEventListener('change', () => {
+                // Update the state of the changed radio button
+                radioStates[radio.value] = radio.checked;
+
+                // Iterate over all radios looking for other radios with the same value
+                radios.forEach(otherRadio => {
+                    // If another radio has the same value but is in a different group and the current radio is checked
+                    if (otherRadio.value === radio.value && otherRadio.name !== radio.name) {
+                        otherRadio.checked = radio.checked;
+                    }
+                });
+
+                // emulate change event when unchecking a radio button automatically
+                radios.forEach(otherRadio => {
+                    if(radioStates[otherRadio.value] != otherRadio.checked) {
+                        // otherRadio changed automatically, so it's checked value is correct
+                        radioStates[otherRadio.value] = otherRadio.checked;
+
+                        radios.forEach(anotherRadio => {
+                            if(anotherRadio.value == otherRadio.value) {
+                                anotherRadio.checked = otherRadio.checked;
+                            }
+                        });
+                    }
+                });
+            });
+        });
+    });
+</script>
+{% endif %}
+{% endblock %}
