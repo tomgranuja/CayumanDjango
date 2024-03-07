@@ -142,7 +142,7 @@ class HomeView(LoginRequiredMixin, View):
             if form.errors:
                 return render(request, "home.html", {"form": form, "period": p, "member": m})
             else:
-                return HttpResponseRedirect("/weekly-schedule/")
+                return HttpResponseRedirect("/weekly-schedule/?saved=true")
         else:
             # Form is not valid, re-render the page with form errors
             return render(request, "home.html", {"form": form, "period": p, "member": m})
@@ -163,4 +163,9 @@ def weekly_schedule(request):
     blocks = []
     [blocks.append(item) for item in raw_blocks if item not in blocks]
 
-    return render(request, "weekly_schedule.html", {"period": p, "member": m, "data": data, "days": days, "blocks": blocks})
+    # feedback in case GET['saved'] exists
+    feedback = None
+    if request.GET.get("saved"):
+        feedback = "Your preferences have been saved"
+
+    return render(request, "weekly_schedule.html", {"period": p, "member": m, "data": data, "days": days, "blocks": blocks, "feedback": feedback})

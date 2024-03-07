@@ -3,7 +3,11 @@
 {% block title %}{{member.name}}'s Weekly Schedule{% endblock %}
 
 {% block content %}
+{% if feedback %}
+<div class="alert alert-success text-center" role="alert">{{feedback}}</div>
+{% endif %}
 <h2>Weekly Workshop Schedule for {{member.name}} <small>({{ period.date_start }} - {{ period.date_end }})</small></h2>
+
 <table class="table">
     <thead>
         <tr>
