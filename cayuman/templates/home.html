@@ -22,7 +22,7 @@ No enrollment available at this time
     {% endif %}
     {% for field in form %}
         <div class="form-group" style="margin-bottom: 20px;">
-            <label class="form-check-label" for="{{ field.id_for_label }}" style="font-weight: bold;">{{ field.label }}</label>
+            <h5 class="form-check-label day-label" for="{{ field.id_for_label }}">{{ field.label }}</h5>
             {% if field.errors %}
                 <div class="field-errors" style="color: red; margin-bottom: 5px;">
                     {% for error in field.errors %}
@@ -50,28 +50,37 @@ No enrollment available at this time
             radioStates[radio.value] = radio.checked;
         });
 
+        function highlightLabel(label) {
+            // Apply the orange background immediately
+            label.classList.add('highlight');
+
+            // Remove the orange background after a short delay, allowing the fade effect to show
+            setTimeout(() => {
+                label.classList.remove('highlight');
+            }, 2000);
+        }
+
         radios.forEach(radio => {
             radio.addEventListener('change', () => {
-                // Update the state of the changed radio button
                 radioStates[radio.value] = radio.checked;
 
-                // Iterate over all radios looking for other radios with the same value
                 radios.forEach(otherRadio => {
-                    // If another radio has the same value but is in a different group and the current radio is checked
                     if (otherRadio.value === radio.value && otherRadio.name !== radio.name) {
                         otherRadio.checked = radio.checked;
+                        // Call highlightLabel on change
+                        highlightLabel(otherRadio.parentElement);
                     }
                 });
 
-                // emulate change event when unchecking a radio button automatically
                 radios.forEach(otherRadio => {
-                    if(radioStates[otherRadio.value] != otherRadio.checked) {
-                        // otherRadio changed automatically, so it's checked value is correct
+                    if (radioStates[otherRadio.value] != otherRadio.checked) {
                         radioStates[otherRadio.value] = otherRadio.checked;
 
                         radios.forEach(anotherRadio => {
-                            if(anotherRadio.value == otherRadio.value) {
+                            if (anotherRadio.value == otherRadio.value) {
                                 anotherRadio.checked = otherRadio.checked;
+                                // Call highlightLabel on change
+                                highlightLabel(anotherRadio.parentElement);
                             }
                         });
                     }
