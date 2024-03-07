@@ -9,9 +9,11 @@
 No enrollment available at this time
 {% else %}
 <p>Available Workshops for {{member.current_student_cycle.cycle.name}} from {{period.date_start}} to {{period.date_end}}</p>
-<p>Elige una opcion por cada bloque horario. Es posible que al hacer tu eleccion el taller elegido no est&eacute; disponible debido a que se hayan ocupado todos los cupos.</p>
+<p>A continuacion elige una opcion por cada bloque horario.</p>
+<p>Al lado de cada taller puede aparecer el numero de cupos todavia disponible.</p>
+<p>Si eliges un taller con dos bloques semanales entonces automaticamente se marcaran ambos bloques y otra opcion que hayas elegido puede ser deshabilitada.</p>
 
-<form method="POST" action="">
+<form id="enrollment" method="POST" action="">
     {% csrf_token %}
     {% if form.non_field_errors %}
     <div class="alert alert-danger" role="alert">
@@ -36,7 +38,7 @@ No enrollment available at this time
         </div>
     {% endfor %}
     <div style="text-align: center;">
-        <button type="submit" class="btn btn-outline-success btn-lg">Save my workshops</button>
+        <input type="submit" class="btn btn-outline-success btn-lg" name="submit" value="Save my workshops" />
     </div>
 </form>
 
@@ -60,18 +62,83 @@ No enrollment available at this time
             }, 2000);
         }
 
+        function increaseQuota(radio) {
+            const commonParent = radio.closest('div');
+            const spanBadge = commonParent.querySelector('span.badge');
+
+            if (spanBadge) {
+                // Get the current text content of spanBadge, trim it to remove any leading/trailing spaces
+                let currentValue = spanBadge.textContent.trim();
+
+                // Convert the text to an integer
+                let intValue = parseInt(currentValue, 10);
+
+                // Check if the conversion was successful to avoid NaN results
+                if (!isNaN(intValue)) {
+                    // Add 1 to the integer value
+                    intValue += 1;
+
+                    // Set the new value as the text content of spanBadge
+                    spanBadge.textContent = intValue.toString();
+                }
+            }
+        }
+
+        function decreaseQuota(radio) {
+            const commonParent = radio.closest('div');
+            const spanBadge = commonParent.querySelector('span.badge');
+
+            if (spanBadge) {
+                // Get the current text content of spanBadge, trim it to remove any leading/trailing spaces
+                let currentValue = spanBadge.textContent.trim();
+
+                // Convert the text to an integer
+                let intValue = parseInt(currentValue, 10);
+
+                // Check if the conversion was successful to avoid NaN results
+                if (!isNaN(intValue)) {
+                    // Add 1 to the integer value
+                    intValue -= 1;
+
+                    // Set the new value as the text content of spanBadge
+                    spanBadge.textContent = intValue.toString();
+                }
+            }
+        }
+
+        function toggleRadioButtons() {
+            const spans = document.querySelectorAll('span.badge');
+            spans.forEach(span => {
+                const radio = span.closest('div').querySelector('input[type="radio"]');
+                if (span.textContent.trim() === '0') {
+                    if (radio) {
+                        radio.disabled = true;
+                    }
+                } else {
+                    if (radio) {
+                        radio.disabled = false;
+                    }
+                }
+            });
+        }
+        toggleRadioButtons(); // on document load disable radio buttons if badge == 0
+
         radios.forEach(radio => {
             radio.addEventListener('change', () => {
+                decreaseQuota(radio);
                 radioStates[radio.value] = radio.checked;
 
+                // Enabled related radio buttons when one is checked
                 radios.forEach(otherRadio => {
                     if (otherRadio.value === radio.value && otherRadio.name !== radio.name) {
                         otherRadio.checked = radio.checked;
+                        decreaseQuota(otherRadio);
                         // Call highlightLabel on change
                         highlightLabel(otherRadio.parentElement);
                     }
                 });
 
+                // Disable related radio buttons when one is unchecked
                 radios.forEach(otherRadio => {
                     if (radioStates[otherRadio.value] != otherRadio.checked) {
                         radioStates[otherRadio.value] = otherRadio.checked;
@@ -79,6 +146,8 @@ No enrollment available at this time
                         radios.forEach(anotherRadio => {
                             if (anotherRadio.value == otherRadio.value) {
                                 anotherRadio.checked = otherRadio.checked;
+                                increaseQuota(anotherRadio);
+                                toggleRadioButtons();
                                 // Call highlightLabel on change
                                 highlightLabel(anotherRadio.parentElement);
                             }
@@ -87,6 +156,15 @@ No enrollment available at this time
                 });
             });
         });
+
+        // re-enable disabled radios before submitting
+        const form = document.getElementById('enrollment'); // Select the form by ID
+        form.addEventListener('submit', (event) => {
+            form.querySelectorAll('input[type="radio"]:disabled').forEach(radio => {
+                radio.disabled = false;
+            });
+        });
+
     });
 </script>
 {% endif %}

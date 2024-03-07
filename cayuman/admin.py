@@ -133,7 +133,7 @@ class WorkshopPeriodAdminForm(ModelForm):
 
 
 class WorkshopPeriodAdmin(admin.ModelAdmin):
-    list_display = ("id", "workshop", "teacher", "period", "cycles_list", "schedules_list", "max_students")
+    list_display = ("id", "workshop", "teacher", "period", "cycles_list", "schedules_list", "num_students", "max_students")
     list_per_page = 20
     filter_horizontal = ("cycles", "schedules")
     list_filter = [
@@ -147,6 +147,9 @@ class WorkshopPeriodAdmin(admin.ModelAdmin):
 
     def schedules_list(self, obj):
         return ", ".join([str(schedule) for schedule in obj.schedules.all()])
+
+    def num_students(self, obj):
+        return obj.count_students()
 
 
 admin.site.register(WorkshopPeriod, WorkshopPeriodAdmin)

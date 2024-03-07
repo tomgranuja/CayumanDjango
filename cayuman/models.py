@@ -254,6 +254,23 @@ class WorkshopPeriod(models.Model):
         self.clean()
         super().save(*args, **kwargs)
 
+    def count_students(self, member: Optional[Member] = None) -> int:
+        """Counts the number of students associated to this entry. If `member` is given counts students but excludes `member`"""
+        if member:
+            return self.studentcycle_set.exclude(student__id=member.id).count()
+        else:
+            return self.studentcycle_set.count()
+
+    def remaining_quota(self, member: Optional[Member] = None) -> int:
+        """Returns the remaining quota for this entry. If `member` is given, excludes member. Return None if no max quota."""
+        if self.max_students == 0:
+            return None
+
+        if member:
+            return self.max_students - self.count_students(member)
+        else:
+            return self.max_students - self.count_students()
+
     def __and__(self, other):
         """
         Workshop period overlapping is defined based on intersection between their date_start and date_end and their schedules

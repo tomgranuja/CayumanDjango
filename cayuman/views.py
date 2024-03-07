@@ -9,6 +9,7 @@ from django.db import transaction
 from django.http import HttpResponse
 from django.http import HttpResponseRedirect
 from django.shortcuts import render
+from django.utils.safestring import mark_safe
 from django.views import View
 
 from .models import Member
@@ -42,14 +43,24 @@ class WorkshopSelectionForm(forms.Form):
         self.period = Period.current()
         self.schedules_with_workshops = schedules_with_workshops
         if schedules_with_workshops:
-            for schedule, workshops in schedules_with_workshops.items():
-                workshop_choices = [(workshop.id, f"{workshop.workshop.name} with {workshop.teacher}") for workshop in workshops]
+            for schedule, workshop_periods in schedules_with_workshops.items():
+                workshop_choices = [(wp.id, mark_safe(self.choice_label(wp))) for wp in workshop_periods]
                 self.fields[f"schedule_{schedule.id}"] = forms.ChoiceField(
                     choices=workshop_choices,
                     label=f"{schedule.day} {schedule.time_start}-{schedule.time_end}",
                     required=True,
                     widget=forms.RadioSelect,
                 )
+
+    def choice_label(self, workshop_period: WorkshopPeriod) -> str:
+        """Returns a label for a workshop period"""
+        remaining_quota = workshop_period.remaining_quota()
+        badge = (
+            f'<span class="badge rounded-pill text-bg-secondary">{remaining_quota}</span>'
+            if remaining_quota is not None and remaining_quota >= 0
+            else ""
+        )
+        return f"{workshop_period.workshop.name} with {workshop_period.teacher} {badge}"
 
     def clean(self) -> None:
         cleaned_data = super().clean()
