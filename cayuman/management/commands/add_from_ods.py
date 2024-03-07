@@ -37,25 +37,23 @@ class Command(BaseCommand):
         self.stdout.write(self.style.SUCCESS(f"Filtering to {len(t)} entries"))
         students_group, _ = Group.objects.get_or_create(name=settings.STUDENTS_GROUP)
         for i, row in t.iterrows():
-            q = Member.objects.filter(username=row.rut)
-            if q.exists():
-                member = q.first()
-                self.stdout.write(self.style.WARNING(f"Preexisting Member object: {member.first_name}, {member.username}"))
-            else:
-                member = Member.objects.create(
-                    username=row.rut,
-                    first_name=row.sfname,
-                    last_name=row.slname,
-                    email=row.email,
-                )
+            member, created = Member.objects.get_or_create(username=row.rut)
+            if created:
+                member.first_name = row.sfname
+                member.last_name = row.slname
+                member.email = row.email
                 member.set_password(row.rut.split("-")[0][-4:])
                 member.save()
+            else:
+                self.stdout.write(self.style.WARNING(f"Preexisting Member object: {member.first_name}, {member.username}"))
             # Force to student group
             member.groups.set([students_group])
 
-            # Update student cycle relation
-            cycle, _ = Cycle.objects.get_or_create(name=cycle_name[row.cycle])
-            if member.studentcycle_set.exists():
-                member.studentcycle_set.first().cycle = cycle
-            else:
+            # Check student cycle relation, create new if ods differ
+            cycle, created = Cycle.objects.get_or_create(name=cycle_name[row.cycle])
+            q = StudentCycle.objects.filter(student=member)
+            cycle_is_different = q.exists() and (q.last().cycle != cycle)
+            if cycle_is_different or not q.exists():
                 StudentCycle.objects.create(student=member, cycle=cycle)
+            else:
+                self.stdout.write(f"{member.first_name}, {member.username} is already at {cycle.name}")
