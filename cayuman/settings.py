@@ -69,10 +69,15 @@ ROOT_URLCONF = "cayuman.urls"
 
 TEMPLATES = [
     {
-        "BACKEND": "django.template.backends.django.DjangoTemplates",
+        "BACKEND": "django.template.backends.jinja2.Jinja2",
         "DIRS": [
             BASE_DIR / "cayuman/templates",
         ],
+        "APP_DIRS": True,
+        "OPTIONS": {"environment": "cayuman.jinja2.environment", "auto_reload": DEBUG, "autoescape": True},
+    },
+    {
+        "BACKEND": "django.template.backends.django.DjangoTemplates",
         "APP_DIRS": True,
         "OPTIONS": {
             "context_processors": [

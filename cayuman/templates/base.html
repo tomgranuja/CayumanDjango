@@ -33,9 +33,9 @@
         <a href="/"><img src="https://comunidadeducativacayuman.cl/wp-content/uploads/2021/02/Recurso-5.png" style="width: 400px;" /></a>
       </div>
       <div class="mt-3 mb-5" style="float: right">
-        <form action="{% url 'logout' %}" method="post">
-            {% csrf_token %}
-            <button class="btn btn-outline-info" type="submit">Log Out</button>
+        <form action="{{ url('logout') }}" method="post">
+          {{ csrf_input }}
+          <button class="btn btn-outline-info" type="submit">Log Out</button>
         </form>
       </div>
       <div style="clear: both;">

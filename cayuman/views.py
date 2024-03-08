@@ -6,6 +6,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.exceptions import ValidationError
 from django.db import transaction
+from django.http import Http404
 from django.http import HttpResponse
 from django.http import HttpResponseRedirect
 from django.shortcuts import render
@@ -60,7 +61,10 @@ class WorkshopSelectionForm(forms.Form):
             if remaining_quota is not None and remaining_quota >= 0
             else ""
         )
-        return f"{workshop_period.workshop.name} with {workshop_period.teacher} {badge}"
+        return (
+            f'<a target="_blank" href="/workshop-period/{workshop_period.id}/">{workshop_period.workshop.name}</a> '
+            f"with {workshop_period.teacher} {badge}"
+        )
 
     def clean(self) -> None:
         cleaned_data = super().clean()
@@ -180,3 +184,22 @@ def weekly_schedule(request):
         feedback = "Your preferences have been saved"
 
     return render(request, "weekly_schedule.html", {"period": p, "member": m, "data": data, "days": days, "blocks": blocks, "feedback": feedback})
+
+
+def workshop_period(request, workshop_period_id):
+    """View for a workshop period"""
+    p = Period.current()
+    if not p:
+        return HttpResponse("No active period")
+    try:
+        wp = WorkshopPeriod.objects.get(id=workshop_period_id, period=p)
+    except WorkshopPeriod.DoesNotExist:
+        raise Http404
+
+    days = [t for t in Schedule.CHOICES]
+    schedules = Schedule.ordered()
+    raw_blocks = [(block.time_start, block.time_end) for block in schedules]
+    blocks = []
+    [blocks.append(item) for item in raw_blocks if item not in blocks]
+
+    return render(request, "workshop_period.html", {"wp": wp, "days": days, "blocks": blocks, "schedules": schedules})
