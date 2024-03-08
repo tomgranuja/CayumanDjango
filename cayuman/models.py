@@ -1,4 +1,5 @@
 from datetime import datetime
+from functools import cached_property
 from functools import lru_cache
 from typing import Dict
 from typing import Optional
@@ -209,6 +210,24 @@ class Period(models.Model):
     def __repr__(self):
         return f"{self.__class__.__name__}(name='{self.name}', date_start='{self.date_start}', date_end='{self.date_end}')"
 
+    @cached_property
+    def count_weeks(self):
+        """Count total weeks this period lasts."""
+        from datetime import timedelta
+
+        # Trick is done by counting the number of mondays
+        days_until_monday = (7 - self.date_start.weekday() + 0) % 7  # 0 is Monday
+        first_monday = self.date_start + timedelta(days=days_until_monday)
+
+        # Count the Mondays
+        monday_count = 0
+        current_date = first_monday
+        while current_date <= self.date_end:
+            monday_count += 1
+            current_date += timedelta(days=7)  # Move to the next Monday
+
+        return monday_count
+
     def clean(self):
         if self.date_start >= self.date_end:
             raise ValidationError({"start": "Start date must be before end date"})
@@ -245,6 +264,11 @@ class WorkshopPeriod(models.Model):
 
     def __str__(self):
         return f"{self.workshop.name} @ {self.period}"
+
+    @cached_property
+    def count_classes(self):
+        num_weeks = self.period.count_weeks
+        return num_weeks * self.schedules.count()
 
     def clean(self):
         if not self.teacher.is_teacher:

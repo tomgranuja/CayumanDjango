@@ -22,11 +22,11 @@
             <tr>
                 <td scope="row">{{ block.0 }} - {{ block.1 }}</td>
 
-            {% for sched, wp in data.items %}
+            {% for sched, wp in data.items() %}
                 {% if sched.time_start == block.0 %}
                     <td>
                         {% if wp %}
-                        {{wp.workshop.name}}
+                        <a target="_blank" href="/workshop-period/{{wp.id}}/">{{wp.workshop.name}}</a>
                         <br /><small>{{wp.teacher.name}}</small>
                         {% endif %}
                     </td>

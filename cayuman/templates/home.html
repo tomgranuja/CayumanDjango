@@ -14,17 +14,17 @@ No enrollment available at this time
 <p>Si eliges un taller con dos bloques semanales entonces automaticamente se marcaran ambos bloques y otra opcion que hayas elegido puede ser deshabilitada.</p>
 
 <form id="enrollment" method="POST" action="">
-    {% csrf_token %}
-    {% if form.non_field_errors %}
+    {{ csrf_input }}
+    {% if form.non_field_errors() %}
     <div class="alert alert-danger" role="alert">
-        {% for error in form.non_field_errors %}
+        {% for error in form.non_field_errors() %}
             {{ error }}
         {% endfor %}
     </div>
     {% endif %}
     {% for field in form %}
         <div class="form-group" style="margin-bottom: 20px;">
-            <h5 class="form-check-label day-label" for="{{ field.id_for_label }}">{{ field.label }}</h5>
+            <h5 class="form-check-label day-label">{{ field.label }}</h5>
             {% if field.errors %}
                 <div class="field-errors" style="color: red; margin-bottom: 5px;">
                     {% for error in field.errors %}
