@@ -92,6 +92,7 @@ def member_groups_changed(sender, instance, action, *args, **kwargs):
 class Workshop(models.Model):
     name = models.CharField(max_length=50)
     description = models.TextField(blank=True)
+    full_name = models.TextField(blank=True)
 
     def __str__(self):
         return self.name

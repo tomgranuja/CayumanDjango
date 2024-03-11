@@ -126,7 +126,7 @@ class Command(BaseCommand):
                 print(f"    {repr(teacher)} created.")
 
             # Workshop
-            ws, created = Workshop.objects.update_or_create(name=row["name"], defaults=dict(description=row.description))
+            ws, created = Workshop.objects.update_or_create(name=row["name"], defaults=dict(description=row.description, full_name=row.full_name))
             if not created:
                 print(f"    {repr(ws)} updated.")
 
