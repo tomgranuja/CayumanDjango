@@ -48,7 +48,7 @@ class WorkshopSelectionForm(forms.Form):
                 workshop_choices = [(wp.id, mark_safe(self.choice_label(wp))) for wp in workshop_periods]
                 self.fields[f"schedule_{schedule.id}"] = forms.ChoiceField(
                     choices=workshop_choices,
-                    label=f"{schedule.day} {schedule.time_start}-{schedule.time_end}",
+                    label=f"{schedule.day} {schedule.time_start.strftime('%H:%M')} - {schedule.time_end.strftime('%H:%M')}",
                     required=True,
                     widget=forms.RadioSelect,
                 )
@@ -61,10 +61,7 @@ class WorkshopSelectionForm(forms.Form):
             if remaining_quota is not None and remaining_quota >= 0
             else ""
         )
-        return (
-            f'<a target="_blank" href="/workshop-period/{workshop_period.id}/">{workshop_period.workshop.name}</a> '
-            f"with {workshop_period.teacher} {badge}"
-        )
+        return f"{workshop_period.workshop.name} with {workshop_period.teacher} {badge}"
 
     def clean(self) -> None:
         cleaned_data = super().clean()
@@ -106,6 +103,10 @@ class HomeView(LoginRequiredMixin, View):
         if not p:
             return HttpResponse("No active period")
         m = Member.objects.get(id=request.user.id)
+
+        # Check if student or not
+        if not m.is_student:
+            return HttpResponseRedirect("/admin/")
 
         wps_by_schedule = available_workshop_periods(m)
         student_cycle = m.current_student_cycle
@@ -169,6 +170,10 @@ def weekly_schedule(request):
     if not p:
         return HttpResponse("No active period")
     m = Member.objects.get(id=request.user.id)
+
+    # Check if student or not
+    if not m.is_student:
+        return HttpResponseRedirect("/admin/")
 
     schedules = Schedule.ordered()
     this_user_wps = m.current_student_cycle.workshop_periods_by_schedule()

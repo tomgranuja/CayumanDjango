@@ -20,7 +20,7 @@
     <tbody>
         {% for block in blocks %}
             <tr>
-                <td scope="row">{{ block.0 }} - {{ block.1 }}</td>
+                <td scope="row">{{ block.0.strftime('%H:%M') }} - {{ block.1.strftime('%H:%M') }}</td>
 
             {% for sched, wp in data.items() %}
                 {% if sched.time_start == block.0 %}
