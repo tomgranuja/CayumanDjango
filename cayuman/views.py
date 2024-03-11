@@ -171,6 +171,10 @@ def weekly_schedule(request):
         return HttpResponse("No active period")
     m = Member.objects.get(id=request.user.id)
 
+    # Check if student or not
+    if not m.is_student:
+        return HttpResponseRedirect("/admin/")
+
     schedules = Schedule.ordered()
     this_user_wps = m.current_student_cycle.workshop_periods_by_schedule()
     data = {sched: this_user_wps.get(sched) for sched in schedules}
