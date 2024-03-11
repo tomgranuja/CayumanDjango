@@ -324,6 +324,24 @@ class WorkshopPeriod(models.Model):
         verbose_name_plural = _("Workshops' Periods")
 
 
+@receiver(m2m_changed, sender=WorkshopPeriod.schedules.through)
+def schedules_workshop_period_changed(sender, instance, action, *args, **kwargs):
+    """Validates no collissions happen between workshop_periods of a same teacher"""
+    if action == "pre_add":
+        if instance.teacher and instance.period:
+            other_wps = WorkshopPeriod.objects.filter(teacher=instance.teacher, period=instance.period)
+            other_schedules = set()
+            for wp in other_wps:
+                if instance.id == wp.id:
+                    continue
+                for sched in wp.schedules.all():
+                    other_schedules.add(sched.id)
+
+            # check overlapping due to schedules
+            if any(sched_id in other_schedules for sched_id in kwargs.get("pk_set")):
+                raise ValidationError("There's already another workshop period overlapping with current one")
+
+
 class StudentCycle(models.Model):
     """Represents the relationship between students and their cycles and chosen workshop_periods"""
 

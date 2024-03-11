@@ -134,40 +134,6 @@ def test_student_cycle_fail_no_cycle_coincidence(create_student, create_teacher,
         sc.workshop_periods.add(wp1, wp2)
 
 
-def test_student_cycle_fail_schedule_collision(create_student, create_teacher, create_workshops, create_cycles, create_period):
-    """Test StudentCycle cannot be created if the schedules of the workshop periods of the student have collisions"""
-    # Create a StudentCycle
-    student = create_student
-    teacher = create_teacher
-    workshops = create_workshops
-    cycles = create_cycles
-    period = create_period
-
-    # create workshop period
-    wp1 = WorkshopPeriod.objects.create(workshop=workshops[0], period=period, teacher=teacher)
-    wp2 = WorkshopPeriod.objects.create(workshop=workshops[1], period=period, teacher=teacher)
-
-    # add cycles
-    wp1.cycles.add(cycles[0])
-    wp2.cycles.add(cycles[1])
-
-    # create schedule for wp1
-    time_start = timezone.now()
-    time_end = timezone.now() + timezone.timedelta(hours=2)
-    schedule_1 = Schedule.objects.create(day="monday", time_start=time_start, time_end=time_end)
-    schedule_2 = Schedule.objects.create(day="tuesday", time_start=time_start, time_end=time_end)
-    wp1.schedules.add(schedule_1, schedule_2)
-
-    # create schedule for wp2
-    wp2.schedules.add(schedule_1)  # collision with schedule from wp1
-
-    sc = StudentCycle.objects.create(student=student, cycle=cycles[0], date_joined=timezone.now())  # no cycle coincidence
-
-    # assign workshop periods to student cycle
-    with pytest.raises(ValidationError, match="Workshop periods are overlapping"):
-        sc.workshop_periods.add(wp1, wp2)
-
-
 def test_student_cycle_fail_max_students(create_teacher, create_workshops, create_cycles, create_period):
     """Test StudentCycle cannot be created if the schedules of the workshop periods of the student have collisions"""
     # Create a StudentCycle

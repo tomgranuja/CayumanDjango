@@ -128,7 +128,5 @@ def test_workshop_period_overlapping(create_workshops, create_teacher, create_pe
     wp1.schedules.add(schedule_1, schedule_2)
 
     # create schedule for wp2
-    wp2.schedules.add(schedule_1)
-
-    # there's overlapping because both wp have schedule at Lunes, same time
-    assert wp1 & wp2
+    with pytest.raises(ValidationError, match=r"There's already another workshop period overlapping with current one"):
+        wp2.schedules.add(schedule_1)

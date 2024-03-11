@@ -107,7 +107,8 @@ class WorkshopPeriodAdminForm(ModelForm):
     def __init__(self, *args, **kwargs):
         super(WorkshopPeriodAdminForm, self).__init__(*args, **kwargs)
         teachers_group = Group.objects.get(name=settings.TEACHERS_GROUP)
-        self.fields["teacher"].queryset = Member.objects.filter(groups=teachers_group)
+        if "teacher" in self.fields:
+            self.fields["teacher"].queryset = Member.objects.filter(groups=teachers_group)
 
     def clean_schedules(self):
         # Get schedules for same teacher and period
