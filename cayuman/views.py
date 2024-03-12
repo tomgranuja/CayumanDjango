@@ -1,3 +1,4 @@
+from html import escape
 from typing import Dict
 from typing import Optional
 
@@ -61,7 +62,12 @@ class WorkshopSelectionForm(forms.Form):
             if remaining_quota is not None and remaining_quota >= 0
             else ""
         )
-        return f"{workshop_period.workshop.name} with {workshop_period.teacher} {badge}"
+        popover = (
+            f'<a href="#/" data-bs-toggle="popover" data-bs-trigger="focus" data-bs-title="{escape(workshop_period.workshop.name)}" data-bs-content="{escape(workshop_period.workshop.description)}">(?)</a>'  # noqa E501
+            if workshop_period.workshop.description
+            else ""
+        )
+        return f"{workshop_period.workshop.name} with {workshop_period.teacher} {badge} {popover}"
 
     def clean(self) -> None:
         cleaned_data = super().clean()
