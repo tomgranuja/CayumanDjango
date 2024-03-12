@@ -1,9 +1,67 @@
 {% extends "base.html" %}
+{% block title %}Log In | Cayuman{% endblock %}
+{% block head %}
+<style>
+.form-box {
+  margin-top: 20px;
+  padding: 25px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  background-color: #f8f9fa;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+  width: 100%;
+  max-width: 500px; /* Adjust width as needed */
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.btn-outline-primary {
+  width: 100%;
+  padding: 10px;
+  border-radius: 5px;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: .5rem;
+  font-weight: bold;
+}
+
+.form-group input[type="text"],
+.form-group input[type="password"] {
+  display: block;
+  width: 100%;
+  padding: .375rem .75rem;
+  font-size: 1rem;
+  line-height: 1.5;
+  color: #495057;
+  background-color: #fff;
+  background-clip: padding-box;
+  border: 1px solid #ced4da;
+  border-radius: .25rem;
+  transition: border-color .15s ease-in-out,box-shadow .15s ease-in-out;
+  margin-bottom: 1rem; /* Adds space between the input fields */
+}
+
+.form-group input[type="text"]:focus,
+.form-group input[type="password"]:focus {
+  color: #495057;
+  background-color: #fff;
+  border-color: #80bdff;
+  outline: 0;
+  box-shadow: 0 0 0 .2rem rgba(0,123,255,.25);
+}
+</style>
+{% endblock %}
 {% block content %}
-<h2>Log In</h2>
-<form method="post">
-  {{ csrf_input }}
-  {{ form }}
-  <button class="btn btn-lg btn-outline-primary" type="submit">Log In</button>
-</form>
+<div class="form-box">
+  <h2 class="text-center mb-4">Log In</h2>
+  <form method="post">
+    {{ csrf_input }}
+    <div class="form-group">
+      {{ form }}
+    </div>
+    <button class="btn btn-lg btn-outline-primary" type="submit">Log In</button>
+  </form>
+</div>
 {% endblock %}

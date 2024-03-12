@@ -1,13 +1,23 @@
 {% extends "base.html" %}
 
 {% block title %}{{member.name}}'s Weekly Schedule{% endblock %}
-
+{% block head %}
+<style>
+    .table-responsive {
+  display: block;
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+</style>
+{% endblock %}
 {% block content %}
 {% if feedback %}
 <div class="alert alert-success text-center" role="alert">{{feedback}}</div>
 {% endif %}
 <h2>Weekly Workshop Schedule for {{member.name}} <small>({{ period.date_start }} - {{ period.date_end }})</small></h2>
 
+<div class="table-responsive">
 <table class="table">
     <thead>
         <tr>
@@ -36,6 +46,7 @@
         {% endfor %}
     </tbody>
 </table>
+</div>
 <div style="text-align: center;">
     <a href="/?force=true" class="btn btn-outline-warning btn-lg">&larr; Change my Workshops</a>
 </div>
