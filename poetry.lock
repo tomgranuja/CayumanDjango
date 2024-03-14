@@ -71,6 +71,21 @@ argon2 = ["argon2-cffi (>=19.1.0)"]
 bcrypt = ["bcrypt"]
 
 [[package]]
+name = "django-jinja"
+version = "2.11.0"
+description = "Jinja2 templating language integrated in Django."
+optional = false
+python-versions = ">=3.8"
+files = [
+    {file = "django-jinja-2.11.0.tar.gz", hash = "sha256:47c06d3271e6b2f27d3596278af517bfe2e19c1eb36ae1c0b1cc302d7f0259af"},
+    {file = "django_jinja-2.11.0-py3-none-any.whl", hash = "sha256:cc4c72246a6e346aa0574e0c56c3e534c1a20ef47b8476f05d7287781f69a0a9"},
+]
+
+[package.dependencies]
+django = ">=3.2"
+jinja2 = ">=3"
+
+[[package]]
 name = "exceptiongroup"
 version = "1.2.0"
 description = "Backport of PEP 654 (exception groups)"
@@ -493,4 +508,4 @@ test = ["covdefaults (>=2.3)", "coverage (>=7.2.7)", "coverage-enable-subprocess
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.10"
-content-hash = "a79563b5113c31bd486ef0f92d86ec47b930ade31560f7a25facd2ba0dd690dc"
+content-hash = "ccc557d704100939d7539fd2607b74da408a1d346f7d0f970c18f174689081ea"

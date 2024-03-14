@@ -16,28 +16,32 @@
       <div class="grid row">
 
         <div class="col-8">
-          <p class="display-6 text-uppercase">Taller</p>
+          <p class="display-6 text-uppercase">{% trans %}Workshop{% endtrans %}</p>
         </div>
 
         <div class="col-4">
-          <h5 class="alert alert-success text-center alert-heading text-uppercase">{{wp.count_classes}} sesiones</h3>
+          <h5 class="alert alert-success text-center alert-heading text-uppercase">
+            {% trans num_session=wp.count_classes %}
+            {{num_session}} sessions
+            {% endtrans %}
+          </h3>
         </div>
 
       </div>
 
       <div>
         <h1 class="display-1 text-uppercase text-primary">{{wp.workshop.name}}</h1>
-        <h3 class="text-uppercase text-secondary">Gu&iacute;a: <span>{{wp.teacher.name}}</span></h3>
+        <h3 class="text-uppercase text-secondary">Gu&iacute;a: <span>{{wp.teacher.get_full_name()}}</span></h3>
         <h4>{{wp.period.date_start | date('j \d\e F \d\e Y')}} - {{wp.period.date_end | date('j \d\e F \d\e Y')}}</h4>
         <p>{{wp.workshop.description}}</p>
       </div>
       <div>
 
         <table class="table caption-top table-bordered">
-          <caption>Horario</caption>
+          <caption>{% trans %}Schedule{% endtrans %}</caption>
           <thead>
             <tr >
-              <th scope="col">Hora</th>
+              <th scope="col">{% trans %}Hour{% endtrans %}</th>
               {% for day in days %}
                 <th scope="col">{{ day.1 }}</th>
               {% endfor %}

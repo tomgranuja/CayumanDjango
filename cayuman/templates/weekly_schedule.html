@@ -1,6 +1,10 @@
 {% extends "base.html" %}
 
-{% block title %}{{member.name}}'s Weekly Schedule{% endblock %}
+{% block title %}
+{% trans name=member.name %}
+{{name}}'s Weekly Schedule
+{% endtrans %}
+{% endblock %}
 {% block head %}
 <style>
     .table-responsive {
@@ -12,16 +16,22 @@
 </style>
 {% endblock %}
 {% block content %}
-{% if feedback %}
-<div class="alert alert-success text-center" role="alert">{{feedback}}</div>
+{% if messages %}
+    {% for message in messages %}
+    <div class="alert alert-{{ message.tags }} text-center" role="alert">{{ message }}</div>
+    {% endfor %}
 {% endif %}
-<h2>Weekly Workshop Schedule for {{member.name}} <small>({{ period.date_start }} - {{ period.date_end }})</small></h2>
+<h2>
+    {% trans name=member.get_full_name(), period_start=period.date_start, period_end=period.date_end %}
+    Weekly Workshop Schedule for {{name}} <small>({{ period_start }} - {{ period_end }})</small>
+    {% endtrans %}
+</h2>
 
 <div class="table-responsive">
 <table class="table">
     <thead>
         <tr>
-            <th scope="col">Hour</th>
+            <th scope="col">{% trans %}Hour{% endtrans %}</th>
             {% for day in days %}
             <th scope="col">{{ day.1 }}</th>
             {% endfor %}
@@ -37,7 +47,7 @@
                     <td>
                         {% if wp %}
                         <a target="_blank" href="/workshop-period/{{wp.id}}/">{{wp.workshop.name}}</a>
-                        <br /><small>{{wp.teacher.name}}</small>
+                        <br /><small>{{wp.teacher.get_full_name()}}</small>
                         {% endif %}
                     </td>
                 {% endif %}
@@ -48,6 +58,6 @@
 </table>
 </div>
 <div style="text-align: center;">
-    <a href="/?force=true" class="btn btn-outline-warning btn-lg">&larr; Change my Workshops</a>
+    <a href="/?force=true" class="btn btn-outline-warning btn-lg">&larr; {% trans %}Change my Workshops{% endtrans %}</a>
 </div>
 {% endblock %}

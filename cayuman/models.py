@@ -17,7 +17,7 @@ from django.db.models import Value
 from django.db.models import When
 from django.db.models.signals import m2m_changed
 from django.dispatch import receiver
-from django.utils.translation import gettext as _
+from django.utils.translation import gettext_lazy as _
 
 
 class Member(User):
@@ -36,10 +36,6 @@ class Member(User):
     @property
     def is_teacher(self):
         return self.groups.filter(name=settings.TEACHERS_GROUP).exists()
-
-    @property
-    def name(self):
-        return f"{self.first_name} {self.last_name}"
 
     @property
     def current_student_cycle(self):
@@ -66,7 +62,7 @@ def member_groups_changed(sender, instance, action, *args, **kwargs):
             groups.add(g)
         for g in Group.objects.filter(id__in=kwargs.get("pk_set")):
             if g in groups:
-                raise ValidationError("Group is already assigned to this member")
+                raise ValidationError(_("Group is already assigned to this member"))
             groups.add(g)
 
         try:
@@ -80,18 +76,19 @@ def member_groups_changed(sender, instance, action, *args, **kwargs):
 
         if not instance.is_staff:
             if not is_student and not is_teacher:
-                raise ValidationError("User must be either Student or Teacher, or a staff member")
+                raise ValidationError(_("User must be either Student or Teacher, or a staff member"))
         else:
             if is_student:
-                raise ValidationError("Student cannot be staff member")
+                raise ValidationError(_("Student cannot be staff member"))
 
         if is_student and is_teacher:
-            raise ValidationError("User must not be both Student and Teacher")
+            raise ValidationError(_("User must not be both Student and Teacher"))
 
 
 class Workshop(models.Model):
-    name = models.CharField(max_length=50)
-    description = models.TextField(blank=True)
+    name = models.CharField(max_length=50, verbose_name=_("Name"))
+    full_name = models.TextField(blank=True, verbose_name=_("Full Name"))
+    description = models.TextField(blank=True, verbose_name=_("Description"))
 
     def __str__(self):
         return self.name
@@ -105,8 +102,8 @@ class Workshop(models.Model):
 
 
 class Cycle(models.Model):
-    name = models.CharField(max_length=50)
-    description = models.TextField(blank=True)
+    name = models.CharField(max_length=50, verbose_name=_("Name"))
+    description = models.TextField(blank=True, verbose_name=_("Description"))
 
     def __str__(self):
         return self.name
@@ -130,9 +127,9 @@ class Schedule(models.Model):
         ("friday", _("Friday")),
     )
 
-    day = models.CharField(max_length=10, choices=CHOICES)
-    time_start = models.TimeField()
-    time_end = models.TimeField()
+    day = models.CharField(max_length=10, choices=CHOICES, verbose_name=_("Day"))
+    time_start = models.TimeField(verbose_name=_("Start time"))
+    time_end = models.TimeField(verbose_name=_("End time"))
 
     def clean(self):
         # normalize times
@@ -143,7 +140,7 @@ class Schedule(models.Model):
 
         # Validate times
         if self.time_start >= self.time_end:
-            raise ValidationError("Start time must be before end time")
+            raise ValidationError(_("Start time must be before end time"))
 
         # Validate no collisions for the same day
         for schedule in Schedule.objects.filter(day=self.day):
@@ -151,7 +148,7 @@ class Schedule(models.Model):
                 # do not compare against self
                 continue
             if self & schedule:
-                raise ValidationError("There's already another schedule overlapping with current one")
+                raise ValidationError(_("There's already another schedule colliding with current one"))
 
     def save(self, *args, **kwargs):
         self.clean()
@@ -160,6 +157,7 @@ class Schedule(models.Model):
     @classmethod
     @lru_cache(maxsize=128)
     def ordered(cls):
+        """class method returning all schedules ordered by week day and time_start"""
         ordering = Case(
             When(day="monday", then=Value(1)),
             When(day="tuesday", then=Value(2)),
@@ -188,7 +186,7 @@ class Schedule(models.Model):
         return f"{self.__class__.__name__}(day='{self.day}', time_start='{self.time_start}', time_end='{self.time_end}')"
 
     def __str__(self):
-        return f"{self.day} @ {self.time_start} - {self.time_end}"
+        return f'{self.get_day_display()} @ {self.time_start.strftime("%H:%M")} - {self.time_end.strftime("%H:%M")}'
 
     class Meta:
         verbose_name = _("Schedule")
@@ -198,14 +196,14 @@ class Schedule(models.Model):
 class Period(models.Model):
     """Represent a period of time"""
 
-    name = models.CharField(max_length=50)
-    description = models.TextField(blank=True)
-    enrollment_start = models.DateField(blank=True)
-    date_start = models.DateField()
-    date_end = models.DateField()
+    name = models.CharField(max_length=50, verbose_name=_("Name"))
+    description = models.TextField(blank=True, verbose_name=_("Description"))
+    enrollment_start = models.DateField(blank=True, verbose_name=_("Enrollment start date"))
+    date_start = models.DateField(verbose_name=_("Start date"))
+    date_end = models.DateField(verbose_name=_("End date"))
 
     def __str__(self):
-        return f"{self.name} from {self.date_start} to {self.date_end}"
+        return _("%(name)s from %(d1)s to %(d2)s") % {"name": self.name, "d1": str(self.date_start), "d2": str(self.date_end)}
 
     def __repr__(self):
         return f"{self.__class__.__name__}(name='{self.name}', date_start='{self.date_start}', date_end='{self.date_end}')"
@@ -230,10 +228,10 @@ class Period(models.Model):
 
     def clean(self):
         if self.date_start >= self.date_end:
-            raise ValidationError({"start": "Start date must be before end date"})
+            raise ValidationError({"start": _("Start date must be before end date")})
 
         if self.enrollment_start and self.enrollment_start > self.date_start:
-            raise ValidationError({"enrollment": "Enrollment start date must be before start date"})
+            raise ValidationError({"enrollment": _("Enrollment start date must be before start date")})
 
     @classmethod
     @lru_cache(maxsize=128)
@@ -255,15 +253,16 @@ class Period(models.Model):
 
 
 class WorkshopPeriod(models.Model):
-    workshop = models.ForeignKey(Workshop, on_delete=models.CASCADE)
-    period = models.ForeignKey(Period, on_delete=models.CASCADE)
-    teacher = models.ForeignKey(Member, on_delete=models.CASCADE)
-    max_students = models.PositiveIntegerField(default=0)
-    cycles = models.ManyToManyField(Cycle)
-    schedules = models.ManyToManyField(Schedule)
+    workshop = models.ForeignKey(Workshop, on_delete=models.CASCADE, verbose_name=_("Workshop"))
+    period = models.ForeignKey(Period, on_delete=models.CASCADE, verbose_name=_("Period"))
+    teacher = models.ForeignKey(Member, on_delete=models.CASCADE, verbose_name=_("Teacher"))
+    max_students = models.PositiveIntegerField(default=0, verbose_name=_("Max Students"))
+    cycles = models.ManyToManyField(Cycle, verbose_name=_("Cycles"))
+    schedules = models.ManyToManyField(Schedule, verbose_name=_("Schedules"))
 
     def __str__(self):
-        return f"{self.workshop.name} @ {self.period}"
+        cycles_list = ", ".join(c.name for c in self.cycles.all())
+        return f"{self.workshop.name} ({cycles_list}) @ {self.period}"
 
     @cached_property
     def count_classes(self):
@@ -272,7 +271,7 @@ class WorkshopPeriod(models.Model):
 
     def clean(self):
         if not self.teacher.is_teacher:
-            raise ValidationError({"teacher": "Teacher must be a teacher"})
+            raise ValidationError({"teacher": _("Teacher must belong to the `%(g)s` group.") % {"g": settings.TEACHERS_GROUP}})
 
     def save(self, *args, **kwargs):
         self.clean()
@@ -319,7 +318,6 @@ class WorkshopPeriod(models.Model):
         return False
 
     class Meta:
-        # unique_together = [["workshop", "period"], ["workshop", "period", "teacher"]]
         verbose_name = _("Workshop's Period")
         verbose_name_plural = _("Workshops' Periods")
 
@@ -327,17 +325,17 @@ class WorkshopPeriod(models.Model):
 class StudentCycle(models.Model):
     """Represents the relationship between students and their cycles and chosen workshop_periods"""
 
-    student = models.ForeignKey(Member, on_delete=models.CASCADE)
-    cycle = models.ForeignKey(Cycle, on_delete=models.CASCADE)
-    date_joined = models.DateField(auto_now_add=True)
-    workshop_periods = models.ManyToManyField(WorkshopPeriod, blank=True)
+    student = models.ForeignKey(Member, on_delete=models.CASCADE, verbose_name=_("Student"))
+    cycle = models.ForeignKey(Cycle, on_delete=models.CASCADE, verbose_name=_("Cycle"))
+    date_joined = models.DateField(auto_now_add=True, verbose_name=_("Date joined"))
+    workshop_periods = models.ManyToManyField(WorkshopPeriod, blank=True, verbose_name=_("Workshop Periods"))
 
     def __str__(self):
         return f"{self.student} @ {self.cycle} {self.date_joined.year}"
 
     def clean(self):
         if not self.student.is_student:
-            raise ValidationError({"student": f"Student must be a member of the `{settings.STUDENTS_GROUP}` group"})
+            raise ValidationError({"student": _("Student must belong to the `%(g)s` group") % {"g": settings.STUDENTS_GROUP}})
 
     def workshop_periods_by_period(self, period: Period) -> Set:
         """Return this student's workshop_periods given a period"""
@@ -386,7 +384,7 @@ def student_cycle_workshop_period_changed(sender, instance, action, *args, **kwa
             wps.add(wp)
         for wp in WorkshopPeriod.objects.filter(id__in=kwargs.get("pk_set")):
             if wp in wps:
-                raise ValidationError(f"Workshop period is already assigned to this student cycle: `{wp}`")
+                raise ValidationError(_("Workshop period `%(wp)s` is already associated with this student") % {"wp": wp.workshop.name})
             wps.add(wp)
 
         # apply validations
@@ -394,18 +392,22 @@ def student_cycle_workshop_period_changed(sender, instance, action, *args, **kwa
             # check if workshop period is full
             if wp.max_students > 0:
                 # Count students in this cycle without counting current student
-                # curr_count = wp.studentcycle_set.filter(student__id__ne=instance.student.id).count()
                 curr_count = wp.studentcycle_set.exclude(student__id=instance.student.id).count()
                 if wp.max_students <= curr_count:
-                    raise ValidationError(f"Workshop period is already full: `{wp}`")
+                    raise ValidationError(_("Workshop period `%s` has reached its quota of students") % (wp.workshop.name))
 
             # check if workshop periods' cycles all belong to the same student cycle's cycle
             if instance.cycle not in wp.cycles.all():
-                raise ValidationError(f"StudentCycle cycle not in workshop period's cycles: `{instance.cycle}` not in {wp.cycles.all()}")
+                raise ValidationError(
+                    _("Student `%(s)s` cannot be associated with workshop period `%(wp)s` because they belong to the same cycle.")
+                    % {"s": instance.student.name, "wp": wp.workshop.name}
+                )
 
             # check for collitions between this student's cycle's workshop_period's schedules and incoming workshop_period's schedules
             for wp_2 in wps:
                 if wp == wp_2:
                     continue
                 if wp & wp_2:
-                    raise ValidationError(f"Workshop periods are overlapping: `{wp}` and `{wp_2}`")
+                    raise ValidationError(
+                        _("Workshop periods `%(w1)s` and `%(w2)s` have colliding schedules.") % {"w1": wp.workshop.name, "w2": wp_2.workshop.name}
+                    )
