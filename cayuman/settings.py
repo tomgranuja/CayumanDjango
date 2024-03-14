@@ -79,6 +79,9 @@ TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",
         "APP_DIRS": True,
+        "DIRS": [
+            BASE_DIR / "cayuman/admin_templates",
+        ],
         "OPTIONS": {
             "context_processors": [
                 "django.template.context_processors.debug",

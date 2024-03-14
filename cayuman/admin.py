@@ -5,6 +5,7 @@ from django.contrib.auth.admin import UserChangeForm
 from django.contrib.auth.models import Group
 from django.core.exceptions import ValidationError
 from django.forms import ModelForm
+from django.urls import path
 from django.utils.html import format_html
 from django.utils.translation import gettext as _
 
@@ -15,6 +16,10 @@ from .models import Schedule
 from .models import StudentCycle
 from .models import Workshop
 from .models import WorkshopPeriod
+
+
+# Setting the name of the django admin panel
+admin.site.site_header = "Cayuman"
 
 
 class MemberChangeForm(UserChangeForm):
@@ -53,7 +58,7 @@ class MemberAdmin(UserAdmin):
         return f"{obj.first_name} {obj.last_name}"
 
     def date_joined(self, obj):
-        return format_html(str(obj.date_joined.strftime("%B %d, %Y"))) if obj.date_joined else "-"
+        return format_html(str(obj.date_joined.strftime("%B %d, %Y"))) if obj.date_joined else None
 
     @admin.display(boolean=True)
     def is_student(self, obj):
@@ -107,7 +112,8 @@ class WorkshopPeriodAdminForm(ModelForm):
     def __init__(self, *args, **kwargs):
         super(WorkshopPeriodAdminForm, self).__init__(*args, **kwargs)
         teachers_group = Group.objects.get(name=settings.TEACHERS_GROUP)
-        self.fields["teacher"].queryset = Member.objects.filter(groups=teachers_group)
+        if "teacher" in self.fields:
+            self.fields["teacher"].queryset = Member.objects.filter(groups=teachers_group)
 
     def clean_schedules(self):
         # Get schedules for same teacher and period
@@ -149,7 +155,77 @@ class WorkshopPeriodAdmin(admin.ModelAdmin):
         return ", ".join([str(schedule) for schedule in obj.schedules.all()])
 
     def num_students(self, obj):
-        return obj.count_students()
+        return format_html(f'<a href="{obj.id}/students/">{obj.count_students()}</a>')
+
+    def get_urls(self):
+        """Add url for custom `students` view"""
+        from functools import update_wrapper
+
+        def wrap(view):
+            def wrapper(*args, **kwargs):
+                return self.admin_site.admin_view(view)(*args, **kwargs)
+
+            wrapper.model_admin = self
+            return update_wrapper(wrapper, view)
+
+        info = self.opts.app_label, self.opts.model_name
+        urls = super().get_urls()
+        new_urls = [
+            path(
+                "<path:object_id>/students/",
+                wrap(self.workshop_period_students_view),
+                name="%s_%s_students" % info,
+            ),
+        ]
+        return new_urls + urls
+
+    def workshop_period_students_view(self, request, object_id, extra_context=None):
+        """Admin view student cycles per workshop period"""
+        from django.contrib.admin.views.main import PAGE_VAR
+        from django.contrib.admin.utils import unquote
+        from django.core.exceptions import PermissionDenied
+        from django.utils.text import capfirst
+        from django.template.response import TemplateResponse
+
+        # Check permissions
+        model = self.model
+        obj = self.get_object(request, unquote(object_id))
+        if obj is None:
+            return self._get_obj_does_not_exist_redirect(request, model._meta, object_id)
+
+        if not self.has_view_or_change_permission(request, obj):
+            raise PermissionDenied
+
+        # Then get students for this object.
+        students_list = obj.studentcycle_set.all()
+
+        paginator = self.get_paginator(request, students_list, 100)
+        page_number = request.GET.get(PAGE_VAR, 1)
+        page_obj = paginator.get_page(page_number)
+        page_range = paginator.get_elided_page_range(page_obj.number)
+
+        context = {
+            **self.admin_site.each_context(request),
+            "title": _("Students: %s") % obj,
+            "subtitle": None,
+            "students_list": page_obj,
+            "page_range": page_range,
+            "page_var": PAGE_VAR,
+            "pagination_required": paginator.count > 100,
+            "module_name": str(capfirst(self.opts.verbose_name_plural)),
+            "object": obj,
+            "opts": self.opts,
+            "preserved_filters": self.get_preserved_filters(request),
+            **(extra_context or {}),
+        }
+
+        request.current_app = self.admin_site.name
+
+        return TemplateResponse(
+            request,
+            "workshop_period_students.html",
+            context,
+        )
 
 
 admin.site.register(WorkshopPeriod, WorkshopPeriodAdmin)
@@ -183,7 +259,8 @@ class StudentCycleAdminForm(ModelForm):
     def __init__(self, *args, **kwargs):
         super(StudentCycleAdminForm, self).__init__(*args, **kwargs)
         students_group = Group.objects.get(name=settings.STUDENTS_GROUP)
-        self.fields["student"].queryset = Member.objects.filter(groups=students_group)
+        if "student" in self.fields:
+            self.fields["student"].queryset = Member.objects.filter(groups=students_group)
 
     class Meta:
         fields = "__all__"
@@ -203,7 +280,7 @@ class StudentCycleAdmin(admin.ModelAdmin):
 
     def workshop_periods_list(self, obj):
         wps = obj.workshop_periods.all()
-        return format_html("<ul><li>{}</li></ul>".format("</li><li>".join([str(period) for period in wps]))) if wps else "-"
+        return format_html("<ul><li>{}</li></ul>".format("</li><li>".join([str(period) for period in wps]))) if wps else None
 
 
 admin.site.register(StudentCycle, StudentCycleAdmin)
