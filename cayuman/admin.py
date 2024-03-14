@@ -18,6 +18,7 @@ from .models import Workshop
 from .models import WorkshopPeriod
 
 
+# Setting the name of the django admin panel
 admin.site.site_header = "Cayuman"
 
 
@@ -157,6 +158,7 @@ class WorkshopPeriodAdmin(admin.ModelAdmin):
         return format_html(f'<a href="{obj.id}/students/">{obj.count_students()}</a>')
 
     def get_urls(self):
+        """Add url for custom `students` view"""
         from functools import update_wrapper
 
         def wrap(view):
@@ -195,7 +197,6 @@ class WorkshopPeriodAdmin(admin.ModelAdmin):
             raise PermissionDenied
 
         # Then get students for this object.
-        # app_label = self.opts.app_label
         students_list = obj.studentcycle_set.all()
 
         paginator = self.get_paginator(request, students_list, 100)
