@@ -111,7 +111,8 @@ class WorkshopPeriodAdminForm(ModelForm):
     def __init__(self, *args, **kwargs):
         super(WorkshopPeriodAdminForm, self).__init__(*args, **kwargs)
         teachers_group = Group.objects.get(name=settings.TEACHERS_GROUP)
-        self.fields["teacher"].queryset = Member.objects.filter(groups=teachers_group)
+        if "teacher" in self.fields:
+            self.fields["teacher"].queryset = Member.objects.filter(groups=teachers_group)
 
     def clean_schedules(self):
         # Get schedules for same teacher and period
@@ -257,7 +258,8 @@ class StudentCycleAdminForm(ModelForm):
     def __init__(self, *args, **kwargs):
         super(StudentCycleAdminForm, self).__init__(*args, **kwargs)
         students_group = Group.objects.get(name=settings.STUDENTS_GROUP)
-        self.fields["student"].queryset = Member.objects.filter(groups=students_group)
+        if "student" in self.fields:
+            self.fields["student"].queryset = Member.objects.filter(groups=students_group)
 
     class Meta:
         fields = "__all__"
