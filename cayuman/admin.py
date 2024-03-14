@@ -54,20 +54,22 @@ class MemberAdmin(UserAdmin):
 
     form = MemberChangeForm
 
+    @admin.display(description=_("Full Name"))
     def name(self, obj):
-        return f"{obj.first_name} {obj.last_name}"
+        return obj.get_full_name()
 
     def date_joined(self, obj):
         return format_html(str(obj.date_joined.strftime("%B %d, %Y"))) if obj.date_joined else None
 
-    @admin.display(boolean=True)
+    @admin.display(boolean=True, description=_("Is Student"))
     def is_student(self, obj):
         return obj.is_student
 
-    @admin.display(boolean=True)
+    @admin.display(boolean=True, description=_("Is Teacher"))
     def is_teacher(self, obj):
         return obj.is_teacher
 
+    @admin.display(description=_("Cycle"))
     def cycle(self, obj):
         return format_html(obj.current_student_cycle.cycle.name if obj.is_student and obj.current_student_cycle else "-")
 
@@ -93,7 +95,7 @@ admin.site.register(Schedule, ScheduleAdmin)
 
 
 class PeriodAdmin(admin.ModelAdmin):
-    list_display = ("id", "name", "date_start", "date_end")
+    list_display = ("id", "name", "enrollment_start", "date_start", "date_end")
     list_per_page = 20
 
 
@@ -101,7 +103,7 @@ admin.site.register(Period, PeriodAdmin)
 
 
 class WorkshopAdmin(admin.ModelAdmin):
-    list_display = ("id", "name", "description")
+    list_display = ("id", "name", "full_name", "description")
     list_per_page = 20
 
 
@@ -129,7 +131,7 @@ class WorkshopPeriodAdminForm(ModelForm):
 
             # check overlapping due to schedules
             if any(sched in other_schedules for sched in self.cleaned_data["schedules"]):
-                raise ValidationError("There's already another workshop period overlapping with current one")
+                raise ValidationError(_("There's already another workshop period overlapping with current one"))
 
         return self.cleaned_data["schedules"]
 
@@ -148,12 +150,19 @@ class WorkshopPeriodAdmin(admin.ModelAdmin):
 
     form = WorkshopPeriodAdminForm
 
+    @admin.display(description=_("Cycles"))
     def cycles_list(self, obj):
         return ", ".join([cycle.name for cycle in obj.cycles.all()])
 
+    @admin.display(description=_("Schedules"))
     def schedules_list(self, obj):
-        return ", ".join([str(schedule) for schedule in obj.schedules.all()])
+        output = "<ul>"
+        for sched in obj.schedules.all():
+            output += f"<li>{str(sched)}</li>"
+        output += "</ul>"
+        return format_html(output)
 
+    @admin.display(description=_("Enrolled Students"))
     def num_students(self, obj):
         return format_html(f'<a href="{obj.id}/students/">{obj.count_students()}</a>')
 
@@ -242,17 +251,22 @@ class StudentCycleAdminForm(ModelForm):
             curr_count = wp.studentcycle_set.exclude(student__id=self.cleaned_data["student"].id).count()
             # curr_count = wp.studentcycle_set.filter(student__id__ne=self.cleaned_data['student'].id).count()
             if wp.max_students > 0 and wp.max_students <= curr_count:
-                raise ValidationError(f"Workshop period is already full: `{wp}`")
+                raise ValidationError(_("Workshop period `%s` has reached its quota of students") % (wp.workshop.name))
 
             if self.cleaned_data["cycle"] not in wp.cycles.all():
-                raise ValidationError(f"StudentCycle cycle not in workshop period's cycles: `{self.cleaned_data['cycle']}` not in {wp.cycles.all()}")
+                raise ValidationError(
+                    _("Student `%(s)s` cannot be associated with workshop period `%(wp)s` because they belong to the same cycle.")
+                    % {"s": self.cleaned_data["student"].name, "wp": wp.workshop.name}
+                )
 
             for wp_2 in self.cleaned_data["workshop_periods"]:
                 if wp == wp_2:
                     continue
 
                 if wp & wp_2:
-                    raise ValidationError(f"Workshop periods are overlapping: `{wp}` and `{wp_2}`")
+                    raise ValidationError(
+                        _("Workshop periods `%(w1)s` and `%(w2)s` have colliding schedules.") % {"w1": wp.workshop.name, "w2": wp_2.workshop.name}
+                    )
 
         return self.cleaned_data["workshop_periods"]
 
@@ -278,6 +292,7 @@ class StudentCycleAdmin(admin.ModelAdmin):
 
     form = StudentCycleAdminForm
 
+    @admin.display(description=_("Workshop Periods List"))
     def workshop_periods_list(self, obj):
         wps = obj.workshop_periods.all()
         return format_html("<ul><li>{}</li></ul>".format("</li><li>".join([str(period) for period in wps]))) if wps else None

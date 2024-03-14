@@ -1,6 +1,5 @@
 {% extends "base.html" %}
-
-{% block title %}Home{% endblock %}
+{% block title %}{% trans %}Home{% endtrans %} | Cayuman{% endblock %}
 {% block head %}
 <style>
     .day-label {
@@ -26,18 +25,19 @@
 </style>
 {% endblock %}
 {% block content %}
-<h2>Hi {{ member.name }}!</h2>
+<h2>{% trans user=member.get_full_name() %}Hello {{ user }}!{% endtrans %}</h2>
 
 {% if not period %}
-No enrollment available at this time
+{% trans %}No enrollment available at this time{% endtrans %}
 {% else %}
-<p>Available Workshops for {{member.current_student_cycle.cycle.name}} from {{period.date_start}} to {{period.date_end}}</p>
-<p>A continuacion elige una opcion por cada bloque horario.</p>
-<p>Al lado de cada taller puede aparecer el numero de cupos todavia disponible.</p>
-<p>Si eliges un taller con dos bloques semanales entonces automaticamente se marcaran ambos bloques y otra opcion que hayas elegido puede ser deshabilitada.</p>
+<p>
+    {% trans cycle=member.current_student_cycle.cycle.name, period_start=period.date_start, period_end=period.date_end %}
+    These are the available workshops for {{cycle}} from {{period_start}} to {{period_end}}
+    {% endtrans %}
+</p>
 
 <form id="enrollment" method="POST" action="">
-    {{ csrf_input }}
+    {% csrf_token %}
     {% if form.non_field_errors() %}
     <div class="alert alert-danger" role="alert">
         {% for error in form.non_field_errors() %}
@@ -61,7 +61,7 @@ No enrollment available at this time
         </div>
     {% endfor %}
     <div style="text-align: center;">
-        <input type="submit" class="btn btn-outline-success btn-lg" name="submit" value="Save my workshops" />
+        <input type="submit" class="btn btn-outline-success btn-lg" name="submit" value="{% trans %}Save my workshops{% endtrans %}" />
     </div>
 </form>
 
@@ -192,10 +192,8 @@ No enrollment available at this time
         // initialize popovers
         const popoverTriggerList = document.querySelectorAll('[data-bs-toggle="popover"]')
         popoverTriggerList.forEach((elem, index) => {
-  elem.setAttribute('tabindex', index.toString());
-  //elem.setAttribute('id', 'po-' + index.toString());
-  //elem.setAttribute('href', '#po-' + index.toString());
-});
+            elem.setAttribute('tabindex', index.toString());
+        });
         const popoverList = [...popoverTriggerList].map(popoverTriggerEl => new bootstrap.Popover(popoverTriggerEl, {trigger: 'focus', container: '.form-group'}))
     });
 </script>

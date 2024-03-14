@@ -28,7 +28,7 @@
         {% for sc in students_list %}
         <tr>
             <th scope="row">{{ sc.id }}</th>
-            <td>{{ sc.student.name }}</td>
+            <td>{{ sc.student.get_full_name }}</td>
             <td>{{ sc.cycle.name }}</td>
         </tr>
         {% endfor %}

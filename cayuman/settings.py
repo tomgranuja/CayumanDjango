@@ -51,6 +51,7 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
+    "django_jinja",
     "tests",
     "cayuman",
 ]
@@ -69,12 +70,37 @@ ROOT_URLCONF = "cayuman.urls"
 
 TEMPLATES = [
     {
-        "BACKEND": "django.template.backends.jinja2.Jinja2",
+        "BACKEND": "django_jinja.jinja2.Jinja2",
         "DIRS": [
             BASE_DIR / "cayuman/templates",
         ],
         "APP_DIRS": True,
-        "OPTIONS": {"environment": "cayuman.jinja2.environment", "auto_reload": DEBUG, "autoescape": True},
+        "OPTIONS": {
+            "match_extension": ".html",
+            "match_regex": r"^(?!admin/).*",
+            "newstyle_gettext": True,
+            "extensions": [
+                "jinja2.ext.do",
+                "jinja2.ext.loopcontrols",
+                "jinja2.ext.i18n",
+                "django_jinja.builtins.extensions.CsrfExtension",
+                "django_jinja.builtins.extensions.CacheExtension",
+                "django_jinja.builtins.extensions.DebugExtension",
+                "django_jinja.builtins.extensions.TimezoneExtension",
+                "django_jinja.builtins.extensions.UrlsExtension",
+                "django_jinja.builtins.extensions.StaticFilesExtension",
+                "django_jinja.builtins.extensions.DjangoFiltersExtension",
+            ],
+            "context_processors": [
+                "django.contrib.messages.context_processors.messages",
+            ],
+            "auto_reload": DEBUG,
+            "autoescape": True,
+            "translation_engine": "django.utils.translation",
+            "policies": {
+                "ext.i18n.trimmed": True,
+            },
+        },
     },
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",

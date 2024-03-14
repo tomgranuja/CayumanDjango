@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}Log In | Cayuman{% endblock %}
+{% block title %}{% trans %}Log In{% endtrans %} | Cayuman{% endblock %}
 {% block head %}
 <style>
 .form-box {
@@ -55,13 +55,13 @@
 {% endblock %}
 {% block content %}
 <div class="form-box">
-  <h2 class="text-center mb-4">Log In</h2>
+  <h2 class="text-center mb-4">{% trans %}Students Log In{% endtrans %}</h2>
   <form method="post">
-    {{ csrf_input }}
+    {% csrf_token %}
     <div class="form-group">
       {{ form }}
     </div>
-    <button class="btn btn-lg btn-outline-primary" type="submit">Log In</button>
+    <button class="btn btn-lg btn-outline-primary" type="submit">{{ pgettext('login button', 'Log In') }}</button>
   </form>
 </div>
 {% endblock %}

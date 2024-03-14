@@ -3,6 +3,7 @@ from typing import Dict
 from typing import Optional
 
 from django import forms
+from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.exceptions import ValidationError
@@ -12,6 +13,7 @@ from django.http import HttpResponse
 from django.http import HttpResponseRedirect
 from django.shortcuts import render
 from django.utils.safestring import mark_safe
+from django.utils.translation import gettext as _
 from django.views import View
 
 from .models import Member
@@ -49,7 +51,7 @@ class WorkshopSelectionForm(forms.Form):
                 workshop_choices = [(wp.id, mark_safe(self.choice_label(wp))) for wp in workshop_periods]
                 self.fields[f"schedule_{schedule.id}"] = forms.ChoiceField(
                     choices=workshop_choices,
-                    label=f"{schedule.day} {schedule.time_start.strftime('%H:%M')} - {schedule.time_end.strftime('%H:%M')}",
+                    label=f"{schedule.get_day_display()} {schedule.time_start.strftime('%H:%M')} - {schedule.time_end.strftime('%H:%M')}",
                     required=True,
                     widget=forms.RadioSelect,
                 )
@@ -67,7 +69,8 @@ class WorkshopSelectionForm(forms.Form):
             if workshop_period.workshop.description
             else ""
         )
-        return f"{workshop_period.workshop.name} with {workshop_period.teacher} {badge} {popover}"
+        output = _("%(wp_name)s with %(teacher)s") % {"wp_name": workshop_period.workshop.name, "teacher": workshop_period.teacher.get_full_name()}
+        return f"{output} {badge} {popover}"
 
     def clean(self) -> None:
         cleaned_data = super().clean()
@@ -164,7 +167,8 @@ class HomeView(LoginRequiredMixin, View):
             if form.errors:
                 return render(request, "home.html", {"form": form, "period": p, "member": m})
             else:
-                return HttpResponseRedirect("/weekly-schedule/?saved=true")
+                messages.success(request, _("Your workshops have been saved"))
+                return HttpResponseRedirect("/weekly-schedule/")
         else:
             # Form is not valid, re-render the page with form errors
             return render(request, "home.html", {"form": form, "period": p, "member": m})
@@ -189,12 +193,7 @@ def weekly_schedule(request):
     blocks = []
     [blocks.append(item) for item in raw_blocks if item not in blocks]
 
-    # feedback in case GET['saved'] exists
-    feedback = None
-    if request.GET.get("saved"):
-        feedback = "Your preferences have been saved"
-
-    return render(request, "weekly_schedule.html", {"period": p, "member": m, "data": data, "days": days, "blocks": blocks, "feedback": feedback})
+    return render(request, "weekly_schedule.html", {"period": p, "member": m, "data": data, "days": days, "blocks": blocks})
 
 
 def workshop_period(request, workshop_period_id):
