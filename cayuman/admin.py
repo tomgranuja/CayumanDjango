@@ -57,7 +57,7 @@ class MemberAdmin(UserAdmin):
         return f"{obj.first_name} {obj.last_name}"
 
     def date_joined(self, obj):
-        return format_html(str(obj.date_joined.strftime("%B %d, %Y"))) if obj.date_joined else "-"
+        return format_html(str(obj.date_joined.strftime("%B %d, %Y"))) if obj.date_joined else None
 
     @admin.display(boolean=True)
     def is_student(self, obj):
