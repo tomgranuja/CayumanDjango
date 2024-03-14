@@ -279,7 +279,7 @@ class StudentCycleAdmin(admin.ModelAdmin):
 
     def workshop_periods_list(self, obj):
         wps = obj.workshop_periods.all()
-        return format_html("<ul><li>{}</li></ul>".format("</li><li>".join([str(period) for period in wps]))) if wps else "-"
+        return format_html("<ul><li>{}</li></ul>".format("</li><li>".join([str(period) for period in wps]))) if wps else None
 
 
 admin.site.register(StudentCycle, StudentCycleAdmin)
