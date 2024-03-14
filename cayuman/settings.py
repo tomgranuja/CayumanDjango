@@ -106,7 +106,7 @@ TEMPLATES = [
         "BACKEND": "django.template.backends.django.DjangoTemplates",
         "APP_DIRS": True,
         "DIRS": [
-            BASE_DIR / "cayuman/admin_templates",
+            BASE_DIR / "cayuman/templates",
         ],
         "OPTIONS": {
             "context_processors": [

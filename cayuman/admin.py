@@ -232,7 +232,7 @@ class WorkshopPeriodAdmin(admin.ModelAdmin):
 
         return TemplateResponse(
             request,
-            "workshop_period_students.html",
+            "admin/workshop_period_students.html",
             context,
         )
 
