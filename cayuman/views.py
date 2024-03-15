@@ -12,6 +12,7 @@ from django.http import Http404
 from django.http import HttpResponse
 from django.http import HttpResponseRedirect
 from django.shortcuts import render
+from django.urls import reverse_lazy as reverse
 from django.utils.safestring import mark_safe
 from django.utils.translation import gettext as _
 from django.views import View
@@ -79,12 +80,20 @@ class WorkshopSelectionForm(forms.Form):
         schedules = available_workshop_periods(self.member)
         schedules_by_wp_id = dict()
 
-        # walk through responses
+        # walk through all expected schedules
         for schedule in schedules:
             field_name = f"schedule_{schedule.id}"
             # ensure every schedule has an associated response
             if field_name not in cleaned_data or not cleaned_data[field_name]:
-                self.add_error(field_name, f"Please select a workshop for {schedule.day} {schedule.time_start}-{schedule.time_end}.")
+                self.add_error(
+                    field_name,
+                    _("Please select a workshop for %(day)s %(start_time)s-%(end_time)s")
+                    % {
+                        "day": schedule.get_day_display(),
+                        "start_time": schedule.time_start.strftime("%H:%M"),
+                        "end_time": schedule.time_end.strftime("%H:%M"),
+                    },
+                )
 
             # save workshop period id
             wp_id = str(cleaned_data[field_name])
@@ -95,15 +104,16 @@ class WorkshopSelectionForm(forms.Form):
         # one query to get all workshop period objects
         workshop_periods = WorkshopPeriod.objects.filter(id__in=schedules_by_wp_id.keys())
 
-        # Security/Consistency checks
+        # The following check tries to understand if no hacking attempts were done
+        # It does it by checking each workshop was given their right schedules and not arbitrary values (form tampering)
         for wp in workshop_periods:
             # ensure each workshop_period lives in the correct schedules
             if set(wp.schedules.all()) != set(schedules_by_wp_id[str(wp.id)]):
-                raise ValidationError(f"Workshop period {wp.workshop.name} has not been assigned the correct schedules")
+                raise ValidationError(_("Workshop period %(wp)s has not been assigned the correct schedules") % {"wp": wp.workshop.name})
 
 
 class HomeView(LoginRequiredMixin, View):
-    login_url = "/accounts/login/"
+    login_url = reverse("login")
     redirect_field_name = "redirect_to"
 
     def get(self, request, *args, **kwargs):
@@ -115,7 +125,7 @@ class HomeView(LoginRequiredMixin, View):
 
         # Check if student or not
         if not m.is_student:
-            return HttpResponseRedirect("/admin/")
+            return HttpResponseRedirect(reverse("admin"))
 
         wps_by_schedule = available_workshop_periods(m)
         student_cycle = m.current_student_cycle
@@ -174,7 +184,7 @@ class HomeView(LoginRequiredMixin, View):
             return render(request, "home.html", {"form": form, "period": p, "member": m})
 
 
-@login_required(login_url="/accounts/login/")
+@login_required(login_url=reverse("login"))
 def weekly_schedule(request):
     p = Period.current()
     if not p:
@@ -183,7 +193,7 @@ def weekly_schedule(request):
 
     # Check if student or not
     if not m.is_student:
-        return HttpResponseRedirect("/admin/")
+        return HttpResponseRedirect(reverse("admin"))
 
     schedules = Schedule.ordered()
     this_user_wps = m.current_student_cycle.workshop_periods_by_schedule()
@@ -196,11 +206,12 @@ def weekly_schedule(request):
     return render(request, "weekly_schedule.html", {"period": p, "member": m, "data": data, "days": days, "blocks": blocks})
 
 
-def workshop_period(request, workshop_period_id):
+def workshop_period(request, workshop_period_id: int):
     """View for a workshop period"""
     p = Period.current()
     if not p:
         return HttpResponse("No active period")
+
     try:
         wp = WorkshopPeriod.objects.get(id=workshop_period_id, period=p)
     except WorkshopPeriod.DoesNotExist:

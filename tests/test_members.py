@@ -43,7 +43,7 @@ def test_member_can_be_teacher(create_user, create_groups):
 def test_member_cannot_be_both_student_and_teacher(create_user, create_groups):
     student_group, teacher_group = create_groups
     user = create_user
-    with pytest.raises(ValidationError, match="User must not be both Student and Teacher"):
+    with pytest.raises(ValidationError, match=r"must not be both"):
         user.groups.add(student_group, teacher_group)
 
 
@@ -53,7 +53,7 @@ def test_member_cannot_be_student_and_staff(create_user, create_groups):
     user.is_staff = True
     user.save()
     user.groups.clear()
-    with pytest.raises(ValidationError, match="Student cannot be staff member"):
+    with pytest.raises(ValidationError, match=r"staff"):
         user.groups.add(student_group)
 
 

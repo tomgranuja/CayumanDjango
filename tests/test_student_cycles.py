@@ -21,7 +21,7 @@ pytestmark = pytest.mark.django_db
 @pytest.fixture()
 def create_student():
     """Fixture to create a student"""
-    user = Member.objects.create_user(username="99999999", password="12345")
+    user = Member.objects.create_user(username="99999999", password="12345", first_name="Test", last_name="Student")
     group, _ = Group.objects.get_or_create(name=settings.STUDENTS_GROUP)
     user.groups.add(group)
     return user
@@ -30,7 +30,7 @@ def create_student():
 @pytest.fixture
 def create_teacher():
     """Fixture to create a teacher"""
-    user = Member.objects.create_user(username="8888888", password="12345")
+    user = Member.objects.create_user(username="8888888", password="12345", first_name="Test", last_name="Teacher")
     group, _ = Group.objects.get_or_create(name=settings.TEACHERS_GROUP)
     user.groups.add(group)
     return user
@@ -130,7 +130,7 @@ def test_student_cycle_fail_no_cycle_coincidence(create_student, create_teacher,
     sc = StudentCycle.objects.create(student=student, cycle=cycles[2], date_joined=timezone.now())  # no cycle coincidence
 
     # assign workshop periods to student cycle
-    with pytest.raises(ValidationError, match="StudentCycle cycle not in workshop period's cycles"):
+    with pytest.raises(ValidationError, match=r"cannot be associated with workshop period"):
         sc.workshop_periods.add(wp1, wp2)
 
 
@@ -164,7 +164,7 @@ def test_student_cycle_fail_schedule_collision(create_student, create_teacher, c
     sc = StudentCycle.objects.create(student=student, cycle=cycles[0], date_joined=timezone.now())  # no cycle coincidence
 
     # assign workshop periods to student cycle
-    with pytest.raises(ValidationError, match="Workshop periods are overlapping"):
+    with pytest.raises(ValidationError, match=r"have colliding schedules"):
         sc.workshop_periods.add(wp1, wp2)
 
 
@@ -198,7 +198,7 @@ def test_student_cycle_fail_max_students(create_teacher, create_workshops, creat
 
         if i > 2:
             # assign workshop periods to student cycle
-            with pytest.raises(ValidationError, match="Workshop period is already full"):
+            with pytest.raises(ValidationError, match=r"has reached its quota of students"):
                 sc.workshop_periods.add(wp1)
         else:
             sc.workshop_periods.add(wp1)

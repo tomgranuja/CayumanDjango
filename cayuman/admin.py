@@ -255,8 +255,8 @@ class StudentCycleAdminForm(ModelForm):
 
             if self.cleaned_data["cycle"] not in wp.cycles.all():
                 raise ValidationError(
-                    _("Student `%(s)s` cannot be associated with workshop period `%(wp)s` because they belong to the same cycle.")
-                    % {"s": self.cleaned_data["student"].name, "wp": wp.workshop.name}
+                    _("Student `%(st)s` cannot be associated with workshop period `%(wp)s` because they belong to the same cycle.")
+                    % {"st": self.cleaned_data["student"].get_full_name(), "wp": wp.workshop.name}
                 )
 
             for wp_2 in self.cleaned_data["workshop_periods"]:

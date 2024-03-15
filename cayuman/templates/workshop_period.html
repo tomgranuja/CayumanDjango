@@ -3,60 +3,71 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1">
-
-    <!-- Bootstrap CSS -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN" crossorigin="anonymous">
-
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN" crossorigin="anonymous" />
     <title>{{wp.workshop.name}} {{wp.period.date_start}} - {{wp.period.date_end}} | Cayuman</title>
+    <style>
+/* Ocultar el span con clase "small" por defecto */
+.tshort {
+  display: none;
+}
 
+/* Cuando el ancho de la página es menor a 720px */
+@media (max-width: 720px) {
+  /* Ocultar el span con clase "big" */
+  .tlong {
+    display: none;
+  }
+  /* Mostrar el span con clase "small" */
+  .tshort {
+    display: inline;
+  }
+}
+
+    </style>
   </head>
-  <body>
-    <div class="container-md">
+  <body style="padding-top: 5px">
+    <div class="container-md" style="max-width: 1024px">
+      <div class="d-inline alert alert-success text-center text-uppercase fw-bold float-end">
+        {% trans num_session=wp.count_classes %}
+        {{num_session}} sessions
+        {% endtrans %}
+      </div>
 
-      <div class="grid row">
-
-        <div class="col-8">
-          <p class="display-6 text-uppercase">{% trans %}Workshop{% endtrans %}</p>
-        </div>
-
-        <div class="col-4">
-          <h5 class="alert alert-success text-center alert-heading text-uppercase">
-            {% trans num_session=wp.count_classes %}
-            {{num_session}} sessions
-            {% endtrans %}
-          </h3>
-        </div>
-
+      <div class="col-8 display-6 text-uppercase">
+        {% trans %}Workshop{% endtrans %}
       </div>
 
       <div>
         <h1 class="display-1 text-uppercase text-primary">{{wp.workshop.name}}</h1>
+        {% if wp.workshop.full_name %}<h2>{{wp.workshop.full_name}}</h2>{% endif %}
         <h3 class="text-uppercase text-secondary">Gu&iacute;a: <span>{{wp.teacher.get_full_name()}}</span></h3>
         <h4>{{wp.period.date_start | date('j \d\e F \d\e Y')}} - {{wp.period.date_end | date('j \d\e F \d\e Y')}}</h4>
         <p>{{wp.workshop.description}}</p>
       </div>
-      <div>
 
-        <table class="table caption-top table-bordered">
-          <caption>{% trans %}Schedule{% endtrans %}</caption>
-          <thead>
-            <tr >
-              <th scope="col">{% trans %}Hour{% endtrans %}</th>
+      <div>
+        <table class="table caption-top table-bordered table-responsive">
+          <caption>{% trans %}Schedules{% endtrans %}</caption>
+          <thead class="overflow-x-hidden">
+            <tr>
+              <th scope="col" width="10%">{% trans %}Hour{% endtrans %}</th>
               {% for day in days %}
-                <th scope="col">{{ day.1 }}</th>
+              <th scope="col" width="18%">
+                <span class="tlong">{{ day.1 }}</span><span class="tshort text-uppercase">{{ day.1 | truncate(3, True, '', 0) }}</span>
+              </th>
               {% endfor %}
             </tr>
           </thead>
           <tbody>
             {% for block in blocks %}
             <tr>
-                <td scope="row">{{ block.0.strftime('%H:%M') }} - {{ block.1.strftime('%H:%M') }}</td>
+                <th scope="row" width="10%">{{ block.0.strftime('%H:%M') }} - {{ block.1.strftime('%H:%M') }}</th>
                 {% for sched in schedules %}
                     {% if sched.time_start == block.0 %}
                         {% set ns = namespace(seen=false) %}
                         {% for wp_sched in wp.schedules.all() %}
                             {% if wp_sched == sched %}
-                                <td class="table-primary">
+                                <td class="table-primary" width="18%">
                                   <div class="d-flex justify-content-center align-items-center icon-link" style="font-size: 2em">
                                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-check-lg" viewBox="0 0 16 16">
                                       <path d="M12.736 3.97a.733.733 0 0 1 1.047 0c.286.289.29.756.01 1.05L7.88 12.01a.733.733 0 0 1-1.065.02L3.217 8.384a.757.757 0 0 1 0-1.06.733.733 0 0 1 1.047 0l3.052 3.093 5.4-6.425z"/>

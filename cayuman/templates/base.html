@@ -7,24 +7,27 @@
     {% block head %}
     {% endblock %}
   </head>
-  <body>
+  <body style="padding-top: 5px; padding-bottom: 5px">
     <div class="container" style="max-width: 1024px;">
       <div class="clearfix">
-      <div class="mt-3 mb-5" style="float: left">
-        <a href="/"><img src="https://comunidadeducativacayuman.cl/wp-content/uploads/2021/02/Recurso-5.png" style="width: 400px;" /></a>
-      </div>
-      <div class="mt-3 mb-5" style="float: right">
-        {% if member %}
-        <form action="{{ url('logout') }}" method="post">
-          {% csrf_token %}
-          <button class="btn btn-outline-info" type="submit">{% trans %}Log Out{% endtrans %}</button>
-        </form>
-        {% endif %}
-      </div>
+        <div class="mt-3 mb-5" style="float: left">
+          <a href="/"><img src="https://comunidadeducativacayuman.cl/wp-content/uploads/2021/02/Recurso-5.png" style="width: 400px;" /></a>
+        </div>
+        <div class="mt-3 mb-5" style="float: right">
+          {% if member %}
+          <form action="{{ url('logout') }}" method="post">
+            {% csrf_token %}
+            <button class="btn btn-outline-info" type="submit">{% trans %}Log Out{% endtrans %}</button>
+          </form>
+          {% endif %}
+        </div>
       </div>
       <div>
       {% block content %}{% endblock %}
       </div>
     </div>
+
+    {% block bottom %}
+    {% endblock %}
   </body>
 </html>

@@ -1,13 +1,12 @@
 {% extends "base.html" %}
 
 {% block title %}
-{% trans name=member.name %}
-{{name}}'s Weekly Schedule
-{% endtrans %}
+{% trans name=member.get_full_name() %}{{name}}'s Weekly Schedule{% endtrans %} | Cayuman
 {% endblock %}
+
 {% block head %}
 <style>
-    .table-responsive {
+.table-responsive {
   display: block;
   width: 100%;
   overflow-x: auto;
@@ -15,6 +14,7 @@
 }
 </style>
 {% endblock %}
+
 {% block content %}
 {% if messages %}
     {% for message in messages %}
@@ -27,26 +27,25 @@
     {% endtrans %}
 </h2>
 
-<div class="table-responsive">
-<table class="table">
+<table class="table table-responsive" style="overflow: scroll">
     <thead>
         <tr>
-            <th scope="col">{% trans %}Hour{% endtrans %}</th>
+            <th scope="col" style="width: 10%">{% trans %}Hour{% endtrans %}</th>
             {% for day in days %}
-            <th scope="col">{{ day.1 }}</th>
+            <th scope="col" style="width: 18%">{{ day.1 }}</th>
             {% endfor %}
         </tr>
     </thead>
     <tbody>
         {% for block in blocks %}
             <tr>
-                <td scope="row">{{ block.0.strftime('%H:%M') }} - {{ block.1.strftime('%H:%M') }}</td>
+                <th scope="row">{{ block.0.strftime('%H:%M') }} - {{ block.1.strftime('%H:%M') }}</th>
 
             {% for sched, wp in data.items() %}
                 {% if sched.time_start == block.0 %}
                     <td>
                         {% if wp %}
-                        <a target="_blank" href="/workshop-period/{{wp.id}}/">{{wp.workshop.name}}</a>
+                        <a href="{{ url('workshop_period', workshop_period_id=wp.id) }}">{{wp.workshop.name}}</a>
                         <br /><small>{{wp.teacher.get_full_name()}}</small>
                         {% endif %}
                     </td>
@@ -56,8 +55,8 @@
         {% endfor %}
     </tbody>
 </table>
-</div>
+
 <div style="text-align: center;">
-    <a href="/?force=true" class="btn btn-outline-warning btn-lg">&larr; {% trans %}Change my Workshops{% endtrans %}</a>
+    <a href="{{ url('home') }}?force=true" class="btn btn-outline-warning btn-lg">&larr; {% trans %}Change my Workshops{% endtrans %}</a>
 </div>
 {% endblock %}

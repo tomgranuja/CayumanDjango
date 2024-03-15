@@ -399,8 +399,8 @@ def student_cycle_workshop_period_changed(sender, instance, action, *args, **kwa
             # check if workshop periods' cycles all belong to the same student cycle's cycle
             if instance.cycle not in wp.cycles.all():
                 raise ValidationError(
-                    _("Student `%(s)s` cannot be associated with workshop period `%(wp)s` because they belong to the same cycle.")
-                    % {"s": instance.student.name, "wp": wp.workshop.name}
+                    _("Student `%(st)s` cannot be associated with workshop period `%(wp)s` because they belong to the same cycle.")
+                    % {"st": instance.student.get_full_name(), "wp": wp.workshop.name}
                 )
 
             # check for collitions between this student's cycle's workshop_period's schedules and incoming workshop_period's schedules

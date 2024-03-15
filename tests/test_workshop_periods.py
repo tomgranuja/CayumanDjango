@@ -96,12 +96,12 @@ def test_workshop_period_non_overlapping(create_workshops, create_teacher, creat
     # create schedule for wp1
     time_start = timezone.now()
     time_end = timezone.now() + timezone.timedelta(hours=2)
-    schedule_1 = Schedule.objects.create(day="Lunes", time_start=time_start, time_end=time_end)
-    schedule_2 = Schedule.objects.create(day="Martes", time_start=time_start, time_end=time_end)
+    schedule_1 = Schedule.objects.create(day="monday", time_start=time_start, time_end=time_end)
+    schedule_2 = Schedule.objects.create(day="tuesday", time_start=time_start, time_end=time_end)
     wp1.schedules.add(schedule_1, schedule_2)
 
     # create schedule for wp2
-    schedule_3 = Schedule.objects.create(day="Miércoles", time_start=time_start, time_end=time_end)
+    schedule_3 = Schedule.objects.create(day="wednesday", time_start=time_start, time_end=time_end)
     wp2.schedules.add(schedule_3)
 
     # no overlapping because the wp have schedules on different days
@@ -123,8 +123,8 @@ def test_workshop_period_overlapping(create_workshops, create_teacher, create_pe
     # create schedule for wp1
     time_start = timezone.now()
     time_end = timezone.now() + timezone.timedelta(hours=2)
-    schedule_1 = Schedule.objects.create(day="Lunes", time_start=time_start, time_end=time_end)
-    schedule_2 = Schedule.objects.create(day="Martes", time_start=time_start, time_end=time_end)
+    schedule_1 = Schedule.objects.create(day="monday", time_start=time_start, time_end=time_end)
+    schedule_2 = Schedule.objects.create(day="tuesday", time_start=time_start, time_end=time_end)
     wp1.schedules.add(schedule_1, schedule_2)
 
     # create schedule for wp2
