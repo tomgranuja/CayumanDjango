@@ -100,11 +100,11 @@ class Command(BaseCommand):
         teachers_group, _ = Group.objects.get_or_create(name=settings.TEACHERS_GROUP)
 
         try:
-            period = Period.objects.get(name=str(PERIOD))
+            period = Period.objects.get(name=f"Periodo {PERIOD}")
             print(f"Selecting preexisting period {period}.")
         except Period.DoesNotExist:
             period = Period.objects.create(
-                name=str(PERIOD),
+                name=f"Periodo {PERIOD}",
                 enrollment_start=datetime.date.fromisoformat(ENROLLMENT_START),
                 date_start=datetime.date.fromisoformat(DATE_START),
                 date_end=datetime.date.fromisoformat(DATE_END),
