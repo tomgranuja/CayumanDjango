@@ -35,6 +35,6 @@ class Command(BaseCommand):
                 member.set_password(row.rut.split("-")[0][-4:])
                 member.save()
             else:
-                self.stdout.write(self.style.WARNING(f"Preexisting Member object: {member.first_name}, {member.username}"))
+                self.stdout.write(self.style.WARNING(f"Updating matching Member: {member.first_name}, {member.username}"))
             # Force to techers group
             member.groups.set([teachers_group])

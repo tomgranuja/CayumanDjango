@@ -146,14 +146,21 @@ class Command(BaseCommand):
 
             # WorkshopPeriod
             try:
-                wp = WorkshopPeriod.objects.get(workshop=ws, period=period, teacher=teacher, schedules=schedules[0])
-                print(f"    Updating preexisting workshop period: {wp}")
+                q = WorkshopPeriod.objects.filter(workshop=ws, period=period, teacher=teacher, cycles__in=cycles)
+                # cycles_in creates duplicates
+                wp = q.distinct().get()
+                print(f"    Find preexisting: {wp}...")
+                wp.cycles.clear()
+                wp.schedules.clear()
+                print("    Schedules and cycles cleared:")
+                print(f"        Schedules: {wp.schedules.all()}")
+                print(f"        Cycles: {wp.cycles.all()}")
             except WorkshopPeriod.DoesNotExist:
                 wp = WorkshopPeriod.objects.create(workshop=ws, period=period, teacher=teacher)
             finally:
                 wp.max_students = row.quota
-                wp.cycles.set(cycles)
-                wp.schedules.set(schedules)
                 wp.save()
+            wp.cycles.add(*cycles)
+            wp.schedules.add(*schedules)
 
             print()
