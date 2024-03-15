@@ -125,7 +125,7 @@ class HomeView(LoginRequiredMixin, View):
 
         # Check if student or not
         if not m.is_student:
-            return HttpResponseRedirect(reverse("admin"))
+            return HttpResponseRedirect(reverse("admin:login"))
 
         wps_by_schedule = available_workshop_periods(m)
         student_cycle = m.current_student_cycle
@@ -193,7 +193,7 @@ def weekly_schedule(request):
 
     # Check if student or not
     if not m.is_student:
-        return HttpResponseRedirect(reverse("admin"))
+        return HttpResponseRedirect(reverse("admin:login"))
 
     schedules = Schedule.ordered()
     this_user_wps = m.current_student_cycle.workshop_periods_by_schedule()
