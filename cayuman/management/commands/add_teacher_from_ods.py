@@ -32,6 +32,7 @@ class Command(BaseCommand):
                 member.first_name = row.gfname
                 member.last_name = row.glname
                 member.email = row.email
+                member.is_staff = True
                 member.set_password(row.rut.split("-")[0][-4:])
                 member.save()
             else:
