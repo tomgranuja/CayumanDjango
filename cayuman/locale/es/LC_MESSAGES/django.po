@@ -368,7 +368,7 @@ msgstr "Haz clic aquí para inscribirte en tus talleres"
 
 #: cayuman/templates/home.html:36
 msgid "Read more"
-msgstr ""
+msgstr "Ver m&aacute;s"
 
 #: cayuman/templates/registration/login.html:2
 msgid "Log In"
