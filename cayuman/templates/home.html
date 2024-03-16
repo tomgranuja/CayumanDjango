@@ -28,9 +28,8 @@
       {% for wp in workshop_periods %}
         <div class="col">
           <div class="card h-100">
-            <h3 class="card-header">{{wp.workshop.name}}</h3>
             <div class="card-body">
-              {% if wp.workshop.full_name %}<h4 class="card-title mb-2 text-body-primary">{{wp.workshop.full_name}}</h4>{% endif %}
+              <h3 class="card-title mb-2 text-body-primary">{{wp.workshop.name}}</h3>
               <h6 class="card-subtitle mb-2 text-body-secondary">{{wp.teacher.get_full_name()}}</h6>
               <p class="card-text fw-light"><small>{{ wp.workshop.description | truncate (150) }}</small></p>
               <a href="{{ url('workshop_period', workshop_period_id=wp.id) }}" class="card-link">{% trans %}Read more{% endtrans %}</a>
