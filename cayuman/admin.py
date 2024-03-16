@@ -285,9 +285,8 @@ class StudentCycleAdmin(admin.ModelAdmin):
     ordering = ("-date_joined",)
     list_display = ("id", "student", "cycle", "workshop_periods_list", "date_joined")
     list_per_page = 20
-    list_filter = [
-        ("student", admin.RelatedOnlyFieldListFilter),
-    ]
+    list_filter = ["cycle"]
+    search_fields = ["student__first_name", "student__last_name", "cycle__name"]
     filter_horizontal = ("workshop_periods",)
 
     form = StudentCycleAdminForm
