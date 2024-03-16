@@ -1,6 +1,5 @@
 from datetime import datetime
 from functools import cached_property
-from functools import lru_cache
 from typing import Dict
 from typing import Optional
 from typing import Set
@@ -116,6 +115,22 @@ class Cycle(models.Model):
         verbose_name_plural = _("Cycles")
 
 
+class ScheduleManager(models.Manager):
+    def ordered(self):
+        """Returns schedules ordered by week day and time_start"""
+        ordering = Case(
+            When(day="monday", then=Value(1)),
+            When(day="tuesday", then=Value(2)),
+            When(day="wednesday", then=Value(3)),
+            When(day="thursday", then=Value(4)),
+            When(day="friday", then=Value(5)),
+            default=Value(6),
+            output_field=IntegerField(),
+        )
+
+        return self.get_queryset().annotate(day_ordering=ordering).order_by("day_ordering", "time_start")
+
+
 class Schedule(models.Model):
     """Represent weekly time blocks"""
 
@@ -130,6 +145,8 @@ class Schedule(models.Model):
     day = models.CharField(max_length=10, choices=CHOICES, verbose_name=_("Day"))
     time_start = models.TimeField(verbose_name=_("Start time"))
     time_end = models.TimeField(verbose_name=_("End time"))
+
+    objects = ScheduleManager()
 
     def clean(self):
         # normalize times
@@ -154,22 +171,6 @@ class Schedule(models.Model):
         self.clean()
         super().save(*args, **kwargs)
 
-    @classmethod
-    @lru_cache(maxsize=128)
-    def ordered(cls):
-        """class method returning all schedules ordered by week day and time_start"""
-        ordering = Case(
-            When(day="monday", then=Value(1)),
-            When(day="tuesday", then=Value(2)),
-            When(day="wednesday", then=Value(3)),
-            When(day="thursday", then=Value(4)),
-            When(day="friday", then=Value(5)),
-            default=Value(6),
-            output_field=IntegerField(),
-        )
-
-        return Schedule.objects.annotate(day_ordering=ordering).order_by("day_ordering", "time_start")
-
     def __and__(self, other):
         """
         Returns True if the schedules overlap, False otherwise
@@ -193,6 +194,15 @@ class Schedule(models.Model):
         verbose_name_plural = _("Schedules")
 
 
+class PeriodManager(models.Manager):
+    def current(self):
+        now = datetime.now().date()
+        try:
+            return self.get_queryset().get(enrollment_start__lte=now, date_end__gt=now)
+        except self.model.DoesNotExist:
+            return None
+
+
 class Period(models.Model):
     """Represent a period of time"""
 
@@ -202,11 +212,20 @@ class Period(models.Model):
     date_start = models.DateField(verbose_name=_("Start date"))
     date_end = models.DateField(verbose_name=_("End date"))
 
+    objects = PeriodManager()
+
     def __str__(self):
         return _("%(name)s from %(d1)s to %(d2)s") % {"name": self.name, "d1": str(self.date_start), "d2": str(self.date_end)}
 
     def __repr__(self):
         return f"{self.__class__.__name__}(name='{self.name}', date_start='{self.date_start}', date_end='{self.date_end}')"
+
+    @cached_property
+    def human_name(self):
+        """Returns a more human name for the period"""
+        from django.utils.formats import date_format
+
+        return f"{self.name} ({date_format(self.date_start, format='F')}-{date_format(self.date_end, format='F')})"
 
     @cached_property
     def count_weeks(self):
@@ -232,16 +251,6 @@ class Period(models.Model):
 
         if self.enrollment_start and self.enrollment_start > self.date_start:
             raise ValidationError({"enrollment": _("Enrollment start date must be before start date")})
-
-    @classmethod
-    @lru_cache(maxsize=128)
-    def current(cls):
-        now = datetime.now().date()
-        try:
-            p = Period.objects.get(enrollment_start__lte=now, date_end__gt=now)
-        except Period.DoesNotExist:
-            p = None
-        return p
 
     def save(self, *args, **kwargs):
         self.clean()

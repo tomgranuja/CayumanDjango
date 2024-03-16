@@ -1,207 +1,48 @@
-{% extends "base.html" %}
-{% block title %}{% trans %}Home{% endtrans %} | Cayuman{% endblock %}
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1">
 
-{% block head %}
-<style>
-    .day-label {
-      font-weight: bold;
-    }
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
 
-    label {
-      border-radius: 8px;
-      padding: 1px 3px 1px 3px;
-    }
+    <title>{% trans %}Home{% endtrans %} | Cayuman</title>
 
-    .highlight {
-      background-color:orange;
-      animation-name:bckanim;
-      animation-fill-mode:forwards;
-      animation-duration:3s;
-      animation-delay:0s;
-    }
-    @keyframes bckanim {
-      0% {background-color:orange;}
-      100% { background-color:transparent;}
-    }
-</style>
-{% endblock %}
+  </head>
+  <body>
+    <div class="container-md">
+      <div class="mb-3">
+        <h1 class="display-2">{% trans user=member.get_full_name() %}Hello {{ user }}!{% endtrans %}</h1>
+        <p>
+            {% trans human_period=period.human_name, cycle_name=member.current_student_cycle.cycle.name %}
+            These are the workshop options for <span>{{human_period}}</span> available for <span>{{cycle_name}}</span> cycle.
+            {% endtrans %}
+        </p>
+      </div>
+      <div class="mb-3">
+        <a href="{{ url('enrollment') }}?force=true" class="btn btn-success">{% trans %}Click here to enroll in your workshops{% endtrans %}</a>
+      </div>
 
-{% block content %}
-<h2>{% trans user=member.get_full_name() %}Hello {{ user }}!{% endtrans %}</h2>
+      <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-4 g-4">
 
-{% if not period %}
-{% trans %}No enrollment available at this time{% endtrans %}
-{% else %}
-<p>
-    {% trans cycle=member.current_student_cycle.cycle.name, period_start=period.date_start, period_end=period.date_end %}
-    These are the available workshops for {{cycle}} from {{period_start}} to {{period_end}}
-    {% endtrans %}
-</p>
-
-<form id="enrollment" method="POST">
-    {% csrf_token %}
-    {% if form.non_field_errors() %}
-    <div class="alert alert-danger" role="alert">
-        {% for error in form.non_field_errors() %}
-            {{ error }}
-        {% endfor %}
-    </div>
-    {% endif %}
-    {% for field in form %}
-        <div class="form-group" style="margin-bottom: 20px;">
-            <h5 class="form-check-label day-label text-capitalize">{{ field.label }}</h5>
-            {% if field.errors %}
-                <div class="field-errors" style="color: red; margin-bottom: 5px;">
-                    {% for error in field.errors %}
-                        <p>{{ error }}</p>
-                    {% endfor %}
-                </div>
-            {% endif %}
-            <div class="{{ field.name }}-wrapper lh-lg" style="padding: 5px;">
-                {{ field }}
+      {% for wp in workshop_periods %}
+        <div class="col">
+          <div class="card h-100">
+            <h3 class="card-header">{{wp.workshop.name}}</h3>
+            <div class="card-body">
+              {% if wp.workshop.full_name %}<h4 class="card-title mb-2 text-body-primary">{{wp.workshop.full_name}}</h4>{% endif %}
+              <h6 class="card-subtitle mb-2 text-body-secondary">{{wp.teacher.get_full_name()}}</h6>
+              <p class="card-text fw-light"><small>{{ wp.workshop.description | truncate (150) }}</small></p>
+              <a href="{{ url('workshop_period', workshop_period_id=wp.id) }}" class="card-link">{% trans %}Read more{% endtrans %}</a>
             </div>
+          </div>
         </div>
-    {% endfor %}
-    <div style="text-align: center;">
-        <input type="submit" class="btn btn-outline-success btn-lg" name="submit" value="{% trans %}Save my workshops{% endtrans %}" />
+      {% endfor %}
     </div>
-</form>
-{% endif %}
-{% endblock %}
 
-{% block bottom %}
-{% if period %}
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
-<script>
-    document.addEventListener('DOMContentLoaded', () => {
-        const radios = document.querySelectorAll('input[type="radio"]');
-        let radioStates = {};
+    <div class="mt-3 mb-3">
+        <a href="{{ url('enrollment') }}?force=true" class="btn btn-success">{% trans %}Click here to enroll in your workshops{% endtrans %}</a>
+    </div>
 
-        // Initialize the tracking object with the current state of each radio button
-        radios.forEach(radio => {
-            radioStates[radio.value] = radio.checked;
-        });
-
-        function highlightLabel(label) {
-            // Apply the orange background immediately
-            label.classList.add('highlight');
-
-            // Remove the orange background after a short delay, allowing the fade effect to show
-            setTimeout(() => {
-                label.classList.remove('highlight');
-            }, 2000);
-        }
-
-        function increaseQuota(radio) {
-            const commonParent = radio.closest('div');
-            const spanBadge = commonParent.querySelector('span.badge');
-
-            if (spanBadge) {
-                // Get the current text content of spanBadge, trim it to remove any leading/trailing spaces
-                let currentValue = spanBadge.textContent.trim();
-
-                // Convert the text to an integer
-                let intValue = parseInt(currentValue, 10);
-
-                // Check if the conversion was successful to avoid NaN results
-                if (!isNaN(intValue)) {
-                    // Add 1 to the integer value
-                    intValue += 1;
-
-                    // Set the new value as the text content of spanBadge
-                    spanBadge.textContent = intValue.toString();
-                }
-            }
-        }
-
-        function decreaseQuota(radio) {
-            const commonParent = radio.closest('div');
-            const spanBadge = commonParent.querySelector('span.badge');
-
-            if (spanBadge) {
-                // Get the current text content of spanBadge, trim it to remove any leading/trailing spaces
-                let currentValue = spanBadge.textContent.trim();
-
-                // Convert the text to an integer
-                let intValue = parseInt(currentValue, 10);
-
-                // Check if the conversion was successful to avoid NaN results
-                if (!isNaN(intValue)) {
-                    // Add 1 to the integer value
-                    intValue -= 1;
-
-                    // Set the new value as the text content of spanBadge
-                    spanBadge.textContent = intValue.toString();
-                }
-            }
-        }
-
-        function toggleRadioButtons() {
-            const spans = document.querySelectorAll('span.badge');
-            spans.forEach(span => {
-                const radio = span.closest('div').querySelector('input[type="radio"]');
-                if (span.textContent.trim() === '0') {
-                    if (radio) {
-                        radio.disabled = true;
-                    }
-                } else {
-                    if (radio) {
-                        radio.disabled = false;
-                    }
-                }
-            });
-        }
-        toggleRadioButtons(); // on document load disable radio buttons if badge == 0
-
-        radios.forEach(radio => {
-            radio.addEventListener('change', () => {
-                decreaseQuota(radio);
-                radioStates[radio.value] = radio.checked;
-
-                // Enabled related radio buttons when one is checked
-                radios.forEach(otherRadio => {
-                    if (otherRadio.value === radio.value && otherRadio.name !== radio.name) {
-                        otherRadio.checked = radio.checked;
-                        decreaseQuota(otherRadio);
-                        // Call highlightLabel on change
-                        highlightLabel(otherRadio.parentElement);
-                    }
-                });
-
-                // Disable related radio buttons when one is unchecked
-                radios.forEach(otherRadio => {
-                    if (radioStates[otherRadio.value] != otherRadio.checked) {
-                        radioStates[otherRadio.value] = otherRadio.checked;
-
-                        radios.forEach(anotherRadio => {
-                            if (anotherRadio.value == otherRadio.value) {
-                                anotherRadio.checked = otherRadio.checked;
-                                increaseQuota(anotherRadio);
-                                toggleRadioButtons();
-                                // Call highlightLabel on change
-                                highlightLabel(anotherRadio.parentElement);
-                            }
-                        });
-                    }
-                });
-            });
-        });
-
-        // re-enable disabled radios before submitting
-        const form = document.getElementById('enrollment'); // Select the form by ID
-        form.addEventListener('submit', (event) => {
-            form.querySelectorAll('input[type="radio"]:disabled').forEach(radio => {
-                radio.disabled = false;
-            });
-        });
-
-        // initialize popovers
-        const popoverTriggerList = document.querySelectorAll('[data-bs-toggle="popover"]')
-        popoverTriggerList.forEach((elem, index) => {
-            elem.setAttribute('tabindex', index.toString());
-        });
-        const popoverList = [...popoverTriggerList].map(popoverTriggerEl => new bootstrap.Popover(popoverTriggerEl, {trigger: 'focus', container: '.form-group'}))
-    });
-</script>
-{% endif %}
-{% endblock %}
+  </body>
+</html>

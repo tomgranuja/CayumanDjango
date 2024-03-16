@@ -40,8 +40,12 @@
       <div>
         <h1 class="display-1 text-uppercase text-primary">{{wp.workshop.name}}</h1>
         {% if wp.workshop.full_name %}<h2>{{wp.workshop.full_name}}</h2>{% endif %}
-        <h3 class="text-uppercase text-secondary">Gu&iacute;a: <span>{{wp.teacher.get_full_name()}}</span></h3>
-        <h4>{{wp.period.date_start | date('j \d\e F \d\e Y')}} - {{wp.period.date_end | date('j \d\e F \d\e Y')}}</h4>
+        <h3 class="text-uppercase text-secondary">
+          {% trans name=wp.teacher.get_full_name() %}
+          Teacher: <span>{{name}}</span>
+          {% endtrans %}
+        </h3>
+        <h4>{{wp.period.date_start| date('DATE_FORMAT')}} - {{wp.period.date_end | date('DATE_FORMAT')}}</h4>
         <p>{{wp.workshop.description}}</p>
       </div>
 
