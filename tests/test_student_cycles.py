@@ -1,4 +1,5 @@
 from datetime import datetime
+from unittest.mock import patch
 
 import pytest
 from django.conf import settings
@@ -202,3 +203,94 @@ def test_student_cycle_fail_max_students(create_teacher, create_workshops, creat
                 sc.workshop_periods.add(wp1)
         else:
             sc.workshop_periods.add(wp1)
+
+
+def test_is_schedule_full(create_student, create_teacher, create_period, create_workshops, create_cycles):
+    """Tests method `is_full_schedule` works ok when telling whether students have filled all their weekly schedule or not"""
+    # Create a StudentCycle
+    student = create_student
+    teacher = create_teacher
+    workshops = create_workshops
+    cycles = create_cycles
+    period = create_period
+
+    # create workshop period
+    wp1 = WorkshopPeriod.objects.create(workshop=workshops[0], period=period, teacher=teacher)
+    wp2 = WorkshopPeriod.objects.create(workshop=workshops[1], period=period, teacher=teacher)
+
+    # add cycles
+    wp1.cycles.add(cycles[0])
+    wp2.cycles.add(cycles[0])
+
+    # create schedule for wp1
+    time_start = timezone.now()
+    time_end = timezone.now() + timezone.timedelta(hours=2)
+    schedule_1 = Schedule.objects.create(day="monday", time_start=time_start, time_end=time_end)
+    schedule_2 = Schedule.objects.create(day="tuesday", time_start=time_start, time_end=time_end)
+    wp1.schedules.add(schedule_1, schedule_2)
+
+    sc = StudentCycle.objects.create(student=student, cycle=cycles[0])
+    sc.workshop_periods.add(wp1, wp2)
+
+    # Assuming there are 2 schedules in the system and the student has 2 workshop periods
+    assert sc.is_schedule_full(period=period) is True
+
+    # Add another schedule to the system without adding more workshop periods to the student
+    Schedule.objects.create(day="wednesday", time_start=time_start, time_end=time_end)
+    assert sc.is_schedule_full(period=period) is False
+
+
+def test_is_enabled_to_enroll(create_student, create_period, create_cycles):
+    """Tests method `is_enabled_to_enroll` works ok when telling whether a student is allowed to enroll workshops or not"""
+    student = create_student
+    period = create_period
+    cycle = create_cycles[0]
+    sc = StudentCycle.objects.create(student=student, cycle=cycle)
+
+    # Mock is_schedule_full to return True
+    with patch.object(StudentCycle, "is_schedule_full", return_value=True):
+        # Assuming the schedule is full and the current date is within the enrollment period
+        with patch("cayuman.models.datetime") as mock_datetime:
+            # Mock current date before enrollment_start
+            mock_datetime.now.return_value = datetime(2022, 12, 21)
+            mock_datetime.now.date.return_value = datetime(2022, 12, 21).date()
+            assert sc.is_enabled_to_enroll(period=period) is False
+
+            # Mock current date within enrollment_start and date_start
+            mock_datetime.now.return_value = datetime(2022, 12, 31)
+            mock_datetime.now.date.return_value = datetime(2022, 12, 31).date()
+            assert sc.is_enabled_to_enroll(period=period) is True
+
+            # Mock current date after date_start and before date_end
+            mock_datetime.now.return_value = datetime(2023, 1, 1)
+            mock_datetime.now.date.return_value = datetime(2023, 1, 1).date()
+            assert sc.is_enabled_to_enroll(period=period) is False
+
+            # Mock current date after date_end
+            mock_datetime.now.return_value = datetime(2024, 1, 1)
+            mock_datetime.now.date.return_value = datetime(2024, 1, 1).date()
+            assert sc.is_enabled_to_enroll(period=period) is False
+
+    # Mock is_schedule_full to return False
+    with patch.object(StudentCycle, "is_schedule_full", return_value=False):
+        # Assuming the schedule is not full and the current date is within the enrollment period but after date_start
+        with patch("cayuman.models.datetime") as mock_datetime:
+            # Mock current date before enrollment_start
+            mock_datetime.now.return_value = datetime(2022, 12, 21)
+            mock_datetime.now.date.return_value = datetime(2022, 12, 21).date()
+            assert sc.is_enabled_to_enroll(period=period) is False
+
+            # Mock current date within enrollment_start and date_start
+            mock_datetime.now.return_value = datetime(2022, 12, 31)
+            mock_datetime.now.date.return_value = datetime(2022, 12, 31).date()
+            assert sc.is_enabled_to_enroll(period=period) is True
+
+            # Mock current date after date_start and before date_end
+            mock_datetime.now.return_value = datetime(2023, 1, 1)
+            mock_datetime.now.date.return_value = datetime(2023, 1, 1).date()
+            assert sc.is_enabled_to_enroll(period=period) is True
+
+            # Mock current date after date_end
+            mock_datetime.now.return_value = datetime(2024, 1, 1)
+            mock_datetime.now.date.return_value = datetime(2024, 1, 1).date()
+            assert sc.is_enabled_to_enroll(period=period) is False

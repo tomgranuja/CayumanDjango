@@ -57,6 +57,10 @@
 </table>
 
 <div style="text-align: center;">
+    {% if member.current_student_cycle.is_enabled_to_enroll() %}
     <a href="{{ url('enrollment') }}?force=true" class="btn btn-outline-warning btn-lg">&larr; {% trans %}Change my Workshops{% endtrans %}</a>
+    {% else %}
+    {% trans %}<small>If you need to change your workshops please contact your teachers.</small>{% endtrans %}
+    {% endif %}
 </div>
 {% endblock %}

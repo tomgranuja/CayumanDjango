@@ -153,6 +153,8 @@ class WorkshopSelectionForm(forms.Form):
 @method_decorator(period_required, name="dispatch")
 @method_decorator(student_required, name="dispatch")
 class EnrollmentView(LoginRequiredMixin, View):
+    """Enrollment form view, where students can choose their workshops"""
+
     login_url = reverse("login")
     redirect_field_name = "redirect_to"
 
@@ -161,7 +163,12 @@ class EnrollmentView(LoginRequiredMixin, View):
         wps_by_schedule = available_workshop_periods_by_schedule(request.current_member)
         student_cycle = request.current_member.current_student_cycle
 
-        if not request.GET.get("force") and student_cycle.is_schedule_full(request.current_period):
+        # check if student is enabled to enroll, otherwise redirect to weekly-schedule with a warning message
+        if not student_cycle.is_enabled_to_enroll():
+            messages.warning(request, _("Online enrollment is no longer enabled. If you need to change your workshops please contact your teachers."))
+            return HttpResponseRedirect(reverse("weekly_schedule"))
+
+        if not request.GET.get("force") and student_cycle.is_schedule_full():
             return HttpResponseRedirect(reverse("weekly_schedule"))
 
         # current data
@@ -174,6 +181,11 @@ class EnrollmentView(LoginRequiredMixin, View):
         """Save workshop periods for current student cycle"""
         wps_by_schedule = available_workshop_periods_by_schedule(request.current_member)
         student_cycle = request.current_member.current_student_cycle
+
+        # check if student is enabled to enroll, otherwise redirect to weekly-schedule with a warning message
+        if not student_cycle.is_enabled_to_enroll():
+            messages.warning(request, _("Online enrollment is no longer enabled. If you need to change your workshops please contact your teachers."))
+            return HttpResponseRedirect(reverse("weekly_schedule"))
 
         # Pass schedules_with_workshops when instantiating the form for POST
         form = WorkshopSelectionForm(request.POST, schedules_with_workshops=wps_by_schedule, member=request.current_member)
