@@ -10,7 +10,6 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.exceptions import ValidationError
 from django.db import transaction
 from django.http import Http404
-from django.http import HttpResponse
 from django.http import HttpResponseRedirect
 from django.shortcuts import render
 from django.urls import reverse_lazy as reverse
@@ -32,7 +31,7 @@ def period_required(view_func):
     def _wrapped_view(request, *args, **kwargs):
         current_period = Period.objects.current()
         if not current_period:
-            return HttpResponse("No active period")
+            return render(request, "no-period.html", status=404)
 
         request.current_period = current_period
 

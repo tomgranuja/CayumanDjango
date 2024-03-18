@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+{% block title %}{% trans %}Resource not found{% endtrans %} | Cayuman{% endblock %}
+
+{% block content %}
+<div class="alert alert-info d-flex align-items-center" role="alert">
+    <svg class="bi flex-shrink-0 me-2" role="img" aria-label="Warning:" style="width: 20px; height: 20px;"><use xlink:href="#info-fill"/></svg>
+    <div>
+      {% trans %}The page you were looking for does not exist. <a href="javascript:history.back()">Go Back</a>.{% endtrans %}
+    </div>
+  </div>
+{% endblock %}

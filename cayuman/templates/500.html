@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+{% block title %}{% trans %}Error detected{% endtrans %} | Cayuman{% endblock %}
+
+{% block content %}
+<div class="alert alert-danger d-flex align-items-center" role="alert">
+    <svg class="bi flex-shrink-0 me-2" role="img" aria-label="Warning:" style="width: 20px; height: 20px;"><use xlink:href="#exclamation-triangle-fill"/></svg>
+    <div>
+      {% trans %}Some error happened while trying to answer your request. We have already received a report about this issue and will fix it shortly. <a href="javascript:history.back()">Go Back</a>.{% endtrans %}
+    </div>
+  </div>
+{% endblock %}
