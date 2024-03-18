@@ -1,8 +1,8 @@
 from datetime import datetime
 from functools import cached_property
+from functools import lru_cache
 from typing import Dict
 from typing import Optional
-from typing import Set
 
 from django.conf import settings
 from django.contrib.auth.models import Group
@@ -195,6 +195,7 @@ class Schedule(models.Model):
 
 
 class PeriodManager(models.Manager):
+    @lru_cache(maxsize=None)
     def current(self):
         now = datetime.now().date()
         try:
@@ -255,6 +256,7 @@ class Period(models.Model):
     def save(self, *args, **kwargs):
         self.clean()
         super().save(*args, **kwargs)
+        Period.objects.current.cache_clear()
 
     class Meta:
         verbose_name = _("Period")
@@ -346,15 +348,6 @@ class StudentCycle(models.Model):
         if not self.student.is_student:
             raise ValidationError({"student": _("Student must belong to the `%(g)s` group") % {"g": settings.STUDENTS_GROUP}})
 
-    def workshop_periods_by_period(self, period: Period) -> Set:
-        """Return this student's workshop_periods given a period"""
-        output = set()
-        wps = self.workshop_periods.all()
-        for wp in wps:
-            if wp.period == period:
-                output.add(wp)
-        return output
-
     def workshop_periods_by_schedule(self, schedule: Optional[Schedule] = None, period: Optional[Period] = None) -> Dict[Schedule, "WorkshopPeriod"]:
         """Return this student's workshop_periods given a schedule, or all of them if no schedule given"""
         output = dict()
@@ -366,11 +359,41 @@ class StudentCycle(models.Model):
                     output[sched] = wp
         return output
 
-    def is_schedule_full(self, period: Period) -> bool:
+    def is_schedule_full(self, period: Optional[Period] = None) -> bool:
         """Returns True or False depending if current student has a full schedule"""
+        if not period:
+            period = Period.objects.current()
+
+        if not period:
+            return False
+
         scount = Schedule.objects.all().count()
         lwps = len(self.workshop_periods_by_schedule(period=period))
         return scount == lwps
+
+    def is_enabled_to_enroll(self, period: Optional[Period] = None) -> bool:
+        """Returns True or False depending if current student is enabled to enroll"""
+        if not period:
+            period = Period.objects.current()
+
+        if not period:
+            return False
+
+        now = datetime.now().date()
+
+        # It's never possible to enroll before `enrollment_start` and after `date_end`
+        if now > period.date_end or now < period.enrollment_start:
+            return False
+
+        # students with full schedule can only re-enroll between `enrollment_start` and `date_start`
+        if self.is_schedule_full(period):
+            if period.enrollment_start <= now < period.date_start:
+                return True
+        else:
+            # students without full schedule can enroll anytime until `date_end`
+            return True
+
+        return False
 
     def save(self, *args, **kwargs):
         self.clean()
