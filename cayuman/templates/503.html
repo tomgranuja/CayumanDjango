@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+{% block title %}{% trans %}Site under maintenance{% endtrans %} | Cayuman{% endblock %}
+
+{% block content %}
+<div class="alert alert-primary d-flex align-items-center" role="alert">
+    <svg class="bi flex-shrink-0 me-2" role="img" aria-label="Warning:" style="width: 20px; height: 20px;"><use xlink:href="#exclamation-triangle-fill"/></svg>
+    <div>
+      {% trans %}This site is under maintenance. Please come back later.{% endtrans %}
+    </div>
+  </div>
+{% endblock %}

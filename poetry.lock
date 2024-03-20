@@ -97,6 +97,20 @@ django = ">=3.2"
 jinja2 = ">=3"
 
 [[package]]
+name = "django-maintenance-mode"
+version = "0.21.1"
+description = "shows a 503 error page when maintenance-mode is on."
+optional = false
+python-versions = "*"
+files = [
+    {file = "django-maintenance-mode-0.21.1.tar.gz", hash = "sha256:b79afddb671c59972ae542e4fafbc99117d2d37991843eaaa837e328eed12b1b"},
+    {file = "django_maintenance_mode-0.21.1-py3-none-any.whl", hash = "sha256:c02fff0e386b7f8b2ab54479d3a0d336ae34014da22a7a2365ca96d5a2c1db94"},
+]
+
+[package.dependencies]
+python-fsutil = ">=0.13.1,<1.0.0"
+
+[[package]]
 name = "exceptiongroup"
 version = "1.2.0"
 description = "Backport of PEP 654 (exception groups)"
@@ -528,6 +542,17 @@ files = [
 cli = ["click (>=5.0)"]
 
 [[package]]
+name = "python-fsutil"
+version = "0.14.1"
+description = "high-level file-system operations for lazy devs."
+optional = false
+python-versions = "*"
+files = [
+    {file = "python-fsutil-0.14.1.tar.gz", hash = "sha256:8fb204fa8059f37bdeee8a1dc0fff010170202ea47c4225ee71bb3c26f3997be"},
+    {file = "python_fsutil-0.14.1-py3-none-any.whl", hash = "sha256:0d45e623f0f4403f674bdd8ae7aa7d24a4b3132ea45c65416bd2865e6b20b035"},
+]
+
+[[package]]
 name = "pytz"
 version = "2024.1"
 description = "World timezone definitions, modern and historical"
@@ -686,4 +711,4 @@ test = ["covdefaults (>=2.3)", "coverage (>=7.2.7)", "coverage-enable-subprocess
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.10"
-content-hash = "065941a3f8a0f3f77ed567163d42cfe51b8269d13021f7cc8d79fe9ce9337335"
+content-hash = "f9bd2328f2aae318f928e35484625f0b62dc105a9d0a0a59a170072b9ef47cc5"
