@@ -101,3 +101,4 @@ zappa_settings.py
 cayuman.db
 
 *.ods
+maintenance_mode_state.txt

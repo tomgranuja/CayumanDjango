@@ -94,11 +94,19 @@ $ poetry run python manage.py makemigrations
 ## Manage translation
 
 ```console
-# Update translation fieles
+# Update translation file
 $ poetry run python manage.py makemessages -l es
 
 # Compile translation file
 $ poetry run python manage.py compilemessages
 
 # restart django server or webserver for changes to take effect
+```
+
+## Maintenance mode
+
+If there's a need to set cayuman as maintenance mode, you must run this command
+
+```console
+$ python manage.py maintenance_mode <on|off>
 ```

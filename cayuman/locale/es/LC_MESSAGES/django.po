@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2024-03-18 11:37-0300\n"
+"POT-Creation-Date: 2024-03-20 11:12-0300\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -304,7 +304,8 @@ msgstr "Recurso no encontrado"
 msgid ""
 "The page you were looking for does not exist. <a href=\"javascript:history."
 "back()\">Go Back</a>."
-msgstr "La página que buscabas no existe. <a href=\"javascript:history."
+msgstr ""
+"La página que buscabas no existe. <a href=\"javascript:history."
 "back()\">Volver atrás</a>."
 
 #: cayuman/templates/500.html:2
@@ -316,9 +317,18 @@ msgid ""
 "Some error happened while trying to answer your request. We have already "
 "received a report about this issue and will fix it shortly. <a "
 "href=\"javascript:history.back()\">Go Back</a>."
-msgstr "Ocurrió un error mientras tratábamos de responder tu solicitud. "
-"Ya hemos recibido un reporte sobre el problema y lo arreglaremos en breve. "
-"<a href=\"javascript:history.back()\">Volver atrás</a>."
+msgstr ""
+"Ocurrió un error mientras tratábamos de responder tu solicitud. Ya hemos "
+"recibido un reporte sobre el problema y lo arreglaremos en breve. <a "
+"href=\"javascript:history.back()\">Volver atrás</a>."
+
+#: cayuman/templates/503.html:2
+msgid "Site under maintenance"
+msgstr "Sitio en mantenimiento"
+
+#: cayuman/templates/503.html:8
+msgid "This site is under maintenance. Please come back later."
+msgstr "Este sitio está en mantenimiento. Por favor vuelve más tarde."
 
 #: cayuman/templates/admin/cayuman/workshopperiod/change_form_object_tools.html:9
 msgid "History"
@@ -401,7 +411,9 @@ msgstr "No hay periodo activo"
 #: cayuman/templates/no-period.html:14
 msgid ""
 "There are currently no active workshop periods. Please check back later."
-msgstr "Actualmente no hay ningún periodo de talleres activo. Por favor vuelve a revisar en otro momento."
+msgstr ""
+"Actualmente no hay ningún periodo de talleres activo. Por favor vuelve a "
+"revisar en otro momento."
 
 #: cayuman/templates/registration/login.html:2
 msgid "Log In"
@@ -444,23 +456,23 @@ msgstr "%(num_session)s sesiones"
 msgid "Teacher: <span>%(name)s</span>"
 msgstr "Guía: <span>%(name)s</span>"
 
-#: cayuman/views.py:110
+#: cayuman/views.py:109
 #, python-format
 msgid "%(wp_name)s with %(teacher)s"
 msgstr "%(wp_name)s con %(teacher)s"
 
-#: cayuman/views.py:127
+#: cayuman/views.py:126
 #, python-format
 msgid "Please select a workshop for %(day)s %(start_time)s-%(end_time)s"
 msgstr ""
 "Por favor selecciona un taller para %(day)s %(start_time)s-%(end_time)s"
 
-#: cayuman/views.py:149
+#: cayuman/views.py:148
 #, python-format
 msgid "Workshop period %(wp)s has not been assigned the correct schedules"
 msgstr "No se asignaron los horarios correctos para el taller %(wp)s"
 
-#: cayuman/views.py:168 cayuman/views.py:187
+#: cayuman/views.py:167 cayuman/views.py:186
 msgid ""
 "Online enrollment is no longer enabled. If you need to change your workshops "
 "please contact your teachers."
@@ -468,7 +480,7 @@ msgstr ""
 "La selección online de talleres ya no está habilitada. Si necesitas cambiar "
 "tus talleres por favor contacta a tus profesores."
 
-#: cayuman/views.py:218
+#: cayuman/views.py:217
 msgid "Your workshops have been saved"
 msgstr "Tus talleres han sido guardados"
 
