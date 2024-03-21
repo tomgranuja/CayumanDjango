@@ -7,6 +7,7 @@ from django import forms
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.contrib.auth.views import LoginView
 from django.core.exceptions import ValidationError
 from django.db import transaction
 from django.http import Http404
@@ -18,6 +19,7 @@ from django.utils.safestring import mark_safe
 from django.utils.translation import gettext as _
 from django.views import View
 
+from .forms import StudentLoginForm
 from .models import Member
 from .models import Period
 from .models import Schedule
@@ -146,6 +148,10 @@ class WorkshopSelectionForm(forms.Form):
             # ensure each workshop_period lives in the correct schedules
             if set(wp.schedules.all()) != set(schedules_by_wp_id[str(wp.id)]):
                 raise ValidationError(_("Workshop period %(wp)s has not been assigned the correct schedules") % {"wp": wp.workshop.name})
+
+
+class StudentLoginView(LoginView):
+    form_class = StudentLoginForm
 
 
 @method_decorator(login_required, name="dispatch")

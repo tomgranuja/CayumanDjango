@@ -19,7 +19,7 @@
     <table>
         <thead>
         <tr>
-            <th scope="col">{% translate 'ID' %}</th>
+            <th scope="col" style="width: 5%;">{% translate 'ID' %}</th>
             <th scope="col">{% translate 'Student' %}</th>
             <th scope="col">{% translate 'Cycle' %}</th>
         </tr>
@@ -27,7 +27,7 @@
         <tbody>
         {% for sc in students_list %}
         <tr>
-            <th scope="row">{{ sc.id }}</th>
+            <th>{{ sc.id }}</th>
             <td>{{ sc.student.get_full_name }}</td>
             <td>{{ sc.cycle.name }}</td>
         </tr>

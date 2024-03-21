@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2024-03-20 11:12-0300\n"
+"POT-Creation-Date: 2024-03-21 13:18-0300\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -102,6 +102,18 @@ msgstr "Los talleres `%(w1)s` y `%(w2)s` tienen una colisión de horario"
 #: cayuman/admin.py:294
 msgid "Workshop Periods List"
 msgstr "Lista de talleres"
+
+#: cayuman/forms.py:8 cayuman/forms.py:15
+msgid "RUT"
+msgstr "RUT"
+
+#: cayuman/forms.py:8
+msgid "Use dash, no point, lowercase (ex. 23456789-k)"
+msgstr "Sin puntos, con guión, minúsculas (ej. 23456789-k)"
+
+#: cayuman/forms.py:9
+msgid "Password"
+msgstr "Contraseña"
 
 #: cayuman/migrations/0002_alter_cycle_options_alter_member_options_and_more.py:19
 #: cayuman/models.py:51
@@ -278,21 +290,21 @@ msgstr "El estudiante debe pertenecer al grupo `%(g)s`"
 msgid "Workshop period `%(wp)s` is already associated with this student"
 msgstr "El taller `%(wp)s` ya está asociado con este estudiante"
 
-#: cayuman/settings.py:164
+#: cayuman/settings.py:166
 msgid "English"
 msgstr "Inglés"
 
-#: cayuman/settings.py:165
+#: cayuman/settings.py:167
 msgid "Spanish"
 msgstr "Español"
 
-#: cayuman/settings.py:206
+#: cayuman/settings.py:263
 #: cayuman/templates/admin/cayuman/workshopperiod/change_form_object_tools.html:5
 #: cayuman/templates/admin/workshop_period_students.html:10
 msgid "Students"
 msgstr "Estudiantes"
 
-#: cayuman/settings.py:207
+#: cayuman/settings.py:264
 msgid "Teachers"
 msgstr "Profesores"
 
@@ -456,23 +468,23 @@ msgstr "%(num_session)s sesiones"
 msgid "Teacher: <span>%(name)s</span>"
 msgstr "Guía: <span>%(name)s</span>"
 
-#: cayuman/views.py:109
+#: cayuman/views.py:111
 #, python-format
 msgid "%(wp_name)s with %(teacher)s"
 msgstr "%(wp_name)s con %(teacher)s"
 
-#: cayuman/views.py:126
+#: cayuman/views.py:128
 #, python-format
 msgid "Please select a workshop for %(day)s %(start_time)s-%(end_time)s"
 msgstr ""
 "Por favor selecciona un taller para %(day)s %(start_time)s-%(end_time)s"
 
-#: cayuman/views.py:148
+#: cayuman/views.py:150
 #, python-format
 msgid "Workshop period %(wp)s has not been assigned the correct schedules"
 msgstr "No se asignaron los horarios correctos para el taller %(wp)s"
 
-#: cayuman/views.py:167 cayuman/views.py:186
+#: cayuman/views.py:173 cayuman/views.py:192
 msgid ""
 "Online enrollment is no longer enabled. If you need to change your workshops "
 "please contact your teachers."
@@ -480,7 +492,7 @@ msgstr ""
 "La selección online de talleres ya no está habilitada. Si necesitas cambiar "
 "tus talleres por favor contacta a tus profesores."
 
-#: cayuman/views.py:217
+#: cayuman/views.py:223
 msgid "Your workshops have been saved"
 msgstr "Tus talleres han sido guardados"
 
