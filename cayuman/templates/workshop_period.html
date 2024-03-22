@@ -28,7 +28,7 @@
   <body style="padding-top: 5px">
     <div class="container-md" style="max-width: 1024px">
       <div class="d-inline alert alert-success text-center text-uppercase fw-bold float-end">
-        {% trans num_session=wp.count_classes %}
+        {% trans num_session=wp.count_classes() %}
         {{num_session}} sessions
         {% endtrans %}
       </div>
@@ -92,5 +92,14 @@
         </table>
       </div>
     </div>
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-T8R8R0NWNC"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-T8R8R0NWNC');
+</script>
   </body>
 </html>

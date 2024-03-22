@@ -41,7 +41,7 @@ class Member(User):
         return StudentCycle.objects.filter(student=self).order_by("-date_joined").first()
 
     def __str__(self):
-        return f"{self.first_name} {self.last_name}"
+        return self.get_full_name()
 
     def __repr__(self):
         return f"{self.__class__.__name__}(username='{self.username}', first_name='{self.first_name}', last_name='{self.last_name}')"
@@ -275,10 +275,9 @@ class WorkshopPeriod(models.Model):
         cycles_list = ", ".join(c.name for c in self.cycles.all())
         return f"{self.workshop.name} ({cycles_list}) @ {self.period}"
 
-    @cached_property
-    def count_classes(self):
-        num_weeks = self.period.count_weeks
-        return num_weeks * self.schedules.count()
+    def __repr__(self):
+        cycles_list = ", ".join(c.name for c in self.cycles.all())
+        return f"{self.__class__.__name__}(workshop='{self.workshop.name}', period='{self.period}', teacher='{self.teacher}', cycles='{cycles_list}')"
 
     def clean(self):
         if not self.teacher.is_teacher:
@@ -288,15 +287,19 @@ class WorkshopPeriod(models.Model):
         self.clean()
         super().save(*args, **kwargs)
 
+    def count_classes(self):
+        num_weeks = self.period.count_weeks
+        return num_weeks * self.schedules.count()
+
     def count_students(self, member: Optional[Member] = None) -> int:
-        """Counts the number of students associated to this entry. If `member` is given counts students but excludes `member`"""
+        """Counts the number of students associated to self. If `member` is given counts students but excludes `member`"""
         if member:
             return self.studentcycle_set.exclude(student__id=member.id).count()
         else:
             return self.studentcycle_set.count()
 
     def remaining_quota(self, member: Optional[Member] = None) -> int:
-        """Returns the remaining quota for this entry. If `member` is given, excludes member. Return None if no max quota."""
+        """Returns the remaining quota for self. If `member` is given, excludes member. Return None if no max quota."""
         if self.max_students == 0:
             return None
 
@@ -342,12 +345,37 @@ class StudentCycle(models.Model):
     workshop_periods = models.ManyToManyField(WorkshopPeriod, blank=True, verbose_name=_("Workshop Periods"))
 
     def __str__(self):
-        return f"{self.student} @ {self.cycle} {self.date_joined.year}"
+        return f"{self.student} @ {self.cycle}"
+
+    def __repr__(self):
+        return f"{self.__class__.__name__}(student='{self.student}', cycle='{self.cycle}')"
 
     def clean(self):
         if not self.student.is_student:
             raise ValidationError({"student": _("Student must belong to the `%(g)s` group") % {"g": settings.STUDENTS_GROUP}})
 
+    @lru_cache(maxsize=None)
+    def available_workshop_periods_by_schedule(self, period: Optional[Period] = None) -> Dict[Schedule, WorkshopPeriod]:
+        """Returns available workshop periods for a student cycle"""
+        if period is None:
+            period = Period.objects.current()
+        if period is None:
+            return {}
+        ss = Schedule.objects.ordered()
+
+        current_student_cycle = self.cycle if self.cycle else None
+
+        wps_by_schedule = {}
+        for s in ss:
+            for wp in s.workshopperiod_set.filter(period=period):
+                if current_student_cycle in wp.cycles.all():
+                    if s not in wps_by_schedule:
+                        wps_by_schedule[s] = []
+                    wps_by_schedule[s].append(wp)
+
+        return wps_by_schedule
+
+    @lru_cache(maxsize=None)
     def workshop_periods_by_schedule(self, schedule: Optional[Schedule] = None, period: Optional[Period] = None) -> Dict[Schedule, "WorkshopPeriod"]:
         """Return this student's workshop_periods given a schedule, or all of them if no schedule given"""
         output = dict()

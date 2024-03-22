@@ -169,16 +169,21 @@ def test_student_cycle_fail_schedule_collision(create_student, create_teacher, c
         sc.workshop_periods.add(wp1, wp2)
 
 
-def test_student_cycle_fail_max_students(create_teacher, create_workshops, create_cycles, create_period):
-    """Test StudentCycle cannot be created if the schedules of the workshop periods of the student have collisions"""
+def test_student_cycle_fail_students_quota(create_teacher, create_workshops, create_cycles, create_period):
+    """
+    Tests `StudentCycle.max_students`, `WorkshopPeriod.count_students()` and `WorkshopPeriod.remaining_quota()`
+    work correctly as students enroll if max_students > 0
+    """
     # Create a StudentCycle
     teacher = create_teacher
     workshops = create_workshops
     cycles = create_cycles
     period = create_period
 
+    MAX_STUDENTS = 5
+
     # create workshop period
-    wp1 = WorkshopPeriod.objects.create(workshop=workshops[0], period=period, teacher=teacher, max_students=2)
+    wp1 = WorkshopPeriod.objects.create(workshop=workshops[0], period=period, teacher=teacher, max_students=MAX_STUDENTS)
 
     # add cycles
     wp1.cycles.add(cycles[0])
@@ -190,19 +195,60 @@ def test_student_cycle_fail_max_students(create_teacher, create_workshops, creat
     schedule_2 = Schedule.objects.create(day="tuesday", time_start=time_start, time_end=time_end)
     wp1.schedules.add(schedule_1, schedule_2)
 
-    for i in range(1, 4):
+    for i in range(1, MAX_STUDENTS + 2):
         user = Member.objects.create_user(username=f"{i}" * 8, password="12345")
         group, _ = Group.objects.get_or_create(name=settings.STUDENTS_GROUP)
         user.groups.add(group)
 
         sc = StudentCycle.objects.create(student=user, cycle=cycles[0], date_joined=timezone.now())  # no cycle coincidence
 
-        if i > 2:
+        if i > MAX_STUDENTS:
             # assign workshop periods to student cycle
             with pytest.raises(ValidationError, match=r"has reached its quota of students"):
                 sc.workshop_periods.add(wp1)
         else:
             sc.workshop_periods.add(wp1)
+
+            assert wp1.count_students() == i
+            assert wp1.remaining_quota() == MAX_STUDENTS - i
+
+
+def test_student_cycle_fail_students_no_quota(create_teacher, create_workshops, create_cycles, create_period):
+    """
+    Tests `StudentCycle.max_students`, `WorkshopPeriod.count_students()` and `WorkshopPeriod.remaining_quota()`
+    work correctly if max_students == 0
+    """
+    # Create a StudentCycle
+    teacher = create_teacher
+    workshops = create_workshops
+    cycles = create_cycles
+    period = create_period
+
+    # create workshop period
+    wp1 = WorkshopPeriod.objects.create(workshop=workshops[0], period=period, teacher=teacher, max_students=0)
+
+    assert wp1.remaining_quota() is None
+
+    # add cycles
+    wp1.cycles.add(cycles[0])
+
+    # create schedule for wp1
+    time_start = timezone.now()
+    time_end = timezone.now() + timezone.timedelta(hours=2)
+    schedule_1 = Schedule.objects.create(day="monday", time_start=time_start, time_end=time_end)
+    schedule_2 = Schedule.objects.create(day="tuesday", time_start=time_start, time_end=time_end)
+    wp1.schedules.add(schedule_1, schedule_2)
+
+    for i in range(1, 5):
+        user = Member.objects.create_user(username=f"{i}" * 8, password="12345")
+        group, _ = Group.objects.get_or_create(name=settings.STUDENTS_GROUP)
+        user.groups.add(group)
+
+        sc = StudentCycle.objects.create(student=user, cycle=cycles[0], date_joined=timezone.now())  # no cycle coincidence
+        sc.workshop_periods.add(wp1)
+
+        assert wp1.count_students() == i
+        assert wp1.remaining_quota() is None
 
 
 def test_is_schedule_full(create_student, create_teacher, create_period, create_workshops, create_cycles):

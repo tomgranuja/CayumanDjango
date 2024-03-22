@@ -1,14 +1,12 @@
-from django.conf import settings
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
-from django.contrib.auth.admin import UserChangeForm
-from django.contrib.auth.models import Group
-from django.core.exceptions import ValidationError
-from django.forms import ModelForm
 from django.urls import path
 from django.utils.html import format_html
 from django.utils.translation import gettext as _
 
+from .forms import AdminMemberChangeForm
+from .forms import AdminStudentCycleForm
+from .forms import AdminWorkshopPeriodForm
 from .models import Cycle
 from .models import Member
 from .models import Period
@@ -22,37 +20,13 @@ from .models import WorkshopPeriod
 admin.site.site_header = "Cayuman"
 
 
-class MemberChangeForm(UserChangeForm):
-    def clean_groups(self):
-        try:
-            is_student = Group.objects.get(name=settings.STUDENTS_GROUP) in self.cleaned_data["groups"]
-        except Group.DoesNotExist:
-            is_student = False
-        try:
-            is_teacher = Group.objects.get(name=settings.TEACHERS_GROUP) in self.cleaned_data["groups"]
-        except Group.DoesNotExist:
-            is_teacher = False
-
-        if not self.cleaned_data["is_staff"]:
-            if not is_student and not is_teacher:
-                raise ValidationError(_("User must be either Student or Teacher, or a staff member"))
-        else:
-            if is_student:
-                raise ValidationError(_("Student cannot be staff member"))
-
-        if is_student and is_teacher:
-            raise ValidationError(_("User must not be both Student and Teacher"))
-
-        return self.cleaned_data["groups"]
-
-
 class MemberAdmin(UserAdmin):
     ordering = ("-date_joined",)
     list_display = ("id", "name", "cycle", "date_joined", "is_student", "is_teacher", "is_staff", "is_active")
     filter_horizontal = ("groups", "user_permissions")
     list_per_page = 20
 
-    form = MemberChangeForm
+    form = AdminMemberChangeForm
 
     @admin.display(description=_("Full Name"))
     def name(self, obj):
@@ -110,36 +84,6 @@ class WorkshopAdmin(admin.ModelAdmin):
 admin.site.register(Workshop, WorkshopAdmin)
 
 
-class WorkshopPeriodAdminForm(ModelForm):
-    def __init__(self, *args, **kwargs):
-        super(WorkshopPeriodAdminForm, self).__init__(*args, **kwargs)
-        teachers_group = Group.objects.get(name=settings.TEACHERS_GROUP)
-        if "teacher" in self.fields:
-            self.fields["teacher"].queryset = Member.objects.filter(groups=teachers_group)
-
-    def clean_schedules(self):
-        # Get schedules for same teacher and period
-        if self.cleaned_data["teacher"] and self.cleaned_data["period"]:
-            other_wps = WorkshopPeriod.objects.filter(teacher=self.cleaned_data["teacher"], period=self.cleaned_data["period"])
-            other_schedules = set()
-            for wp in other_wps:
-                if self.instance:
-                    if self.instance.id == wp.id:
-                        continue
-                for sched in wp.schedules.all():
-                    other_schedules.add(sched)
-
-            # check overlapping due to schedules
-            if any(sched in other_schedules for sched in self.cleaned_data["schedules"]):
-                raise ValidationError(_("There's already another workshop period overlapping with current one"))
-
-        return self.cleaned_data["schedules"]
-
-    class Meta:
-        fields = "__all__"
-        model = WorkshopPeriod
-
-
 class WorkshopPeriodAdmin(admin.ModelAdmin):
     list_display = ("id", "workshop", "teacher", "period", "cycles_list", "schedules_list", "num_students", "max_students")
     list_per_page = 20
@@ -148,7 +92,7 @@ class WorkshopPeriodAdmin(admin.ModelAdmin):
         ("teacher", admin.RelatedOnlyFieldListFilter),
     ]
 
-    form = WorkshopPeriodAdminForm
+    form = AdminWorkshopPeriodForm
 
     @admin.display(description=_("Cycles"))
     def cycles_list(self, obj):
@@ -240,47 +184,6 @@ class WorkshopPeriodAdmin(admin.ModelAdmin):
 admin.site.register(WorkshopPeriod, WorkshopPeriodAdmin)
 
 
-class StudentCycleAdminForm(ModelForm):
-    def clean_workshop_periods(self):
-        # clean workshop_periods m2m relation
-        # this breaks DRY principle with respect to m2m_changed signal handler for model StudentCycle
-        # but it's necessary so validation works ok in django admin as well as directly using the model
-        # {'student': Member(...), 'cycle': <Cycle: ...>, 'workshop_periods': <QuerySet [<WorkshopPeriod: ...>, <WorkshopPeriod: ...>]>}
-        for wp in self.cleaned_data["workshop_periods"]:
-            # Count students in this cycle without counting current student
-            curr_count = wp.studentcycle_set.exclude(student__id=self.cleaned_data["student"].id).count()
-            # curr_count = wp.studentcycle_set.filter(student__id__ne=self.cleaned_data['student'].id).count()
-            if wp.max_students > 0 and wp.max_students <= curr_count:
-                raise ValidationError(_("Workshop period `%s` has reached its quota of students") % (wp.workshop.name))
-
-            if self.cleaned_data["cycle"] not in wp.cycles.all():
-                raise ValidationError(
-                    _("Student `%(st)s` cannot be associated with workshop period `%(wp)s` because they belong to the same cycle.")
-                    % {"st": self.cleaned_data["student"].get_full_name(), "wp": wp.workshop.name}
-                )
-
-            for wp_2 in self.cleaned_data["workshop_periods"]:
-                if wp == wp_2:
-                    continue
-
-                if wp & wp_2:
-                    raise ValidationError(
-                        _("Workshop periods `%(w1)s` and `%(w2)s` have colliding schedules.") % {"w1": wp.workshop.name, "w2": wp_2.workshop.name}
-                    )
-
-        return self.cleaned_data["workshop_periods"]
-
-    def __init__(self, *args, **kwargs):
-        super(StudentCycleAdminForm, self).__init__(*args, **kwargs)
-        students_group = Group.objects.get(name=settings.STUDENTS_GROUP)
-        if "student" in self.fields:
-            self.fields["student"].queryset = Member.objects.filter(groups=students_group)
-
-    class Meta:
-        fields = "__all__"
-        model = StudentCycle
-
-
 class StudentCycleAdmin(admin.ModelAdmin):
     ordering = ("-date_joined",)
     list_display = ("id", "student", "cycle", "workshop_periods_list", "date_joined")
@@ -289,7 +192,7 @@ class StudentCycleAdmin(admin.ModelAdmin):
     search_fields = ["student__first_name", "student__last_name", "cycle__name"]
     filter_horizontal = ("workshop_periods",)
 
-    form = StudentCycleAdminForm
+    form = AdminStudentCycleForm
 
     @admin.display(description=_("Workshop Periods List"))
     def workshop_periods_list(self, obj):
