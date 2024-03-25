@@ -1,3 +1,5 @@
+import datetime
+
 import pytest
 from django.core.exceptions import ValidationError
 from django.utils import timezone
@@ -43,12 +45,14 @@ def test_schedule_instances_intersection():
 
 def test_schedule_creation_fail():
     """Tests that it's not possible to create schedule instances colliding in time"""
-    time_start_1 = timezone.now()
-    time_end_1 = timezone.now() + timezone.timedelta(hours=2)
-    Schedule.objects.create(day="Lunes", time_start=time_start_1, time_end=time_end_1)
-    time_start_2 = timezone.now() + timezone.timedelta(hours=1)
-    time_end_2 = timezone.now() + timezone.timedelta(hours=3)
+    today = timezone.localdate()
+    now = timezone.make_aware(datetime.datetime.combine(today, datetime.time(10, 0)))
 
+    time_start_1 = now
+    time_end_1 = now + timezone.timedelta(hours=2)
+    Schedule.objects.create(day="Lunes", time_start=time_start_1, time_end=time_end_1)
+    time_start_2 = now + timezone.timedelta(hours=1)
+    time_end_2 = now + timezone.timedelta(hours=3)
     with pytest.raises(ValidationError, match=r"another schedule colliding"):
         Schedule.objects.create(day="Lunes", time_start=time_start_2, time_end=time_end_2)
 

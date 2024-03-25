@@ -3,6 +3,7 @@ from functools import cached_property
 from functools import lru_cache
 from typing import Dict
 from typing import Optional
+from typing import Set
 
 from django.conf import settings
 from django.contrib.auth.models import Group
@@ -387,6 +388,17 @@ class StudentCycle(models.Model):
                     output[sched] = wp
         return output
 
+    @lru_cache(maxsize=None)
+    def workshop_periods_by_period(self, period: Optional[Period] = None) -> Set:
+        """Return this student's workshop_periods given a period, or all of them if no period given"""
+        if period is None:
+            period = Period.objects.current()
+        if period is None:
+            return set()
+
+        wps_by_schedule = self.workshop_periods_by_schedule(period=period)
+        return {wp for wp in wps_by_schedule.values()}
+
     def is_schedule_full(self, period: Optional[Period] = None) -> bool:
         """Returns True or False depending if current student has a full schedule"""
         if not period:
@@ -438,6 +450,10 @@ class StudentCycle(models.Model):
 def student_cycle_workshop_period_changed(sender, instance, action, *args, **kwargs):
     """Validation procedure for the StudentCycle.workshop_periods m2m relation"""
     if action == "pre_add":
+        instance.available_workshop_periods_by_schedule.cache_clear()
+        instance.workshop_periods_by_schedule.cache_clear()
+        instance.workshop_periods_by_period.cache_clear()
+
         # Get all workshop periods for this student's cycle, including incoming ones
         wps = set()
         for wp in instance.workshop_periods.all():

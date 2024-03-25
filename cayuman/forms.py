@@ -92,6 +92,19 @@ class AdminStudentCycleForm(ModelForm):
         if "student" in self.fields:
             self.fields["student"].queryset = Member.objects.filter(groups=students_group)
 
+    def save(self, commit=True):
+        """clear model's cached methods"""
+        # Save the instance as usual
+        instance = super().save(commit=commit)
+
+        # Clear the cache for the relevant methods
+        if commit:
+            instance.available_workshop_periods_by_schedule.cache_clear()
+            instance.workshop_periods_by_schedule.cache_clear()
+            instance.workshop_periods_by_period.cache_clear()
+
+        return instance
+
     def clean_workshop_periods(self):
         # clean workshop_periods m2m relation
         # this breaks DRY principle with respect to m2m_changed signal handler for model StudentCycle

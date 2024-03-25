@@ -196,8 +196,8 @@ class StudentCycleAdmin(admin.ModelAdmin):
 
     @admin.display(description=_("Workshop Periods List"))
     def workshop_periods_list(self, obj):
-        wps = obj.workshop_periods.all()
-        return format_html("<ul><li>{}</li></ul>".format("</li><li>".join([str(period) for period in wps]))) if wps else None
+        wps = obj.workshop_periods_by_period()
+        return format_html("<ul><li>{}</li></ul>".format("</li><li>".join([str(wp) for wp in wps]))) if wps else None
 
 
 admin.site.register(StudentCycle, StudentCycleAdmin)
