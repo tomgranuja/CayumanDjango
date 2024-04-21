@@ -60,7 +60,7 @@
     {% if member.current_student_cycle.is_enabled_to_enroll() %}
     <a href="{{ url('enrollment') }}?force=true" class="btn btn-outline-warning btn-lg">&larr; {% trans %}Change my Workshops{% endtrans %}</a>
     {% else %}
-    <small>{% trans %}If you need to change your workshops please contact your teachers.{% endtrans %}</small>
+    <small>{% trans %}If you need to change your workshops please contact your teachers.{% endtrans %} <a href="/?force=true">{% trans %}Click here{% endtrans %}</a> {% trans %}to check the list of available workshops during this period{% endtrans %}.</small>
     {% endif %}
 </div>
 {% endblock %}
