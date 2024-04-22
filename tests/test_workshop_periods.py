@@ -47,7 +47,13 @@ def create_workshops():
 def create_period():
     """Fixture to create a sample Period"""
     # Period
-    Period.objects.create(name="Period 1", date_start=datetime(2023, 1, 1), date_end=datetime(2023, 12, 31), enrollment_start=datetime(2022, 12, 23))
+    Period.objects.create(
+        name="Period 1",
+        date_start=datetime(2023, 1, 1),
+        date_end=datetime(2023, 12, 31),
+        enrollment_start=datetime(2022, 12, 23),
+        enrollment_end=datetime(2022, 12, 27),
+    )
     return Period.objects.all()[0]
 
 

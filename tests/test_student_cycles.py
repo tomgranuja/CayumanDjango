@@ -41,7 +41,13 @@ def create_teacher():
 def create_period():
     """Fixture to create a sample Period"""
     # Period
-    Period.objects.create(name="Period 1", date_start=datetime(2023, 1, 1), date_end=datetime(2023, 12, 31), enrollment_start=datetime(2022, 12, 23))
+    Period.objects.create(
+        name="Period 1",
+        date_start=datetime(2023, 1, 1),
+        date_end=datetime(2023, 12, 31),
+        enrollment_start=datetime(2022, 12, 23),
+        enrollment_end=datetime(2022, 12, 27),
+    )
     return Period.objects.all()[0]
 
 
@@ -302,10 +308,15 @@ def test_is_enabled_to_enroll(create_student, create_period, create_cycles):
             mock_datetime.now.date.return_value = datetime(2022, 12, 21).date()
             assert sc.is_enabled_to_enroll(period=period) is False
 
-            # Mock current date within enrollment_start and date_start
+            # Mock current date within enrollment_start and enrollment_end
+            mock_datetime.now.return_value = datetime(2022, 12, 25)
+            mock_datetime.now.date.return_value = datetime(2022, 12, 25).date()
+            assert sc.is_enabled_to_enroll(period=period) is True
+
+            # Mock current date within enrollment_end and date_start
             mock_datetime.now.return_value = datetime(2022, 12, 31)
             mock_datetime.now.date.return_value = datetime(2022, 12, 31).date()
-            assert sc.is_enabled_to_enroll(period=period) is True
+            assert sc.is_enabled_to_enroll(period=period) is False
 
             # Mock current date after date_start and before date_end
             mock_datetime.now.return_value = datetime(2023, 1, 1)
@@ -326,9 +337,14 @@ def test_is_enabled_to_enroll(create_student, create_period, create_cycles):
             mock_datetime.now.date.return_value = datetime(2022, 12, 21).date()
             assert sc.is_enabled_to_enroll(period=period) is False
 
-            # Mock current date within enrollment_start and date_start
-            mock_datetime.now.return_value = datetime(2022, 12, 31)
-            mock_datetime.now.date.return_value = datetime(2022, 12, 31).date()
+            # Mock current date within enrollment_start and enrollment_end
+            mock_datetime.now.return_value = datetime(2022, 12, 25)
+            mock_datetime.now.date.return_value = datetime(2022, 12, 25).date()
+            assert sc.is_enabled_to_enroll(period=period) is True
+
+            # Mock current date after date_start and before date_end
+            mock_datetime.now.return_value = datetime(2023, 1, 1)
+            mock_datetime.now.date.return_value = datetime(2023, 1, 1).date()
             assert sc.is_enabled_to_enroll(period=period) is True
 
             # Mock current date after date_start and before date_end

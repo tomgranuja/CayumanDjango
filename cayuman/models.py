@@ -17,6 +17,7 @@ from django.db.models import Value
 from django.db.models import When
 from django.db.models.signals import m2m_changed
 from django.dispatch import receiver
+from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 
 
@@ -198,11 +199,32 @@ class Schedule(models.Model):
 class PeriodManager(models.Manager):
     @lru_cache(maxsize=None)
     def current(self):
+        """
+        Current period is defined as this:
+        - That period where current_date is between date_start and date_end
+        - Else, last one stored on DB
+        """
         now = datetime.now().date()
         try:
-            return self.get_queryset().get(enrollment_start__lte=now, date_end__gt=now)
+            val = self.get_queryset().get(enrollment_start__lte=now, date_end__gt=now)
+            print(f"Here at 1 {now}")
+        except self.model.MultipleObjectsReturned:
+            try:
+                val = self.get_queryset().get(date_start__lte=now, date_end__gt=now)
+                print(f"Here at 2 {now}")
+            except self.model.DoesNotExist:
+                val = None
+                print(f"Here at 3 {now}")
         except self.model.DoesNotExist:
-            return None
+            val = None
+            print(f"Here at 4 {now}")
+
+        if not val:
+            # return latest in terms of id
+            val = self.get_queryset().order_by("-id").first()
+            print(f"Here at 5 {now}")
+
+        return val
 
 
 class Period(models.Model):
@@ -211,6 +233,7 @@ class Period(models.Model):
     name = models.CharField(max_length=50, verbose_name=_("Name"))
     description = models.TextField(blank=True, verbose_name=_("Description"))
     enrollment_start = models.DateField(blank=True, verbose_name=_("Enrollment start date"))
+    enrollment_end = models.DateField(blank=True, null=True, verbose_name=_("Enrollment end date"))
     date_start = models.DateField(verbose_name=_("Start date"))
     date_end = models.DateField(verbose_name=_("End date"))
 
@@ -227,7 +250,13 @@ class Period(models.Model):
         """Returns a more human name for the period"""
         from django.utils.formats import date_format
 
-        return f"{self.name} ({date_format(self.date_start, format='F')}-{date_format(self.date_end, format='F')})"
+        month_1 = date_format(self.date_start, format="F")
+        month_2 = date_format(self.date_end, format="F")
+
+        if month_1 != month_2:
+            return f"{self.name} ({month_1}-{month_2})"
+        else:
+            return f"{self.name} ({month_1} {self.date_start.year})"
 
     @cached_property
     def count_weeks(self):
@@ -248,11 +277,34 @@ class Period(models.Model):
         return monday_count
 
     def clean(self):
+        if not self.enrollment_end and self.enrollment_start:
+            self.enrollment_end = self.enrollment_start + timezone.timedelta(days=5)
+
         if self.date_start >= self.date_end:
-            raise ValidationError({"start": _("Start date must be before end date")})
+            raise ValidationError({"date_start": _("Start date must be before end date")})
+
+        if self.enrollment_start >= self.enrollment_end:
+            raise ValidationError({"enrollment_start": _("Enrollment start date must be before enrollment end date")})
 
         if self.enrollment_start and self.enrollment_start > self.date_start:
-            raise ValidationError({"enrollment": _("Enrollment start date must be before start date")})
+            raise ValidationError({"enrollment_start": _("Enrollment start date must be before start date")})
+
+        # Can't collide with another period in terms of date_start and date_end
+        other_periods = Period.objects.all()
+        if self.id:
+            if any(self & other for other in other_periods if self.id != other.id):
+                raise ValidationError({"date_start": _("The starting and ending dates you chose are colliding with another period")})
+        else:
+            if any(self & other for other in other_periods):
+                raise ValidationError({"date_start": _("The starting and ending dates you chose are colliding with another period")})
+
+    def __and__(self, other):
+        """
+        Returns True if the periods overlap, False otherwise
+        """
+        if self.date_start >= other.date_end or self.date_end <= other.date_start:
+            return False
+        return True
 
     def save(self, *args, **kwargs):
         self.clean()
@@ -425,9 +477,9 @@ class StudentCycle(models.Model):
         if now > period.date_end or now < period.enrollment_start:
             return False
 
-        # students with full schedule can only re-enroll between `enrollment_start` and `date_start`
+        # students with full schedule can only re-enroll between `enrollment_start` and `enrollment_end`
         if self.is_schedule_full(period):
-            if period.enrollment_start <= now < period.date_start:
+            if period.enrollment_start <= now < period.enrollment_end:
                 return True
         else:
             # students without full schedule can enroll anytime until `date_end`
