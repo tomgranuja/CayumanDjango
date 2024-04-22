@@ -207,22 +207,17 @@ class PeriodManager(models.Manager):
         now = datetime.now().date()
         try:
             val = self.get_queryset().get(enrollment_start__lte=now, date_end__gt=now)
-            print(f"Here at 1 {now}")
         except self.model.MultipleObjectsReturned:
             try:
                 val = self.get_queryset().get(date_start__lte=now, date_end__gt=now)
-                print(f"Here at 2 {now}")
             except self.model.DoesNotExist:
                 val = None
-                print(f"Here at 3 {now}")
         except self.model.DoesNotExist:
             val = None
-            print(f"Here at 4 {now}")
 
         if not val:
             # return latest in terms of id
             val = self.get_queryset().order_by("-id").first()
-            print(f"Here at 5 {now}")
 
         return val
 

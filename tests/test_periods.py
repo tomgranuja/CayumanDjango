@@ -74,8 +74,7 @@ def test_period_create_invalid_():
 
     # collision with another period
     date_start = date(2024, 5, 4)
-    period_1 = instantiate_period("Period 1", date_start=date_start)
-    print(period_1.date_end)
+    instantiate_period("Period 1", date_start=date_start)
 
     date_start = date(2024, 5, 18)
     with pytest.raises(ValidationError, match=r"colliding with another period"):
