@@ -69,8 +69,12 @@ admin.site.register(Schedule, ScheduleAdmin)
 
 
 class PeriodAdmin(admin.ModelAdmin):
-    list_display = ("id", "name", "enrollment_start", "date_start", "date_end")
+    list_display = ("id", "name", "enrollment_start", "enrollment_end", "date_start", "date_end", "active")
     list_per_page = 20
+
+    @admin.display(boolean=True, description=_("Active"))
+    def active(self, obj):
+        return obj == Period.objects.current()
 
 
 admin.site.register(Period, PeriodAdmin)
