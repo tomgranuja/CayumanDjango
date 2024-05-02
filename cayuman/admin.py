@@ -69,7 +69,7 @@ admin.site.register(Schedule, ScheduleAdmin)
 
 
 class PeriodAdmin(admin.ModelAdmin):
-    list_display = ("id", "name", "enrollment_start", "enrollment_end", "date_start", "date_end", "active")
+    list_display = ("id", "name", "preview_date", "enrollment_start", "enrollment_end", "date_start", "date_end", "active")
     list_per_page = 20
 
     @admin.display(boolean=True, description=_("Active"))
