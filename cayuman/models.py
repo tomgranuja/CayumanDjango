@@ -204,9 +204,13 @@ class PeriodManager(models.Manager):
         - That period where current_date is between date_start and date_end
         - Else, last one stored on DB
         """
+        from django.db.models import Q
+
         now = datetime.now().date()
         try:
-            val = self.get_queryset().get(enrollment_start__lte=now, date_end__gt=now)
+            date_condition = Q(enrollment_start__lte=now) | Q(preview_date__lte=now)
+            end_condition = Q(date_end__gt=now)
+            val = self.get_queryset().get(date_condition & end_condition)
         except self.model.MultipleObjectsReturned:
             try:
                 val = self.get_queryset().get(date_start__lte=now, date_end__gt=now)
@@ -227,6 +231,7 @@ class Period(models.Model):
 
     name = models.CharField(max_length=50, verbose_name=_("Name"))
     description = models.TextField(blank=True, verbose_name=_("Description"))
+    preview_date = models.DateField(blank=True, null=True, verbose_name=_("Preview date"))
     enrollment_start = models.DateField(blank=True, verbose_name=_("Enrollment start date"))
     enrollment_end = models.DateField(blank=True, null=True, verbose_name=_("Enrollment end date"))
     date_start = models.DateField(verbose_name=_("Start date"))
@@ -272,7 +277,14 @@ class Period(models.Model):
         return monday_count
 
     def clean(self):
+        if not self.preview_date:
+            self.preview_date = self.enrollment_start
+
+        if self.preview_date > self.enrollment_start:
+            raise ValidationError({"preview_date": _("Preview date must be before enrollment start date")})
+
         if not self.enrollment_end and self.enrollment_start:
+            # Fill enrollment_end automatically to enrollment_start + 5 days
             self.enrollment_end = self.enrollment_start + timezone.timedelta(days=5)
 
         if self.date_start >= self.date_end:
@@ -300,6 +312,15 @@ class Period(models.Model):
         if self.date_start >= other.date_end or self.date_end <= other.date_start:
             return False
         return True
+
+    def is_current(self):
+        return self == Period.objects.current()
+
+    def can_be_previewed(self):
+        now = datetime.now().date()
+        if self.preview_date:
+            return self.preview_date <= now and self.date_end >= now
+        return self.enrollment_start <= now and self.date_end >= now
 
     def save(self, *args, **kwargs):
         self.clean()
@@ -496,11 +517,11 @@ class StudentCycle(models.Model):
 @receiver(m2m_changed, sender=StudentCycle.workshop_periods.through)
 def student_cycle_workshop_period_changed(sender, instance, action, *args, **kwargs):
     """Validation procedure for the StudentCycle.workshop_periods m2m relation"""
-    if action == "pre_add":
-        instance.available_workshop_periods_by_schedule.cache_clear()
-        instance.workshop_periods_by_schedule.cache_clear()
-        instance.workshop_periods_by_period.cache_clear()
+    instance.available_workshop_periods_by_schedule.cache_clear()
+    instance.workshop_periods_by_schedule.cache_clear()
+    instance.workshop_periods_by_period.cache_clear()
 
+    if action == "pre_add":
         # Get all workshop periods for this student's cycle, including incoming ones
         wps = set()
         for wp in instance.workshop_periods.all():

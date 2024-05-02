@@ -68,8 +68,6 @@ def test_ok_workshop_period_with_teacher(create_teacher, create_workshops, creat
 
     # create workshop
     wp = WorkshopPeriod.objects.create(workshop=workshops[0], period=period, teacher=teacher)
-    wp.save()
-
     assert wp.teacher == teacher
 
 

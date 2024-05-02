@@ -105,12 +105,21 @@ class EnrollmentView(LoginRequiredMixin, View):
 def home(request):
     """Home view showing the list of all available workshops for the given logger in student"""
     # This view is only visible if GET force is defined or if the student is not enrolled yet for the current period
-    if not request.GET.get("force") and request.current_member.current_student_cycle.is_schedule_full(request.current_period):
-        return HttpResponseRedirect(reverse("weekly_schedule"))
+    wps = set()
+    current_student_cycle = request.current_member.current_student_cycle
+    if not request.current_period.can_be_previewed():
+        messages.warning(request, _("It is still not the time to visualize workshops for the upcoming period. Please return later."))
+    else:
+        if not request.GET.get("force") and (current_student_cycle and current_student_cycle.is_schedule_full(request.current_period)):
+            return HttpResponseRedirect(reverse("weekly_schedule"))
 
-    # Get all available workshop periods for this student and return
-    wps_by_schedule = request.current_member.current_student_cycle.available_workshop_periods_by_schedule()
-    wps = {wp for sublist in wps_by_schedule.values() for wp in sublist}
+        # Get all available workshop periods for this student and return
+        if current_student_cycle:
+            if current_student_cycle.is_enabled_to_enroll():
+                wps_by_schedule = current_student_cycle.available_workshop_periods_by_schedule()
+                wps = {wp for sublist in wps_by_schedule.values() for wp in sublist}
+        else:
+            messages.warning(request, _("Your student account is not associated with any Cycle. Please ask your teachers to fix this."))
     return render(request, "home.html", {"period": request.current_period, "member": request.current_member, "workshop_periods": wps})
 
 
@@ -137,6 +146,9 @@ def weekly_schedule(request):
 @period_required
 def workshop_period(request, workshop_period_id: int):
     """View detailed information about a workshop period"""
+    if not request.current_period.can_be_previewed():
+        raise Http404
+
     try:
         wp = WorkshopPeriod.objects.get(id=workshop_period_id, period=request.current_period)
     except WorkshopPeriod.DoesNotExist:
