@@ -110,14 +110,13 @@ def home(request):
     if not request.current_period.can_be_previewed():
         messages.warning(request, _("It is still not the time to visualize workshops for the upcoming period. Please return later."))
     else:
-        if not request.GET.get("force") and (current_student_cycle and current_student_cycle.is_schedule_full(request.current_period)):
+        if not request.GET.get("force") and (request.current_member.is_schedule_full(request.current_period)):
             return HttpResponseRedirect(reverse("weekly_schedule"))
 
         # Get all available workshop periods for this student and return
         if current_student_cycle:
-            if current_student_cycle.is_enabled_to_enroll():
-                wps_by_schedule = current_student_cycle.available_workshop_periods_by_schedule()
-                wps = {wp for sublist in wps_by_schedule.values() for wp in sublist}
+            wps_by_schedule = current_student_cycle.available_workshop_periods_by_schedule()
+            wps = {wp for sublist in wps_by_schedule.values() for wp in sublist}
         else:
             messages.warning(request, _("Your student account is not associated with any Cycle. Please ask your teachers to fix this."))
     return render(request, "home.html", {"period": request.current_period, "member": request.current_member, "workshop_periods": wps})

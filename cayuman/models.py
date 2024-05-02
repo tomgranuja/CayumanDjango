@@ -31,16 +31,30 @@ class Member(User):
     objects = UserManager()
 
     @property
-    def is_student(self):
+    def is_student(self) -> Group:
         return self.groups.filter(name=settings.STUDENTS_GROUP).exists()
 
     @property
-    def is_teacher(self):
+    def is_teacher(self) -> Group:
         return self.groups.filter(name=settings.TEACHERS_GROUP).exists()
 
     @property
     def current_student_cycle(self):
         return StudentCycle.objects.filter(student=self).order_by("-date_joined").first()
+
+    def is_enabled_to_enroll(self, *args, **kwargs) -> bool:
+        # Returns true or false depending on whether the user is enabled to enroll or not.
+        # If no student_cycle then it returns False
+        if self.current_student_cycle:
+            return self.current_student_cycle.is_enabled_to_enroll(*args, **kwargs)
+        return False
+
+    def is_schedule_full(self, *args, **kwargs) -> bool:
+        # Returns true or false depending on whether the user is schedule full or not.
+        # If no student_cycle then it returns False
+        if self.current_student_cycle:
+            return self.current_student_cycle.is_schedule_full(*args, **kwargs)
+        return False
 
     def __str__(self):
         return self.get_full_name()

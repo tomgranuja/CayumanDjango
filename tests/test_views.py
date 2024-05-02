@@ -160,7 +160,12 @@ def client_authenticated_teacher(client, create_teacher):
             200,
             None,
             ["Hello", "It is still not the time to visualize workshops for the upcoming period"],
-            ["Your student account is not associated with any Cycle", "These are the workshop options for", "Click here to enroll in your workshops"],
+            [
+                "Your student account is not associated with any Cycle",
+                "These are the workshop options for",
+                "Click here to enroll in your workshops",
+                "card-title mb-2 text-body-primar",
+            ],
         ),
         (
             reverse("home"),
@@ -172,7 +177,7 @@ def client_authenticated_teacher(client, create_teacher):
             200,
             None,
             ["Hello", "Your student account is not associated with any Cycle"],
-            ["These are the workshop options for", "Click here to enroll in your workshops"],
+            ["These are the workshop options for", "Click here to enroll in your workshops", "card-title mb-2 text-body-primar"],
         ),
         (
             reverse("home"),
@@ -183,7 +188,7 @@ def client_authenticated_teacher(client, create_teacher):
             False,
             200,
             None,
-            ["Hello", "These are the workshop options for"],
+            ["Hello", "These are the workshop options for", "card-title mb-2 text-body-primar"],
             ["Click here to enroll in your workshops", "Your student account is not associated with any Cycle"],
         ),
         (
@@ -195,7 +200,7 @@ def client_authenticated_teacher(client, create_teacher):
             False,
             200,
             None,
-            ["Hello", "These are the workshop options for", "Click here to enroll in your workshops"],
+            ["Hello", "These are the workshop options for", "Click here to enroll in your workshops", "card-title mb-2 text-body-primar"],
             ["Your student account is not associated with any Cycle"],
         ),
         (
