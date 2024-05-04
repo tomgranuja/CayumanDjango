@@ -254,7 +254,8 @@ class Period(models.Model):
     objects = PeriodManager()
 
     def __str__(self):
-        return _("%(name)s from %(d1)s to %(d2)s") % {"name": self.name, "d1": str(self.date_start), "d2": str(self.date_end)}
+        return self.human_name
+        # return _("%(name)s from %(d1)s to %(d2)s") % {"name": self.name, "d1": str(self.date_start), "d2": str(self.date_end)}
 
     def __repr__(self):
         return f"{self.__class__.__name__}(name='{self.name}', date_start='{self.date_start}', date_end='{self.date_end}')"

@@ -20,6 +20,69 @@ from .models import WorkshopPeriod
 admin.site.site_header = "Cayuman"
 
 
+# actions
+def create_export_to_csv_action(fields):
+    """Factory function to create an export_to_csv admin action for specified fields."""
+    import csv
+    import re
+    from django.http import HttpResponse
+    from django.utils.html import strip_tags
+
+    def export_to_csv(modeladmin, request, queryset):
+        meta = modeladmin.model._meta
+        response = HttpResponse(content_type="text/csv")
+        response["Content-Disposition"] = "attachment; filename={}.csv".format(meta)
+        writer = csv.writer(response)
+
+        # Fetch headers: use verbose_name from model field or short_description from admin methods
+        headers = []
+        for field in fields:
+            try:
+                if hasattr(modeladmin, field):
+                    field_obj = getattr(modeladmin, field)
+                    if callable(field_obj) and hasattr(field_obj, "short_description"):
+                        headers.append(getattr(field_obj, "short_description"))
+                    else:
+                        headers.append(modeladmin.model._meta.get_field(field).verbose_name)
+                else:
+                    # This is used when field is neither a method nor directly available as a field
+                    headers.append(modeladmin.model._meta.get_field(field).verbose_name)
+            except Exception:
+                # Fallback to field name if it's neither in model fields nor an annotated method
+                headers.append(field)
+
+        # Write a first row with header information
+        writer.writerow(headers)
+
+        for obj in queryset:
+            row = []
+            for field in fields:
+                field_value = getattr(modeladmin, field, None)
+                if callable(field_value):
+                    value = field_value(obj)
+                else:
+                    value = getattr(obj, field, None)
+                    if callable(value):
+                        value = value()
+
+                # Handle case where value might be HTML
+                if isinstance(value, str) and ("<" in value and ">" in value):
+                    # DIRTY HACK: turn </li><li> to ,
+                    if re.search(r"\s*</li>\s*<li>\s*", value):
+                        value = re.sub(r"\s*</li>\s*<li>\s*", ", ", value)
+                    value = strip_tags(value)  # Strips HTML to plain text
+                elif isinstance(value, bool):
+                    value = 1 if value else 0
+
+                row.append(value)
+            writer.writerow(row)
+
+        return response
+
+    export_to_csv.short_description = _("Export Selected to CSV")
+    return export_to_csv
+
+
 class MemberAdmin(UserAdmin):
     ordering = ("-date_joined",)
     list_display = ("id", "name", "cycle", "date_joined", "is_student", "is_teacher", "is_staff", "is_active")
@@ -74,7 +137,7 @@ class PeriodAdmin(admin.ModelAdmin):
 
     @admin.display(boolean=True, description=_("Active"))
     def active(self, obj):
-        return obj == Period.objects.current()
+        return obj.is_current()
 
 
 admin.site.register(Period, PeriodAdmin)
@@ -89,14 +152,37 @@ admin.site.register(Workshop, WorkshopAdmin)
 
 
 class WorkshopPeriodAdmin(admin.ModelAdmin):
-    list_display = ("id", "workshop", "teacher", "period", "cycles_list", "schedules_list", "num_students", "max_students")
+    list_display = ("id", "workshop", "teacher", "period", "cycles_list", "schedules_list", "num_students", "max_students", "active")
     list_per_page = 20
     filter_horizontal = ("cycles", "schedules")
     list_filter = [
+        ("period", admin.RelatedOnlyFieldListFilter),
         ("teacher", admin.RelatedOnlyFieldListFilter),
     ]
 
     form = AdminWorkshopPeriodForm
+    actions = [
+        create_export_to_csv_action(["workshop", "teacher", "period", "cycles_list", "schedules_list", "num_students", "max_students", "active"])
+    ]
+
+    def changelist_view(self, request, extra_context=None):
+        # Check if the URL already has any filters set, if not set period to the current one
+        from django.urls import reverse_lazy as reverse
+        from django.http import HttpResponseRedirect
+
+        if not request.GET and Period.objects.current():
+            # Construct the URL for the filtered view
+            current_period_id = Period.objects.current().id
+            base_url = reverse("admin:%s_%s_changelist" % (self.model._meta.app_label, self.model._meta.model_name))
+            query_string = f"period__id__exact={current_period_id}"
+            return HttpResponseRedirect(f"{base_url}?{query_string}")
+
+        # If the parameter is already there or there is no current period, just render the default view
+        return super().changelist_view(request, extra_context)
+
+    @admin.display(boolean=True, description=_("Active"))
+    def active(self, obj):
+        return obj.period.is_current()
 
     @admin.display(description=_("Cycles"))
     def cycles_list(self, obj):
