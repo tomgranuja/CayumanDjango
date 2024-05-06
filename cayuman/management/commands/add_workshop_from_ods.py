@@ -17,10 +17,13 @@ from cayuman.models import WorkshopPeriod
 
 DAYS_LIST = [t[0] for t in Schedule.CHOICES]
 TIMES_LIST = [("10:15", "11:15"), ("12:30", "13:30")]
-PERIOD = 1
-DATE_START = "2024-04-01"
-DATE_END = "2024-05-10"
-ENROLLMENT_START = "2024-03-01"
+
+# Not used, period is created manually.
+# Period number is readed from second command line argument.
+# PERIOD = 1
+# DATE_START = "2024-04-01"
+# DATE_END = "2024-05-10"
+# ENROLLMENT_START = "2024-03-01"
 
 
 teacher_username = {
@@ -30,14 +33,14 @@ teacher_username = {
     "Francisca U.": "18059647-k",
     "Grace": "17838740-5",
     "Carla": "16440581-8",
-    "Cristina": "26327523-6",
+    "Cristina": "16994402-4",
     "Francisca G.": "20638262-7",
-    "Javiera": "16788558-4",
+    "Javiera": "17788558-4",
     "Paulina": "15696924-9",
     "Salvador": "15971521-3",
 }
 
-cycle_pairs = {"ulmos": ["Ulmos"], "canelos y manios": ["Canelos", "Mañios"], "coihues y avellanos": ["Coigües", "Avellanos"]}
+cycle_pairs = {"ulmos": ["Ulmos"], "canelos y manios": ["Canelos", "Mañíos"], "coihues y avellanos": ["Coigües", "Avellanos"]}
 
 
 # Convert ods table to dataframe and fix time coordinates
@@ -71,12 +74,16 @@ def row_coords(row):
 
 
 def coord_to_dict(coord):
-    h_idx, d_idx = coord
+    t_idx, d_idx = coord
     from_iso = datetime.time.fromisoformat
+    time_start = from_iso(TIMES_LIST[t_idx][0])
+    time_end = from_iso(TIMES_LIST[t_idx][1])
     return {
         "day": DAYS_LIST[d_idx],
-        "time_start": from_iso(TIMES_LIST[h_idx][0]),
-        "time_end": from_iso(TIMES_LIST[h_idx][1]),
+        "time_start__hour": time_start.hour,
+        "time_start__minute": time_start.minute,
+        "time_end__hour": time_end.hour,
+        "time_end__minute": time_end.minute,
     }
 
 
@@ -85,32 +92,28 @@ class Command(BaseCommand):
 
     def add_arguments(self, parser):
         parser.add_argument("filename")
+        parser.add_argument("period_n", type=int)
 
     def handle(self, *args, **options):
         filename = options["filename"]
+        period_n = options["period_n"]
         try:
             t = ws_table(filename, drop_c=True, nan_names="Not defined")
         except FileNotFoundError:
             raise CommandError('File "%s" does not exist' % filename)
 
         self.stdout.write(self.style.SUCCESS(f"Read {len(t)} entries"))
-        t = t[t.period == PERIOD]
-        self.stdout.write(self.style.SUCCESS(f"Filtering to {len(t)} entries of period {PERIOD}."))
+        t = t[t.period == period_n]
+        self.stdout.write(self.style.SUCCESS(f"Filtering to {len(t)} entries of period {period_n}."))
 
         teachers_group, _ = Group.objects.get_or_create(name=settings.TEACHERS_GROUP)
 
         try:
-            period = Period.objects.get(name=f"Periodo {PERIOD}")
-            print(f"Selecting preexisting period {period}.")
+            period = Period.objects.get(name=f"Periodo {period_n}")
+            print(f"Selecting period {period}.")
         except Period.DoesNotExist:
-            period = Period.objects.create(
-                name=f"Periodo {PERIOD}",
-                enrollment_start=datetime.date.fromisoformat(ENROLLMENT_START),
-                date_start=datetime.date.fromisoformat(DATE_START),
-                date_end=datetime.date.fromisoformat(DATE_END),
-            )
-            print(f"Period {period} created.")
-        print()
+            message = f"Period {period_n} doesn't exist, " "stopping without touching database."
+            raise CommandError(message)
 
         for i, row in t.iloc[:].iterrows():
             print(f"Adding entry at index {i}, {row['name']}...")
@@ -131,11 +134,12 @@ class Command(BaseCommand):
                 defaults["description"] = row["description"]
             if pd.notna(row["full_name"]):
                 defaults["full_name"] = row["full_name"]
-            ws, created = Workshop.objects.update_or_create(name=row["name"], defaults=defaults)
+            ws, created = Workshop.objects.update_or_create(name=row["name"].strip(), defaults=defaults)
             if not created:
                 print(f"    {repr(ws)} updated.")
 
             # Schedules
+
             schedules = [Schedule.objects.get_or_create(**coord_to_dict(coord)) for coord in row.coords]
             for sc, created in schedules:
                 if created:
