@@ -80,8 +80,11 @@ class EnrollmentView(LoginRequiredMixin, View):
             # Wrap the operations in a transaction.atomic block to rollback db operation if it fails due to additional validation
             try:
                 with transaction.atomic():
-                    # Clear existing workshop periods
-                    student_cycle.workshop_periods.clear()
+                    # Get workshop_periods only in current period
+                    workshop_periods_to_remove = student_cycle.workshop_periods.filter(period=request.current_period)
+
+                    # Remove these workshop periods from the student_cycle
+                    student_cycle.workshop_periods.remove(*workshop_periods_to_remove)
 
                     # Attempt to associate new workshop periods with student cycle
                     student_cycle.workshop_periods.add(*workshop_periods)
@@ -128,7 +131,7 @@ def home(request):
 def weekly_schedule(request):
     """Show users their weekly schedule with enrolled workshops"""
     schedules = Schedule.objects.ordered()
-    this_user_wps = request.current_member.current_student_cycle.workshop_periods_by_schedule()
+    this_user_wps = request.current_member.current_student_cycle.workshop_periods_by_schedule(period=request.current_period)
     data = {sched: this_user_wps.get(sched) for sched in schedules}
     days = [t for t in Schedule.CHOICES]
     raw_blocks = [(block.time_start, block.time_end) for block in schedules]

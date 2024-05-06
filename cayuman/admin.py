@@ -154,7 +154,7 @@ admin.site.register(Workshop, WorkshopAdmin)
 
 
 class WorkshopPeriodAdmin(admin.ModelAdmin):
-    list_display = ("id", "workshop", "teacher", "period", "cycles_list", "schedules_list", "num_students", "max_students", "active")
+    list_display = ("id", "workshop", "teacher", "period", "cycles_list", "schedules_list", "num_students", "max_students", "external_link", "active")
     list_per_page = 20
     filter_horizontal = ("cycles", "schedules")
     list_filter = [
@@ -185,6 +185,10 @@ class WorkshopPeriodAdmin(admin.ModelAdmin):
     @admin.display(boolean=True, description=_("Active"))
     def active(self, obj):
         return obj.period.is_current()
+
+    @admin.display(description=_("Link"))
+    def external_link(self, obj):
+        return format_html(f'<a href="{obj.get_absolute_url()}" target="_blank">{_("View on site")}</a>')
 
     @admin.display(description=_("Cycles"))
     def cycles_list(self, obj):
