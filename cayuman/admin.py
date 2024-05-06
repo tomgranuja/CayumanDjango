@@ -153,6 +153,21 @@ class WorkshopAdmin(admin.ModelAdmin):
 admin.site.register(Workshop, WorkshopAdmin)
 
 
+class WorkshopPeriodCyclesFilter(admin.SimpleListFilter):
+    """Filter workshop periods by cycle"""
+
+    title = _("Cycle")
+    parameter_name = "cycle"
+
+    def lookups(self, request, model_admin):
+        return list(Cycle.objects.values_list("id", "name"))
+
+    def queryset(self, request, queryset):
+        if self.value():
+            return queryset.filter(cycles__id=self.value())
+        return queryset
+
+
 class WorkshopPeriodAdmin(admin.ModelAdmin):
     list_display = ("id", "workshop", "teacher", "period", "cycles_list", "schedules_list", "num_students", "max_students", "external_link", "active")
     list_per_page = 20
@@ -160,6 +175,7 @@ class WorkshopPeriodAdmin(admin.ModelAdmin):
     list_filter = [
         ("period", admin.RelatedOnlyFieldListFilter),
         ("teacher", admin.RelatedOnlyFieldListFilter),
+        WorkshopPeriodCyclesFilter,
     ]
 
     form = AdminWorkshopPeriodForm

@@ -134,7 +134,7 @@ class Command(BaseCommand):
                 defaults["description"] = row["description"]
             if pd.notna(row["full_name"]):
                 defaults["full_name"] = row["full_name"]
-            ws, created = Workshop.objects.update_or_create(name=row["name"], defaults=defaults)
+            ws, created = Workshop.objects.update_or_create(name=row["name"].strip(), defaults=defaults)
             if not created:
                 print(f"    {repr(ws)} updated.")
 

@@ -517,7 +517,7 @@ class StudentCycle(models.Model):
 
         # students with full schedule can only re-enroll between `enrollment_start` and `enrollment_end`
         if self.is_schedule_full(period):
-            if period.enrollment_start <= now < period.enrollment_end:
+            if period.enrollment_start <= now <= period.enrollment_end:
                 return True
         else:
             # students without full schedule can enroll anytime until `date_end`
