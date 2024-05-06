@@ -1,0 +1,58 @@
+{% extends "admin/base_site.html" %}
+{% load i18n admin_urls %}
+
+{% block breadcrumbs %}
+<div class="breadcrumbs">
+<a href="{% url 'admin:index' %}">{% translate 'Home' %}</a>
+&rsaquo; <a href="{% url 'admin:app_list' app_label=opts.app_label %}">{{ opts.app_config.verbose_name }}</a>
+&rsaquo; <a href="{% url opts|admin_urlname:'changelist' %}">{{ module_name }}</a>
+&rsaquo; <a href="{% url opts|admin_urlname:'change' object.pk|admin_urlquote %}">{{ object|truncatewords:"18" }}</a>
+&rsaquo; {% translate 'Workshop Periods' %}
+</div>
+{% endblock %}
+
+{% block content %}
+<div id="content-main">
+<div id="change-history" class="module">
+
+{% if workshop_periods_list %}
+    <table>
+        <thead>
+        <tr>
+            <th scope="col">{% translate 'Workshop' %}</th>
+            <th scope="col">{% translate 'Teacher' %}</th>
+            <th scope="col">{% translate 'Schedules' %}</th>
+        </tr>
+        </thead>
+        <tbody>
+        {% for wp in workshop_periods_list %}
+        <tr>
+            <td>{{ wp.workshop.name }}</td>
+            <td>{{wp.teacher}}</td>
+            <td>
+                {{wp.schedules.all | join:", "}}
+            </td>
+        </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+    <p class="paginator">
+      {% if pagination_required %}
+        {% for i in page_range %}
+          {% if i == workshop_periods_list.paginator.ELLIPSIS %}
+            {{ workshop_periods_list.paginator.ELLIPSIS }}
+          {% elif i == workshop_periods_list.number %}
+            <span class="this-page">{{ i }}</span>
+          {% else %}
+            <a href="?{{ page_var }}={{ i }}" {% if i == workshop_periods_list.paginator.num_pages %} class="end" {% endif %}>{{ i }}</a>
+          {% endif %}
+        {% endfor %}
+      {% endif %}
+      {{ workshop_periods_list.paginator.count }} {% blocktranslate count counter=workshop_periods_list.paginator.count %}entry{% plural %}entries{% endblocktranslate %}
+    </p>
+{% else %}
+    <p>{% translate 'There are no workshop periods associated with this student cycle for ' %} {{period}}</period></p>
+{% endif %}
+</div>
+</div>
+{% endblock %}

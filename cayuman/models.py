@@ -1,6 +1,5 @@
 from datetime import datetime
 from functools import cached_property
-from functools import lru_cache
 from typing import Dict
 from typing import Optional
 from typing import Set
@@ -211,7 +210,6 @@ class Schedule(models.Model):
 
 
 class PeriodManager(models.Manager):
-    @lru_cache(maxsize=None)
     def current(self):
         """
         Current period is defined as this:
@@ -340,7 +338,6 @@ class Period(models.Model):
     def save(self, *args, **kwargs):
         self.clean()
         super().save(*args, **kwargs)
-        Period.objects.current.cache_clear()
 
     class Meta:
         verbose_name = _("Period")
@@ -362,6 +359,11 @@ class WorkshopPeriod(models.Model):
     def __repr__(self):
         cycles_list = ", ".join(c.name for c in self.cycles.all())
         return f"{self.__class__.__name__}(workshop='{self.workshop.name}', period='{self.period}', teacher='{self.teacher}', cycles='{cycles_list}')"
+
+    def get_absolute_url(self):
+        from django.urls import reverse
+
+        return reverse("workshop_period", kwargs={"workshop_period_id": self.id})
 
     def clean(self):
         if not self.teacher.is_teacher:
@@ -438,7 +440,7 @@ class StudentCycle(models.Model):
         if not self.student.is_student:
             raise ValidationError({"student": _("Student must belong to the `%(g)s` group") % {"g": settings.STUDENTS_GROUP}})
 
-    @lru_cache(maxsize=None)
+    # @lru_cache(maxsize=None)
     def available_workshop_periods_by_schedule(self, period: Optional[Period] = None) -> Dict[Schedule, WorkshopPeriod]:
         """Returns available workshop periods for a student cycle"""
         if period is None:
@@ -459,7 +461,7 @@ class StudentCycle(models.Model):
 
         return wps_by_schedule
 
-    @lru_cache(maxsize=None)
+    # @lru_cache(maxsize=None)
     def workshop_periods_by_schedule(self, schedule: Optional[Schedule] = None, period: Optional[Period] = None) -> Dict[Schedule, "WorkshopPeriod"]:
         """Return this student's workshop_periods given a schedule, or all of them if no schedule given"""
         output = dict()
@@ -471,7 +473,7 @@ class StudentCycle(models.Model):
                     output[sched] = wp
         return output
 
-    @lru_cache(maxsize=None)
+    # @lru_cache(maxsize=None)
     def workshop_periods_by_period(self, period: Optional[Period] = None) -> Set:
         """Return this student's workshop_periods given a period, or all of them if no period given"""
         if period is None:
@@ -481,6 +483,11 @@ class StudentCycle(models.Model):
 
         wps_by_schedule = self.workshop_periods_by_schedule(period=period)
         return {wp for wp in wps_by_schedule.values()}
+
+    def is_current(self):
+        if self.student.current_student_cycle:
+            return self.id == self.student.current_student_cycle.id
+        return False
 
     def is_schedule_full(self, period: Optional[Period] = None) -> bool:
         """Returns True or False depending if current student has a full schedule"""
@@ -532,9 +539,9 @@ class StudentCycle(models.Model):
 @receiver(m2m_changed, sender=StudentCycle.workshop_periods.through)
 def student_cycle_workshop_period_changed(sender, instance, action, *args, **kwargs):
     """Validation procedure for the StudentCycle.workshop_periods m2m relation"""
-    instance.available_workshop_periods_by_schedule.cache_clear()
-    instance.workshop_periods_by_schedule.cache_clear()
-    instance.workshop_periods_by_period.cache_clear()
+    # instance.available_workshop_periods_by_schedule.cache_clear()
+    # instance.workshop_periods_by_schedule.cache_clear()
+    # instance.workshop_periods_by_period.cache_clear()
 
     if action == "pre_add":
         # Get all workshop periods for this student's cycle, including incoming ones

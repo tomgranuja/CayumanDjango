@@ -1,8 +1,7 @@
 {% load i18n admin_urls %}
 {% block object-tools-items %}
   <li>
-    {% url opts|admin_urlname:'students' original.pk|admin_urlquote as students_url %}
-    <a href="{% add_preserved_filters students_url %}" class="historylink">{% translate "Students" %}</a>
+    <a href="{% url 'admin:cayuman_workshopperiod_student_cycles' original.pk %}" class="historylink">{% translate "Student Cycles" %}</a>
   </li>
   <li>
     {% url opts|admin_urlname:'history' original.pk|admin_urlquote as history_url %}

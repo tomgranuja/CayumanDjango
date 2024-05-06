@@ -30,7 +30,6 @@ def mock_date(given_date):
         @functools.wraps(test_func)
         def wrapper(*args, **kwargs):
             # Clear the cache before running the test
-            Period.objects.current.cache_clear()
             with patch("cayuman.models.datetime") as mock_datetime:
                 # Set the mocked datetime
                 mock_datetime.now.return_value = datetime(given_date.year, given_date.month, given_date.day)
@@ -437,7 +436,6 @@ def test_url(
     if assign_student_cycle_workshop_period:
         student_cycle.workshop_periods.add(workshop_period)
 
-    Period.objects.current.cache_clear()
     with patch("cayuman.models.datetime") as mock_datetime:
         # Set the mocked datetime
         mock_datetime.now.return_value = datetime(current_date.year, current_date.month, current_date.day)

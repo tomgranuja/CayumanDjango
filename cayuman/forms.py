@@ -98,10 +98,10 @@ class AdminStudentCycleForm(ModelForm):
         instance = super().save(commit=commit)
 
         # Clear the cache for the relevant methods
-        if commit:
-            instance.available_workshop_periods_by_schedule.cache_clear()
-            instance.workshop_periods_by_schedule.cache_clear()
-            instance.workshop_periods_by_period.cache_clear()
+        # if commit:
+        #    instance.available_workshop_periods_by_schedule.cache_clear()
+        #    instance.workshop_periods_by_schedule.cache_clear()
+        #    instance.workshop_periods_by_period.cache_clear()
 
         return instance
 
@@ -110,17 +110,20 @@ class AdminStudentCycleForm(ModelForm):
         # this breaks DRY principle with respect to m2m_changed signal handler for model StudentCycle
         # but it's necessary so validation works ok in django admin as well as directly using the model
         # {'student': Member(...), 'cycle': <Cycle: ...>, 'workshop_periods': <QuerySet [<WorkshopPeriod: ...>, <WorkshopPeriod: ...>]>}
+        student = self.cleaned_data.get("student") or self.instance.student
+        cycle = self.cleaned_data.get("cycle") or self.instance.cycle
+
         for wp in self.cleaned_data["workshop_periods"]:
             # Count students in this cycle without counting current student
-            curr_count = wp.studentcycle_set.exclude(student__id=self.cleaned_data["student"].id).count()
+            curr_count = wp.studentcycle_set.exclude(student__id=student.id).count()
             # curr_count = wp.studentcycle_set.filter(student__id__ne=self.cleaned_data['student'].id).count()
             if wp.max_students > 0 and wp.max_students <= curr_count:
                 raise ValidationError(_("Workshop period `%s` has reached its quota of students") % (wp.workshop.name))
 
-            if self.cleaned_data["cycle"] not in wp.cycles.all():
+            if cycle not in wp.cycles.all():
                 raise ValidationError(
                     _("Student `%(st)s` cannot be associated with workshop period `%(wp)s` because they belong to the same cycle.")
-                    % {"st": self.cleaned_data["student"].get_full_name(), "wp": wp.workshop.name}
+                    % {"st": student.get_full_name(), "wp": wp.workshop.name}
                 )
 
             for wp_2 in self.cleaned_data["workshop_periods"]:
