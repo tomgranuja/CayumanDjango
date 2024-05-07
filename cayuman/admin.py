@@ -341,9 +341,9 @@ class StudentCycleAdmin(admin.ModelAdmin):
     @admin.display(description=_("Workshops %s") % (Period.objects.current()))
     def this_period_workshops_html(self, obj):
         """Display function to use in Django admin list for this model"""
-        wps = obj.workshop_periods_by_period()
+        wps = obj.workshop_periods_by_period(Period.objects.current())
         if wps:
-            if obj.is_schedule_full():
+            if obj.is_schedule_full(Period.objects.current()):
                 text = _("Full schedule")
             else:
                 text = _("Partial schedule")
@@ -355,7 +355,7 @@ class StudentCycleAdmin(admin.ModelAdmin):
     @admin.display(description=_("Workshops %s") % (Period.objects.current()))
     def this_period_workshops_list(self, obj):
         """Display function to use when exporting these entries to CSV"""
-        wps = obj.workshop_periods_by_period()
+        wps = obj.workshop_periods_by_period(Period.objects.current())
         if wps:
             return ", ".join([wp.workshop.name for wp in wps])
         else:

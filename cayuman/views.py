@@ -40,15 +40,15 @@ class EnrollmentView(LoginRequiredMixin, View):
         student_cycle = request.current_member.current_student_cycle
 
         # check if student is enabled to enroll, otherwise redirect to weekly-schedule with a warning message
-        if not student_cycle.is_enabled_to_enroll():
+        if not student_cycle.is_enabled_to_enroll(request.current_period):
             messages.warning(request, _("Online enrollment is no longer enabled. If you need to change your workshops please contact your teachers."))
             return HttpResponseRedirect(reverse("weekly_schedule"))
 
-        if not request.GET.get("force") and student_cycle.is_schedule_full():
+        if not request.GET.get("force") and student_cycle.is_schedule_full(request.current_period):
             return HttpResponseRedirect(reverse("weekly_schedule"))
 
         # current data
-        wps_by_schedule = student_cycle.available_workshop_periods_by_schedule()
+        wps_by_schedule = student_cycle.available_workshop_periods_by_schedule(request.current_period)
         data = {f"schedule_{sched.id}": wp.id for sched, wp in student_cycle.workshop_periods_by_schedule(period=request.current_period).items()}
         form = WorkshopSelectionForm(initial=data, schedules_with_workshops=wps_by_schedule, member=request.current_member)
 
@@ -59,12 +59,12 @@ class EnrollmentView(LoginRequiredMixin, View):
         student_cycle = request.current_member.current_student_cycle
 
         # check if student is enabled to enroll, otherwise redirect to weekly-schedule with a warning message
-        if not student_cycle.is_enabled_to_enroll():
+        if not student_cycle.is_enabled_to_enroll(request.current_period):
             messages.warning(request, _("Online enrollment is no longer enabled. If you need to change your workshops please contact your teachers."))
             return HttpResponseRedirect(reverse("weekly_schedule"))
 
         # Pass schedules_with_workshops when instantiating the form for POST
-        wps_by_schedule = student_cycle.available_workshop_periods_by_schedule()
+        wps_by_schedule = student_cycle.available_workshop_periods_by_schedule(request.current_period)
         form = WorkshopSelectionForm(request.POST, schedules_with_workshops=wps_by_schedule, member=request.current_member)
         if form.is_valid():
             # Form is valid, proceed with saving data or other post-submission processes
@@ -88,6 +88,13 @@ class EnrollmentView(LoginRequiredMixin, View):
 
                     # Attempt to associate new workshop periods with student cycle
                     student_cycle.workshop_periods.add(*workshop_periods)
+
+                    # Clear caches
+                    # student_cycle.available_workshop_periods_by_schedule.cache_clear()
+                    student_cycle.workshop_periods_by_schedule.cache_clear()
+                    student_cycle.is_schedule_full.cache_clear()
+                    student_cycle.workshop_periods_by_period.cache_clear()
+                    student_cycle.is_enabled_to_enroll.cache_clear()
             except ValidationError as e:
                 # If a ValidationError occurs, the transaction will be rolled back automatically
                 form.add_error(None, e)
@@ -118,7 +125,7 @@ def home(request):
 
         # Get all available workshop periods for this student and return
         if current_student_cycle:
-            wps_by_schedule = current_student_cycle.available_workshop_periods_by_schedule()
+            wps_by_schedule = current_student_cycle.available_workshop_periods_by_schedule(request.current_period)
             wps = {wp for sublist in wps_by_schedule.values() for wp in sublist}
         else:
             messages.warning(request, _("Your student account is not associated with any Cycle. Please ask your teachers to fix this."))
