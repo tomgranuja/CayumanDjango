@@ -29,7 +29,7 @@
         {% endfor %}
       {% endif %}
 
-      {% if member.is_enabled_to_enroll() %}
+      {% if member.is_enabled_to_enroll(period) %}
       <div class="mb-3">
         <a href="{{ url('enrollment') }}?force=true" class="btn btn-success">{% trans %}Click here to enroll in your workshops{% endtrans %}</a>
       </div>
@@ -51,7 +51,7 @@
       {% endfor %}
     </div>
 
-    {% if member.is_enabled_to_enroll() %}
+    {% if member.is_enabled_to_enroll(period) %}
     <div class="mt-3 mb-3">
         <a href="{{ url('enrollment') }}?force=true" class="btn btn-success">{% trans %}Click here to enroll in your workshops{% endtrans %}</a>
     </div>

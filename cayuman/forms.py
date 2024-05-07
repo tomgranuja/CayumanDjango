@@ -98,10 +98,12 @@ class AdminStudentCycleForm(ModelForm):
         instance = super().save(commit=commit)
 
         # Clear the cache for the relevant methods
-        # if commit:
-        #    instance.available_workshop_periods_by_schedule.cache_clear()
-        #    instance.workshop_periods_by_schedule.cache_clear()
-        #    instance.workshop_periods_by_period.cache_clear()
+        if commit:
+            # instance.available_workshop_periods_by_schedule.cache_clear()
+            instance.workshop_periods_by_schedule.cache_clear()
+            instance.is_schedule_full.cache_clear()
+            instance.workshop_periods_by_period.cache_clear()
+            instance.is_enabled_to_enroll.cache_clear()
 
         return instance
 
@@ -205,7 +207,7 @@ class WorkshopSelectionForm(forms.Form):
         cleaned_data = super().clean()
 
         # get available workshops for this user
-        schedules = self.member.current_student_cycle.available_workshop_periods_by_schedule()
+        schedules = self.member.current_student_cycle.available_workshop_periods_by_schedule(self.period)
         schedules_by_wp_id = dict()
 
         # walk through all expected schedules

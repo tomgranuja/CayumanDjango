@@ -1,10 +1,10 @@
 from datetime import datetime
+from datetime import time
 
 import pytest
 from django.conf import settings
 from django.contrib.auth.models import Group
 from django.core.exceptions import ValidationError
-from django.utils import timezone
 
 from cayuman.models import Member
 from cayuman.models import Period
@@ -98,8 +98,8 @@ def test_workshop_period_non_overlapping(create_workshops, create_teacher, creat
     wp2 = WorkshopPeriod.objects.create(workshop=workshops[1], period=period, teacher=teacher)
 
     # create schedule for wp1
-    time_start = timezone.now()
-    time_end = timezone.now() + timezone.timedelta(hours=2)
+    time_start = time(10, 15)
+    time_end = time(11, 15)
     schedule_1 = Schedule.objects.create(day="monday", time_start=time_start, time_end=time_end)
     schedule_2 = Schedule.objects.create(day="tuesday", time_start=time_start, time_end=time_end)
     wp1.schedules.add(schedule_1, schedule_2)
@@ -125,8 +125,8 @@ def test_workshop_period_overlapping(create_workshops, create_teacher, create_pe
     wp2 = WorkshopPeriod.objects.create(workshop=workshops[1], period=period, teacher=teacher)
 
     # create schedule for wp1
-    time_start = timezone.now()
-    time_end = timezone.now() + timezone.timedelta(hours=2)
+    time_start = time(10, 15)
+    time_end = time(11, 15)
     schedule_1 = Schedule.objects.create(day="monday", time_start=time_start, time_end=time_end)
     schedule_2 = Schedule.objects.create(day="tuesday", time_start=time_start, time_end=time_end)
     wp1.schedules.add(schedule_1, schedule_2)

@@ -1,11 +1,11 @@
 from datetime import datetime
+from datetime import time
 from unittest.mock import patch
 
 import pytest
 from django.conf import settings
 from django.contrib.auth.models import Group
 from django.core.exceptions import ValidationError
-from django.utils import timezone
 
 from cayuman.models import Cycle
 from cayuman.models import Member
@@ -85,8 +85,8 @@ def test_student_cycle_ok(create_student, create_teacher, create_workshops, crea
     wp2.cycles.add(cycles[0])
 
     # create schedule for wp1
-    time_start = timezone.now()
-    time_end = timezone.now() + timezone.timedelta(hours=2)
+    time_start = time(10, 15)
+    time_end = time(11, 15)
     schedule_1 = Schedule.objects.create(day="monday", time_start=time_start, time_end=time_end)
     schedule_2 = Schedule.objects.create(day="tuesday", time_start=time_start, time_end=time_end)
     wp1.schedules.add(schedule_1, schedule_2)
@@ -95,7 +95,7 @@ def test_student_cycle_ok(create_student, create_teacher, create_workshops, crea
     schedule_3 = Schedule.objects.create(day="wednesday", time_start=time_start, time_end=time_end)
     wp2.schedules.add(schedule_3)
 
-    sc = StudentCycle.objects.create(student=student, cycle=cycles[0], date_joined=timezone.now())  # coincidence in cycles[0]
+    sc = StudentCycle.objects.create(student=student, cycle=cycles[0], date_joined=time(10, 15))  # coincidence in cycles[0]
 
     # assign workshop periods to student cycle
     sc.workshop_periods.add(wp1, wp2)
@@ -124,8 +124,8 @@ def test_student_cycle_fail_no_cycle_coincidence(create_student, create_teacher,
     wp2.cycles.add(cycles[1])
 
     # create schedule for wp1
-    time_start = timezone.now()
-    time_end = timezone.now() + timezone.timedelta(hours=2)
+    time_start = time(10, 15)
+    time_end = time(11, 15)
     schedule_1 = Schedule.objects.create(day="monday", time_start=time_start, time_end=time_end)
     schedule_2 = Schedule.objects.create(day="tuesday", time_start=time_start, time_end=time_end)
     wp1.schedules.add(schedule_1, schedule_2)
@@ -134,7 +134,7 @@ def test_student_cycle_fail_no_cycle_coincidence(create_student, create_teacher,
     schedule_3 = Schedule.objects.create(day="wednesday", time_start=time_start, time_end=time_end)
     wp2.schedules.add(schedule_3)
 
-    sc = StudentCycle.objects.create(student=student, cycle=cycles[2], date_joined=timezone.now())  # no cycle coincidence
+    sc = StudentCycle.objects.create(student=student, cycle=cycles[2], date_joined=time(10, 15))  # no cycle coincidence
 
     # assign workshop periods to student cycle
     with pytest.raises(ValidationError, match=r"cannot be associated with workshop period"):
@@ -159,8 +159,8 @@ def test_student_cycle_fail_schedule_collision(create_student, create_teacher, c
     wp2.cycles.add(cycles[1])
 
     # create schedule for wp1
-    time_start = timezone.now()
-    time_end = timezone.now() + timezone.timedelta(hours=2)
+    time_start = time(10, 15)
+    time_end = time(11, 15)
     schedule_1 = Schedule.objects.create(day="monday", time_start=time_start, time_end=time_end)
     schedule_2 = Schedule.objects.create(day="tuesday", time_start=time_start, time_end=time_end)
     wp1.schedules.add(schedule_1, schedule_2)
@@ -168,7 +168,7 @@ def test_student_cycle_fail_schedule_collision(create_student, create_teacher, c
     # create schedule for wp2
     wp2.schedules.add(schedule_1)  # collision with schedule from wp1
 
-    sc = StudentCycle.objects.create(student=student, cycle=cycles[0], date_joined=timezone.now())  # no cycle coincidence
+    sc = StudentCycle.objects.create(student=student, cycle=cycles[0], date_joined=time(10, 15))  # no cycle coincidence
 
     # assign workshop periods to student cycle
     with pytest.raises(ValidationError, match=r"have colliding schedules"):
@@ -195,8 +195,8 @@ def test_student_cycle_fail_students_quota(create_teacher, create_workshops, cre
     wp1.cycles.add(cycles[0])
 
     # create schedule for wp1
-    time_start = timezone.now()
-    time_end = timezone.now() + timezone.timedelta(hours=2)
+    time_start = time(10, 15)
+    time_end = time(11, 15)
     schedule_1 = Schedule.objects.create(day="monday", time_start=time_start, time_end=time_end)
     schedule_2 = Schedule.objects.create(day="tuesday", time_start=time_start, time_end=time_end)
     wp1.schedules.add(schedule_1, schedule_2)
@@ -206,7 +206,7 @@ def test_student_cycle_fail_students_quota(create_teacher, create_workshops, cre
         group, _ = Group.objects.get_or_create(name=settings.STUDENTS_GROUP)
         user.groups.add(group)
 
-        sc = StudentCycle.objects.create(student=user, cycle=cycles[0], date_joined=timezone.now())  # no cycle coincidence
+        sc = StudentCycle.objects.create(student=user, cycle=cycles[0], date_joined=time(10, 15))  # no cycle coincidence
 
         if i > MAX_STUDENTS:
             # assign workshop periods to student cycle
@@ -239,8 +239,8 @@ def test_student_cycle_fail_students_no_quota(create_teacher, create_workshops, 
     wp1.cycles.add(cycles[0])
 
     # create schedule for wp1
-    time_start = timezone.now()
-    time_end = timezone.now() + timezone.timedelta(hours=2)
+    time_start = time(10, 15)
+    time_end = time(11, 15)
     schedule_1 = Schedule.objects.create(day="monday", time_start=time_start, time_end=time_end)
     schedule_2 = Schedule.objects.create(day="tuesday", time_start=time_start, time_end=time_end)
     wp1.schedules.add(schedule_1, schedule_2)
@@ -250,7 +250,7 @@ def test_student_cycle_fail_students_no_quota(create_teacher, create_workshops, 
         group, _ = Group.objects.get_or_create(name=settings.STUDENTS_GROUP)
         user.groups.add(group)
 
-        sc = StudentCycle.objects.create(student=user, cycle=cycles[0], date_joined=timezone.now())  # no cycle coincidence
+        sc = StudentCycle.objects.create(student=user, cycle=cycles[0], date_joined=time(10, 15))  # no cycle coincidence
         sc.workshop_periods.add(wp1)
 
         assert wp1.count_students() == i
@@ -275,8 +275,8 @@ def test_is_schedule_full(create_student, create_teacher, create_period, create_
     wp2.cycles.add(cycles[0])
 
     # create schedule for wp1
-    time_start = timezone.now()
-    time_end = timezone.now() + timezone.timedelta(hours=2)
+    time_start = time(10, 15)
+    time_end = time(11, 15)
     schedule_1 = Schedule.objects.create(day="monday", time_start=time_start, time_end=time_end)
     schedule_2 = Schedule.objects.create(day="tuesday", time_start=time_start, time_end=time_end)
     wp1.schedules.add(schedule_1, schedule_2)
@@ -289,6 +289,7 @@ def test_is_schedule_full(create_student, create_teacher, create_period, create_
 
     # Add another schedule to the system without adding more workshop periods to the student
     Schedule.objects.create(day="wednesday", time_start=time_start, time_end=time_end)
+    sc.is_schedule_full.cache_clear()  # TO-DO: Find the right spot in models.py or signals to clear cache for this case, although very unlikely
     assert sc.is_schedule_full(period=period) is False
 
 
@@ -304,26 +305,31 @@ def test_is_enabled_to_enroll(create_student, create_period, create_cycles):
         # Assuming the schedule is full and the current date is within the enrollment period
         with patch("cayuman.models.datetime") as mock_datetime:
             # Mock current date before enrollment_start
+            sc.is_enabled_to_enroll.cache_clear()
             mock_datetime.now.return_value = datetime(2022, 12, 21)
             mock_datetime.now.date.return_value = datetime(2022, 12, 21).date()
             assert sc.is_enabled_to_enroll(period=period) is False
 
             # Mock current date within enrollment_start and enrollment_end
+            sc.is_enabled_to_enroll.cache_clear()
             mock_datetime.now.return_value = datetime(2022, 12, 25)
             mock_datetime.now.date.return_value = datetime(2022, 12, 25).date()
             assert sc.is_enabled_to_enroll(period=period) is True
 
             # Mock current date within enrollment_end and date_start
+            sc.is_enabled_to_enroll.cache_clear()
             mock_datetime.now.return_value = datetime(2022, 12, 31)
             mock_datetime.now.date.return_value = datetime(2022, 12, 31).date()
             assert sc.is_enabled_to_enroll(period=period) is False
 
             # Mock current date after date_start and before date_end
+            sc.is_enabled_to_enroll.cache_clear()
             mock_datetime.now.return_value = datetime(2023, 1, 1)
             mock_datetime.now.date.return_value = datetime(2023, 1, 1).date()
             assert sc.is_enabled_to_enroll(period=period) is False
 
             # Mock current date after date_end
+            sc.is_enabled_to_enroll.cache_clear()
             mock_datetime.now.return_value = datetime(2024, 1, 1)
             mock_datetime.now.date.return_value = datetime(2024, 1, 1).date()
             assert sc.is_enabled_to_enroll(period=period) is False
@@ -333,26 +339,31 @@ def test_is_enabled_to_enroll(create_student, create_period, create_cycles):
         # Assuming the schedule is not full and the current date is within the enrollment period but after date_start
         with patch("cayuman.models.datetime") as mock_datetime:
             # Mock current date before enrollment_start
+            sc.is_enabled_to_enroll.cache_clear()
             mock_datetime.now.return_value = datetime(2022, 12, 21)
             mock_datetime.now.date.return_value = datetime(2022, 12, 21).date()
             assert sc.is_enabled_to_enroll(period=period) is False
 
             # Mock current date within enrollment_start and enrollment_end
+            sc.is_enabled_to_enroll.cache_clear()
             mock_datetime.now.return_value = datetime(2022, 12, 25)
             mock_datetime.now.date.return_value = datetime(2022, 12, 25).date()
             assert sc.is_enabled_to_enroll(period=period) is True
 
             # Mock current date after date_start and before date_end
+            sc.is_enabled_to_enroll.cache_clear()
             mock_datetime.now.return_value = datetime(2023, 1, 1)
             mock_datetime.now.date.return_value = datetime(2023, 1, 1).date()
             assert sc.is_enabled_to_enroll(period=period) is True
 
             # Mock current date after date_start and before date_end
+            sc.is_enabled_to_enroll.cache_clear()
             mock_datetime.now.return_value = datetime(2023, 1, 1)
             mock_datetime.now.date.return_value = datetime(2023, 1, 1).date()
             assert sc.is_enabled_to_enroll(period=period) is True
 
             # Mock current date after date_end
+            sc.is_enabled_to_enroll.cache_clear()
             mock_datetime.now.return_value = datetime(2024, 1, 1)
             mock_datetime.now.date.return_value = datetime(2024, 1, 1).date()
             assert sc.is_enabled_to_enroll(period=period) is False

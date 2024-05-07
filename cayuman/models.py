@@ -1,5 +1,6 @@
 from datetime import datetime
 from functools import cached_property
+from functools import lru_cache
 from typing import Dict
 from typing import Optional
 from typing import Set
@@ -113,21 +114,6 @@ class Workshop(models.Model):
     class Meta:
         verbose_name = _("Workshop")
         verbose_name_plural = _("Workshops")
-
-
-class Cycle(models.Model):
-    name = models.CharField(max_length=50, verbose_name=_("Name"))
-    description = models.TextField(blank=True, verbose_name=_("Description"))
-
-    def __str__(self):
-        return self.name
-
-    def __repr__(self):
-        return f"{self.__class__.__name__}(name='{self.name}')"
-
-    class Meta:
-        verbose_name = _("Cycle")
-        verbose_name_plural = _("Cycles")
 
 
 class ScheduleManager(models.Manager):
@@ -344,6 +330,43 @@ class Period(models.Model):
         verbose_name_plural = _("Periods")
 
 
+class Cycle(models.Model):
+    name = models.CharField(max_length=50, verbose_name=_("Name"))
+    description = models.TextField(blank=True, verbose_name=_("Description"))
+
+    def __str__(self):
+        return self.name
+
+    def __repr__(self):
+        return f"{self.__class__.__name__}(name='{self.name}')"
+
+    def save(self, *args, **kwargs):
+        self.available_workshop_periods_by_schedule.cache_clear()
+        super().save(*args, **kwargs)
+
+    @lru_cache(maxsize=None)
+    def available_workshop_periods_by_schedule(self, period: Optional[Period] = None) -> Dict[Schedule, "WorkshopPeriod"]:
+        """Returns available workshop periods for a student cycle"""
+        if period is None:
+            period = Period.objects.current()
+        if period is None:
+            return {}
+
+        wps_by_schedule = {}
+        for s in Schedule.objects.ordered():
+            for wp in s.workshopperiod_set.filter(period=period):
+                if self in wp.cycles.all():
+                    if s not in wps_by_schedule:
+                        wps_by_schedule[s] = []
+                    wps_by_schedule[s].append(wp)
+
+        return wps_by_schedule
+
+    class Meta:
+        verbose_name = _("Cycle")
+        verbose_name_plural = _("Cycles")
+
+
 class WorkshopPeriod(models.Model):
     workshop = models.ForeignKey(Workshop, on_delete=models.CASCADE, verbose_name=_("Workshop"))
     period = models.ForeignKey(Period, on_delete=models.CASCADE, verbose_name=_("Period"))
@@ -440,28 +463,13 @@ class StudentCycle(models.Model):
         if not self.student.is_student:
             raise ValidationError({"student": _("Student must belong to the `%(g)s` group") % {"g": settings.STUDENTS_GROUP}})
 
-    # @lru_cache(maxsize=None)
     def available_workshop_periods_by_schedule(self, period: Optional[Period] = None) -> Dict[Schedule, WorkshopPeriod]:
         """Returns available workshop periods for a student cycle"""
-        if period is None:
-            period = Period.objects.current()
-        if period is None:
-            return {}
-        ss = Schedule.objects.ordered()
+        if self.cycle:
+            return self.cycle.available_workshop_periods_by_schedule(period=period)
+        return {}
 
-        current_student_cycle = self.cycle if self.cycle else None
-
-        wps_by_schedule = {}
-        for s in ss:
-            for wp in s.workshopperiod_set.filter(period=period):
-                if current_student_cycle in wp.cycles.all():
-                    if s not in wps_by_schedule:
-                        wps_by_schedule[s] = []
-                    wps_by_schedule[s].append(wp)
-
-        return wps_by_schedule
-
-    # @lru_cache(maxsize=None)
+    @lru_cache(maxsize=None)
     def workshop_periods_by_schedule(self, schedule: Optional[Schedule] = None, period: Optional[Period] = None) -> Dict[Schedule, "WorkshopPeriod"]:
         """Return this student's workshop_periods given a schedule, or all of them if no schedule given"""
         output = dict()
@@ -473,7 +481,7 @@ class StudentCycle(models.Model):
                     output[sched] = wp
         return output
 
-    # @lru_cache(maxsize=None)
+    @lru_cache(maxsize=None)
     def workshop_periods_by_period(self, period: Optional[Period] = None) -> Set:
         """Return this student's workshop_periods given a period, or all of them if no period given"""
         if period is None:
@@ -489,6 +497,7 @@ class StudentCycle(models.Model):
             return self.id == self.student.current_student_cycle.id
         return False
 
+    @lru_cache(maxsize=None)
     def is_schedule_full(self, period: Optional[Period] = None) -> bool:
         """Returns True or False depending if current student has a full schedule"""
         if not period:
@@ -501,6 +510,7 @@ class StudentCycle(models.Model):
         lwps = len(self.workshop_periods_by_schedule(period=period))
         return scount == lwps
 
+    @lru_cache(maxsize=None)
     def is_enabled_to_enroll(self, period: Optional[Period] = None) -> bool:
         """Returns True or False depending if current student is enabled to enroll"""
         if not period:
@@ -527,6 +537,10 @@ class StudentCycle(models.Model):
 
     def save(self, *args, **kwargs):
         self.clean()
+        self.workshop_periods_by_schedule.cache_clear()
+        self.is_schedule_full.cache_clear()
+        self.workshop_periods_by_period.cache_clear()
+        self.is_enabled_to_enroll.cache_clear()
         super().save(*args, **kwargs)
 
     class Meta:
@@ -540,8 +554,10 @@ class StudentCycle(models.Model):
 def student_cycle_workshop_period_changed(sender, instance, action, *args, **kwargs):
     """Validation procedure for the StudentCycle.workshop_periods m2m relation"""
     # instance.available_workshop_periods_by_schedule.cache_clear()
-    # instance.workshop_periods_by_schedule.cache_clear()
-    # instance.workshop_periods_by_period.cache_clear()
+    instance.workshop_periods_by_schedule.cache_clear()
+    instance.is_schedule_full.cache_clear()
+    instance.workshop_periods_by_period.cache_clear()
+    instance.is_enabled_to_enroll.cache_clear()
 
     if action == "pre_add":
         # Get all workshop periods for this student's cycle, including incoming ones
