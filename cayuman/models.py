@@ -207,11 +207,11 @@ class PeriodManager(models.Manager):
         now = datetime.now().date()
         try:
             date_condition = Q(enrollment_start__lte=now) | Q(preview_date__lte=now)
-            end_condition = Q(date_end__gt=now)
+            end_condition = Q(date_end__gte=now)
             val = self.get_queryset().get(date_condition & end_condition)
         except self.model.MultipleObjectsReturned:
             try:
-                val = self.get_queryset().get(date_start__lte=now, date_end__gt=now)
+                val = self.get_queryset().get(date_start__lte=now, date_end__gte=now)
             except self.model.DoesNotExist:
                 val = None
         except self.model.DoesNotExist:
