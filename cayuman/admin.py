@@ -364,10 +364,10 @@ class StudentCycleAdmin(admin.ModelAdmin):
     @admin.display(description=_("Previous Periods Workshops"))
     def previous_periods_workshops(self, obj):
         current_period = Period.objects.current()
-        period = Period.objects.exclude(id=current_period.id).order_by("-id").first()
+        period = Period.objects.filter(id__lt=current_period.id).order_by("-id").first()
         if period:
             return format_html(
-                f'<a href="{reverse("admin:cayuman_studentcycle_workshops", kwargs={"object_id": obj.id, "period_id": 1})}">'
+                f'<a href="{reverse("admin:cayuman_studentcycle_workshops", kwargs={"object_id": obj.id, "period_id": period.id})}">'
                 f'{_("Workshops %s") % (period)}'
                 "</a>"
             )
