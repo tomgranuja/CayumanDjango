@@ -204,14 +204,15 @@ class PeriodManager(models.Manager):
         """
         from django.db.models import Q
 
-        now = datetime.now().date()
+        now = timezone.now()
+        now_date = now.date()
         try:
-            date_condition = Q(enrollment_start__lte=now) | Q(preview_date__lte=now)
-            end_condition = Q(date_end__gte=now)
+            date_condition = Q(enrollment_start__lte=now) | Q(preview_date__lte=now_date)
+            end_condition = Q(date_end__gte=now_date)
             val = self.get_queryset().get(date_condition & end_condition)
         except self.model.MultipleObjectsReturned:
             try:
-                val = self.get_queryset().get(date_start__lte=now, date_end__gte=now)
+                val = self.get_queryset().get(date_start__lte=now_date, date_end__gte=now_date)
             except self.model.DoesNotExist:
                 val = None
         except self.model.DoesNotExist:
@@ -230,7 +231,7 @@ class Period(models.Model):
     name = models.CharField(max_length=50, verbose_name=_("Name"))
     description = models.TextField(blank=True, verbose_name=_("Description"))
     preview_date = models.DateField(blank=True, null=True, verbose_name=_("Preview date"))
-    enrollment_start = models.DateField(blank=True, verbose_name=_("Enrollment start date"))
+    enrollment_start = models.DateTimeField(blank=True, verbose_name=_("Enrollment start date and time"))
     enrollment_end = models.DateField(blank=True, null=True, verbose_name=_("Enrollment end date"))
     date_start = models.DateField(verbose_name=_("Start date"))
     date_end = models.DateField(verbose_name=_("End date"))
@@ -277,22 +278,22 @@ class Period(models.Model):
 
     def clean(self):
         if not self.preview_date:
-            self.preview_date = self.enrollment_start
+            self.preview_date = self.enrollment_start.date()
 
-        if self.preview_date > self.enrollment_start:
+        if self.preview_date > self.enrollment_start.date():
             raise ValidationError({"preview_date": _("Preview date must be before enrollment start date")})
 
         if not self.enrollment_end and self.enrollment_start:
             # Fill enrollment_end automatically to enrollment_start + 5 days
-            self.enrollment_end = self.enrollment_start + timezone.timedelta(days=5)
+            self.enrollment_end = self.enrollment_start.date() + timezone.timedelta(days=5)
 
         if self.date_start >= self.date_end:
             raise ValidationError({"date_start": _("Start date must be before end date")})
 
-        if self.enrollment_start >= self.enrollment_end:
+        if self.enrollment_start.date() >= self.enrollment_end:
             raise ValidationError({"enrollment_start": _("Enrollment start date must be before enrollment end date")})
 
-        if self.enrollment_start and self.enrollment_start > self.date_start:
+        if self.enrollment_start and self.enrollment_start.date() > self.date_start:
             raise ValidationError({"enrollment_start": _("Enrollment start date must be before start date")})
 
         # Can't collide with another period in terms of date_start and date_end
@@ -316,10 +317,11 @@ class Period(models.Model):
         return self == Period.objects.current()
 
     def can_be_previewed(self):
-        now = datetime.now().date()
+        now = timezone.now()
+        now_date = now.date()
         if self.preview_date:
-            return self.preview_date <= now and self.date_end >= now
-        return self.enrollment_start <= now and self.date_end >= now
+            return self.preview_date <= now_date and self.date_end >= now_date
+        return self.enrollment_start <= now and self.date_end >= now_date
 
     def save(self, *args, **kwargs):
         self.clean()
@@ -519,15 +521,16 @@ class StudentCycle(models.Model):
         if not period:
             return False
 
-        now = datetime.now().date()
+        now = timezone.now()
+        now_date = now.date()
 
         # It's never possible to enroll before `enrollment_start` and after `date_end`
-        if now > period.date_end or now < period.enrollment_start:
+        if now_date > period.date_end or now < period.enrollment_start:
             return False
 
         # students with full schedule can only re-enroll between `enrollment_start` and `enrollment_end`
         if self.is_schedule_full(period):
-            if period.enrollment_start <= now <= period.enrollment_end:
+            if period.enrollment_start <= now and now_date <= period.enrollment_end:
                 return True
         else:
             # students without full schedule can enroll anytime until `date_end`
