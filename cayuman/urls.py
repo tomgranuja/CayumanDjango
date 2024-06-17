@@ -8,13 +8,15 @@ from .views import home
 from .views import StudentLoginView
 from .views import weekly_schedule
 from .views import workshop_period
+from .views import workshop_periods
 
 urlpatterns = [
     path("admin/", admin.site.urls),
     path("accounts/login/", StudentLoginView.as_view(), name="login"),
     path("accounts/logout/", auth_views.LogoutView.as_view(next_page="login"), name="logout"),
-    path("weekly-schedule/", weekly_schedule, name="weekly_schedule"),
+    path("weekly-schedule/<int:period_id>/", weekly_schedule, name="weekly_schedule"),
     path("workshop-period/<int:workshop_period_id>/", workshop_period, name="workshop_period"),
-    path("enrollment", EnrollmentView.as_view(), name="enrollment"),
+    path("workshop-periods/<int:period_id>/", workshop_periods, name="workshop_periods"),
+    path("enrollment/<int:period_id>/", EnrollmentView.as_view(), name="enrollment"),
     path("", home, name="home"),
 ]

@@ -167,35 +167,35 @@ def test_current_period():
     )
 
     # test date falling withing period 1 preview_date
-    with patch("cayuman.models.datetime") as mock_datetime:
+    with patch("cayuman.models.timezone") as mock_datetime:
         mock_datetime.now.return_value = datetime(2024, 4, 18)
         mock_datetime.now.date.return_value = datetime(2024, 4, 18).date()
-        assert Period.objects.current() == period_1
-        assert period_1.is_current() is True
+        assert Period.objects.current() is None
+        assert period_1.is_current() is False
         assert period_2.is_current() is False
         assert period_1.can_be_previewed() is True
         assert period_2.can_be_previewed() is False
 
     # test date falling within period 1 enrollment range
-    with patch("cayuman.models.datetime") as mock_datetime:
+    with patch("cayuman.models.timezone") as mock_datetime:
         mock_datetime.now.return_value = datetime(2024, 4, 25)
         mock_datetime.now.date.return_value = datetime(2024, 4, 25).date()
-        assert Period.objects.current() == period_1
+        assert Period.objects.current() is None
 
     # test date falling between period 1 date_start and enrollment_end
-    with patch("cayuman.models.datetime") as mock_datetime:
+    with patch("cayuman.models.timezone") as mock_datetime:
         mock_datetime.now.return_value = datetime(2024, 5, 3)
         mock_datetime.now.date.return_value = datetime(2024, 5, 3).date()
-        assert Period.objects.current() == period_1
+        assert Period.objects.current() is None
 
     # test date before period 1 date_end but before period 2 enrollment_start
-    with patch("cayuman.models.datetime") as mock_datetime:
+    with patch("cayuman.models.timezone") as mock_datetime:
         mock_datetime.now.return_value = datetime(2024, 6, 9)
         mock_datetime.now.date.return_value = datetime(2024, 6, 9).date()
         assert Period.objects.current() == period_1
 
     # test date between period 2 enrollment_start/preview_date and period 1 date_end
-    with patch("cayuman.models.datetime") as mock_datetime:
+    with patch("cayuman.models.timezone") as mock_datetime:
         mock_datetime.now.return_value = datetime(2024, 6, 14)
         mock_datetime.now.date.return_value = datetime(2024, 6, 14).date()
         assert Period.objects.current() == period_1
@@ -203,7 +203,7 @@ def test_current_period():
         assert period_2.can_be_previewed() is True
 
     # test date between period 2 enrollment_end and date_start and after period 1 date_end
-    with patch("cayuman.models.datetime") as mock_datetime:
+    with patch("cayuman.models.timezone") as mock_datetime:
         mock_datetime.now.return_value = datetime(2024, 6, 17)
         mock_datetime.now.date.return_value = datetime(2024, 6, 17).date()
         assert Period.objects.current() == period_2
@@ -213,7 +213,7 @@ def test_current_period():
         assert period_2.can_be_previewed() is True
 
     # test date far in the future
-    with patch("cayuman.models.datetime") as mock_datetime:
+    with patch("cayuman.models.timezone") as mock_datetime:
         mock_datetime.now.return_value = datetime(2024, 12, 17)
         mock_datetime.now.date.return_value = datetime(2024, 12, 17).date()
-        assert Period.objects.current() == period_2
+        assert Period.objects.current() is None

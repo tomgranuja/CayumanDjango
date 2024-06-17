@@ -303,7 +303,7 @@ def test_is_enabled_to_enroll(create_student, create_period, create_cycles):
     # Mock is_schedule_full to return True
     with patch.object(StudentCycle, "is_schedule_full", return_value=True):
         # Assuming the schedule is full and the current date is within the enrollment period
-        with patch("cayuman.models.datetime") as mock_datetime:
+        with patch("cayuman.models.timezone") as mock_datetime:
             # Mock current date before enrollment_start
             sc.is_enabled_to_enroll.cache_clear()
             mock_datetime.now.return_value = datetime(2022, 12, 21)
@@ -337,7 +337,7 @@ def test_is_enabled_to_enroll(create_student, create_period, create_cycles):
     # Mock is_schedule_full to return False
     with patch.object(StudentCycle, "is_schedule_full", return_value=False):
         # Assuming the schedule is not full and the current date is within the enrollment period but after date_start
-        with patch("cayuman.models.datetime") as mock_datetime:
+        with patch("cayuman.models.timezone") as mock_datetime:
             # Mock current date before enrollment_start
             sc.is_enabled_to_enroll.cache_clear()
             mock_datetime.now.return_value = datetime(2022, 12, 21)

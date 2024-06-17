@@ -13,10 +13,10 @@
     <div class="container-md">
 
       <div class="mb-3">
-        <h1 class="display-2">{% trans user=member.get_full_name() %}Hello {{ user }}!{% endtrans %}</h1>
-        {% if member.current_student_cycle %}
+        <h1 class="display-2">{% trans user=request.member.get_full_name() %}Hello {{ user }}!{% endtrans %}</h1>
+        {% if request.member.current_student_cycle %}
         <p>
-            {% trans human_period=period.human_name, cycle_name=member.current_student_cycle.cycle.name %}
+            {% trans human_period=request.period.human_name, cycle_name=request.member.current_student_cycle.cycle.name %}
             These are the workshop options for <span>{{human_period}}</span> available for <span>{{cycle_name}}</span> cycle.
             {% endtrans %}
         </p>
@@ -29,9 +29,9 @@
         {% endfor %}
       {% endif %}
 
-      {% if member.is_enabled_to_enroll(period) %}
+      {% if request.member.is_enabled_to_enroll(request.period) %}
       <div class="mb-3">
-        <a href="{{ url('enrollment') }}?force=true" class="btn btn-success">{% trans %}Click here to enroll in your workshops{% endtrans %}</a>
+        <a href="{{ url('enrollment', period_id=request.period.id) }}?force=true" class="btn btn-success">{% trans %}Click here to enroll in your workshops{% endtrans %}</a>
       </div>
       {% endif %}
 
@@ -51,9 +51,9 @@
       {% endfor %}
     </div>
 
-    {% if member.is_enabled_to_enroll(period) %}
+    {% if request.member.is_enabled_to_enroll(period) %}
     <div class="mt-3 mb-3">
-        <a href="{{ url('enrollment') }}?force=true" class="btn btn-success">{% trans %}Click here to enroll in your workshops{% endtrans %}</a>
+        <a href="{{ url('enrollment', period_id=request.period.id) }}?force=true" class="btn btn-success">{% trans %}Click here to enroll in your workshops{% endtrans %}</a>
     </div>
     {% endif %}
 <!-- Google tag (gtag.js) -->

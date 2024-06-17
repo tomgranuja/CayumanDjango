@@ -27,13 +27,13 @@
 {% endblock %}
 
 {% block content %}
-<h2>{% trans user=member.get_full_name() %}Hello {{ user }}!{% endtrans %}</h2>
+<h2>{% trans user=request.member.get_full_name() %}Hello {{ user }}!{% endtrans %}</h2>
 
-{% if not period %}
+{% if not request.period %}
 {% trans %}No enrollment available at this time{% endtrans %}
 {% else %}
 <p>
-    {% trans cycle_name=member.current_student_cycle.cycle.name, human_period=period.human_name %}
+    {% trans cycle_name=request.member.current_student_cycle.cycle.name, human_period=request.period.human_name %}
     These are the available workshops for {{cycle_name}} during {{human_period}}
     {% endtrans %}
 </p>
@@ -70,7 +70,7 @@
 {% endblock %}
 
 {% block bottom %}
-{% if period %}
+{% if request.period %}
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
 <script>
     document.addEventListener('DOMContentLoaded', () => {

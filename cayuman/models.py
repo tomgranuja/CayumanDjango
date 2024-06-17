@@ -200,27 +200,22 @@ class PeriodManager(models.Manager):
         """
         Current period is defined as this:
         - That period where current_date is between date_start and date_end
-        - Else, last one stored on DB
+        - Else None
+        Method makes of `period_by_date` to take advantage of caching, while `current` is not cached
         """
-        from django.db.models import Q
+        now = timezone.now()
+        return Period.objects.period_by_date(now.date())
 
-        now = datetime.now().date()
+    @lru_cache
+    def period_by_date(self, date):
+        """
+        Returns the period that contains the given date.
+        - given_date must be a date object
+        """
         try:
-            date_condition = Q(enrollment_start__lte=now) | Q(preview_date__lte=now)
-            end_condition = Q(date_end__gte=now)
-            val = self.get_queryset().get(date_condition & end_condition)
-        except self.model.MultipleObjectsReturned:
-            try:
-                val = self.get_queryset().get(date_start__lte=now, date_end__gte=now)
-            except self.model.DoesNotExist:
-                val = None
-        except self.model.DoesNotExist:
+            val = self.get_queryset().get(date_start__lte=date, date_end__gte=date)
+        except (self.model.MultipleObjectsReturned, self.model.DoesNotExist):
             val = None
-
-        if not val:
-            # return latest in terms of id
-            val = self.get_queryset().order_by("-id").first()
-
         return val
 
 
@@ -316,7 +311,7 @@ class Period(models.Model):
         return self == Period.objects.current()
 
     def can_be_previewed(self):
-        now = datetime.now().date()
+        now = timezone.now().date()
         if self.preview_date:
             return self.preview_date <= now and self.date_end >= now
         return self.enrollment_start <= now and self.date_end >= now
@@ -341,10 +336,9 @@ class Cycle(models.Model):
         return f"{self.__class__.__name__}(name='{self.name}')"
 
     def save(self, *args, **kwargs):
-        self.available_workshop_periods_by_schedule.cache_clear()
+        # self.available_workshop_periods_by_schedule.cache_clear()
         super().save(*args, **kwargs)
 
-    @lru_cache(maxsize=None)
     def available_workshop_periods_by_schedule(self, period: Optional[Period] = None) -> Dict[Schedule, "WorkshopPeriod"]:
         """Returns available workshop periods for a student cycle"""
         if period is None:
@@ -519,7 +513,7 @@ class StudentCycle(models.Model):
         if not period:
             return False
 
-        now = datetime.now().date()
+        now = timezone.now().date()
 
         # It's never possible to enroll before `enrollment_start` and after `date_end`
         if now > period.date_end or now < period.enrollment_start:

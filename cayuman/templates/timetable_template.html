@@ -1,0 +1,16 @@
+<table {% if table_class %}class="{{table_class}}"{% else %}class="table table-responsive"{% endif %} style="overflow: scroll">
+    {% if caption %}<caption>{{caption}}</caption>{% endif %}
+    <thead{% if thead_class %} class="{{thead_class}}"{% endif %}>
+        <tr>
+            <th scope="col" style="width: 10%">{% trans %}Hour{% endtrans %}</th>
+            {% for day in days %}
+            <th scope="col" width="18%">
+                <span class="tlong">{{ day.1 }}</span><span class="tshort text-uppercase">{{ day.1 | truncate(3, True, '', 0) }}</span>
+            </th>
+            {% endfor %}
+        </tr>
+    </thead>
+    <tbody{% if tbody_class %} class="{{tbody_class}}"{% endif %}>
+        {{tbody}}
+    </tbody>
+</table>

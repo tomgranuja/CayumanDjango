@@ -1,31 +1,12 @@
 from functools import wraps
 
 from django.http import HttpResponseRedirect
-from django.shortcuts import render
 from django.urls import reverse_lazy as reverse
-
-from .models import Member
-from .models import Period
-
-
-def period_required(view_func):
-    """Decorator to ensure a view counts with a valid active Period"""
-
-    @wraps(view_func)
-    def _wrapped_view(request, *args, **kwargs):
-        current_period = Period.objects.current()
-        if not current_period:
-            return render(request, "no-period.html", status=404)
-
-        request.current_period = current_period
-
-        return view_func(request, *args, **kwargs)
-
-    return _wrapped_view
 
 
 def student_required(view_func):
     """Decorator to ensure a view counts with a valid active student"""
+    from cayuman.models import Member
 
     @wraps(view_func)
     def _wrapped_view(request, *args, **kwargs):
@@ -34,9 +15,26 @@ def student_required(view_func):
             if not member.is_student or not member.is_active:
                 return HttpResponseRedirect(reverse("admin:login"))
 
-            request.current_member = member
+            request.member = member
         except Member.DoesNotExist:
             return HttpResponseRedirect(reverse("login"))
+
+        return view_func(request, *args, **kwargs)
+
+    return _wrapped_view
+
+
+def studentcycle_required(view_func):
+    """Decorator to ensure a view counts with a valid active studentcycle"""
+    from django.utils.translation import gettext as _
+    from django.contrib import messages
+
+    @wraps(view_func)
+    def _wrapped_view(request, *args, **kwargs):
+        student_cycle = request.member.current_student_cycle
+        if not student_cycle:
+            messages.warning(request, _("Your student account is not associated with any Cycle. Please ask your teachers to fix this."))
+            return HttpResponseRedirect(reverse("workshop_periods", kwargs={"period_id": request.period.id}))
 
         return view_func(request, *args, **kwargs)
 

@@ -171,11 +171,16 @@ class WorkshopSelectionForm(forms.Form):
     """Form used by students to enroll in workshops during a given period"""
 
     def __init__(
-        self, *args, schedules_with_workshops: Optional[Dict[Schedule, WorkshopPeriod]] = None, member: Optional[Member] = None, **kwargs
+        self,
+        *args,
+        schedules_with_workshops: Optional[Dict[Schedule, WorkshopPeriod]] = None,
+        period: Optional[Period] = None,
+        member: Optional[Member] = None,
+        **kwargs,
     ) -> None:
         super().__init__(*args, **kwargs)
         self.member = member
-        self.period = Period.objects.current()
+        self.period = period
         self.schedules_with_workshops = schedules_with_workshops
         if schedules_with_workshops:
             for schedule, workshop_periods in schedules_with_workshops.items():
