@@ -154,7 +154,7 @@ def workshop_periods(request, period_id: int):
     wps = set()
 
     current_student_cycle = request.member.current_student_cycle
-    if not request.period.can_be_previewed():
+    if not request.period.is_enabled_to_preview():
         messages.warning(request, _("It is still not the time to visualize workshops for the upcoming period. Please return later."))
     else:
         # Get all available workshop periods for this student and return

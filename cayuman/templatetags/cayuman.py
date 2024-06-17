@@ -5,24 +5,24 @@ from django.template import Library
 from django.template import Node
 from django.template import Template
 from django.template import TemplateSyntaxError
-from django.template import Variable
-from django.template.base import token_kwargs
+from django.template.base import kwarg_re
 from django.template.loader import render_to_string
 from django.utils.safestring import mark_safe
+from django.utils.safestring import SafeString
 from jinja2 import nodes
 from jinja2 import Template as JinjaTemplate
 from jinja2.ext import Extension
 from jinja2.ext import Markup
 
-# from jinja2 import pass_context
-
 register = Library()
 
 
-BLOCK_TPL = """
+BLOCK_TPL_JINJA2 = """
 {% for block in blocks %}
 <tr{% if tr_class %} class="{{tr_class}}"{% endif %}>
-    <th{% if th_class %} class="{{th_class}}"{% endif %} scope="row">{{ block.0.strftime('%H:%M') }} - {{ block.1.strftime('%H:%M') }}</th>
+    <th{% if th_class %} class="{{th_class}}"{% endif %} scope="row">
+        {{ block.0.strftime('%H:%M') }} - {{ block.1.strftime('%H:%M') }}
+    </th>
 
     {% for schedule in schedules %}
         {% if schedule.time_start == block.0 %}
@@ -33,6 +33,35 @@ BLOCK_TPL = """
             {% else %}
             <td></td>
             {% endif %}
+        {% endif %}
+    {% endfor %}
+</tr>
+{% endfor %}"""
+
+
+BLOCK_TPL_DJANGO = """
+{% for block in blocks %}
+<tr{% if tr_class %} class="{{tr_class}}"{% endif %}>
+    <th{% if th_class %} class="{{th_class}}"{% endif %} scope="row">
+        {{ block.0|date:'H:i' }} - {{ block.1|date:'H:i' }}
+    </th>
+
+    {% for schedule in schedules %}
+        {% if schedule.time_start == block.0 %}
+            {% with key=schedule.id|stringformat:"d" %}
+                {% if key in results %}
+                    {% for k, v in results.items %}
+                        {# TO-DO: make more efficient #}
+                        {% if k == key %}
+                        <td{% if td_class %} class="{{td_class}}"{% endif %}>
+                            {{v|default:''}}
+                        </td>
+                        {% endif %}
+                    {% endfor %}
+                {% else %}
+                    <td>NOUP {{key}} | {{results.key}} |</td>
+                {% endif %}
+            {% endwith %}
         {% endif %}
     {% endfor %}
 </tr>
@@ -94,32 +123,41 @@ def do_timetable(parser, token):
     """
     bits = token.split_contents()
     if len(bits) < 2:
-        raise TemplateSyntaxError("'timetable' statements should have at least two words: %s" % token.contents)
+        raise TemplateSyntaxError("`timetable` statements should have at least two words: %s" % token.contents)
 
-    workshop_periods = bits[1]
-    kwargs = {}
+    workshop_periods = parser.compile_filter(bits[1])
+
     if len(bits) >= 3:
-        remaining_bits = bits[2:]
-        kwargs = token_kwargs(remaining_bits, parser, support_legacy=True)
-        if not kwargs:
-            raise TemplateSyntaxError("%r expected at least one variable assignment" % bits[0])
-    if remaining_bits:
-        raise TemplateSyntaxError("%r received an invalid token: %r" % (bits[0], remaining_bits[0]))
+        kwargs = {}
+        bits = bits[2:]
+
+        for bit in bits:
+            match = kwarg_re.match(bit)
+            if not match:
+                raise TemplateSyntaxError("Malformed arguments for `timetable` statement")
+            name, value = match.groups()
+            if name:
+                kwargs[name] = parser.compile_filter(value)  # .strip('"').strip("'"))
+            else:
+                raise TemplateSyntaxError("Malformed arguments for `timetable` statement")
+
     nodelist = parser.parse(("endtimetable",))
     parser.delete_first_token()
+
     return TimetableNode(workshop_periods, nodelist, **kwargs)
 
 
 class TimetableNode(Node):
-    def __init__(self, nodelist, kwargs):
+    """Django Templating templatetag to easily display timetables"""
+
+    def __init__(self, workshop_periods, nodelist, **kwargs):
+        self.workshop_periods = workshop_periods
         self.nodelist = nodelist
         self.kwargs = kwargs
 
-    def _render_block(self, context_dict):
-        return django_render_string(BLOCK_TPL, context_dict)
-
     def render(self, context):
-        workshop_periods = Variable("workshop_periods").resolve(context)
+        workshop_periods = self.workshop_periods.resolve(context)
+        kwargs = {k: v.resolve(context) for k, v in self.kwargs.items()}
         days, blocks, schedules = get_scheduling_data()
 
         results = {}
@@ -129,25 +167,27 @@ class TimetableNode(Node):
                 if schedule.time_start == block[0]:
                     if schedule.id not in results:
                         results[f"{schedule.id}"] = []
-
                     for workshop_period in workshop_periods:
-                        # Update the context with these specific variables for this iteration
-                        context.push()
-                        context["schedule"] = schedule
-                        context["workshop_period"] = workshop_period
-                        context.update(self.kwargs)
-
-                        # Render the template block with the updated context
-                        rendered_content = self.nodelist.render(context)
-                        results[f"{schedule.id}"].append(mark_safe(rendered_content))
-
-                        # Pop the context to avoid side-effects
-                        context.pop()
+                        # Manually update the context for each iteration
+                        # context.push()
+                        temp_ctx = {"schedule": schedule, "workshop_period": workshop_period}
+                        with context.push(**temp_ctx):
+                            rendered_content = self.nodelist.render(context)
+                            if rendered_content.strip():
+                                results[f"{schedule.id}"].append(mark_safe(rendered_content.strip()))
+                            else:
+                                results[f"{schedule.id}"].append("")
 
         for key, val in results.items():
-            results[key] = "".join(val)
+            if any(isinstance(v, SafeString) for v in val):
+                results[key] = mark_safe("".join([v.strip() for v in val]))
+            else:
+                results[key] = None
 
-        params = {"tbody": self._render_block({"results": results, "blocks": blocks, "schedules": schedules}), "days": days}
+        params_tbody = {"results": results, "blocks": blocks, "schedules": schedules}
+        params_tbody.update(kwargs)
+        params = {"tbody": django_render_string(BLOCK_TPL_DJANGO, params_tbody), "days": days}
+        params.update(kwargs)
         return render_to_string("timetable_template.html", params)
 
 
@@ -188,7 +228,7 @@ class TimetableExtension(Extension):
         return nodes.CallBlock(self.call_method("_render_timetable", [workshop_periods], kwargs), [wp, sc], [], body).set_lineno(lineno)
 
     def _render_block(self, context_dict):
-        return Markup(jinja2_render_string(BLOCK_TPL, context_dict))
+        return Markup(jinja2_render_string(BLOCK_TPL_JINJA2, context_dict))
 
     def _render_template(self, template_path, context):
         # Load and render the template with the given context

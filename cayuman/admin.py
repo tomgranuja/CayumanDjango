@@ -184,7 +184,7 @@ class WorkshopPeriodAdmin(admin.ModelAdmin):
     ]
 
     def changelist_view(self, request, extra_context=None):
-        # Check if the URL already has any filters set, if not set period to the current one
+        # Check if the URL already has any filters set, else set period to the current one
         from django.urls import reverse_lazy as reverse
         from django.http import HttpResponseRedirect
 
@@ -418,6 +418,7 @@ class StudentCycleAdmin(admin.ModelAdmin):
         period = Period.objects.get(id=period_id)
 
         # Then get students for this object.
+        workshop_periods = list(obj.workshop_periods.filter(period=period))
         workshop_periods_list = list(obj.workshop_periods_by_period(period))
 
         paginator = self.get_paginator(request, workshop_periods_list, 100)
@@ -429,6 +430,7 @@ class StudentCycleAdmin(admin.ModelAdmin):
             **self.admin_site.each_context(request),
             "title": _("Workshop Periods %s for: %s") % (period, obj),
             "subtitle": None,
+            "workshop_periods": workshop_periods,
             "workshop_periods_list": page_obj,
             "period": period,
             "page_range": page_range,

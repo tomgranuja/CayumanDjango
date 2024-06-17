@@ -310,11 +310,23 @@ class Period(models.Model):
     def is_current(self):
         return self == Period.objects.current()
 
-    def can_be_previewed(self):
-        now = timezone.now().date()
+    def is_enabled_to_preview(self):
+        now = timezone.now()
+        now_date = now.date()
         if self.preview_date:
-            return self.preview_date <= now and self.date_end >= now
-        return self.enrollment_start <= now and self.date_end >= now
+            return self.preview_date <= now_date and self.date_end >= now_date
+        return self.enrollment_start <= now and self.date_end >= now_date
+
+    def is_enabled_to_enroll(self) -> bool:
+        """Returns True or False depending if current period is enabled to enroll"""
+        now = timezone.now()
+        now_date = now.date()
+
+        # It's never possible to enroll before `enrollment_start` and after `date_end`
+        if now_date > self.date_end or now_date < self.enrollment_start:
+            return False
+
+        return True
 
     def save(self, *args, **kwargs):
         self.clean()
@@ -516,7 +528,7 @@ class StudentCycle(models.Model):
         now = timezone.now().date()
 
         # It's never possible to enroll before `enrollment_start` and after `date_end`
-        if now > period.date_end or now < period.enrollment_start:
+        if not period.is_enabled_to_enroll():
             return False
 
         # students with full schedule can only re-enroll between `enrollment_start` and `enrollment_end`
