@@ -59,7 +59,7 @@ BLOCK_TPL_DJANGO = """
                         {% endif %}
                     {% endfor %}
                 {% else %}
-                    <td>NOUP {{key}} | {{results.key}} |</td>
+                    <td></td>
                 {% endif %}
             {% endwith %}
         {% endif %}
@@ -108,7 +108,7 @@ def do_timetable(parser, token):
     {% timetable workshop_periods key1=var1 key2=var2 ... keyN=varN %}
         {% if schedule in workshop_period.schedules.all() %}
             <a href="{{ url('workshop_period', workshop_period_id=workshop_period.id) }}">{{workshop_period.workshop.name}}</a>
-            <br /><small>{{workshop_period.teacher.get_full_name()}}</small>
+            <br /><small>{{workshop_period.teacher.get_full_name}}</small>
         {% endif %}
     {% endtimetable %}
 
@@ -137,7 +137,7 @@ def do_timetable(parser, token):
                 raise TemplateSyntaxError("Malformed arguments for `timetable` statement")
             name, value = match.groups()
             if name:
-                kwargs[name] = parser.compile_filter(value)  # .strip('"').strip("'"))
+                kwargs[name] = parser.compile_filter(value)
             else:
                 raise TemplateSyntaxError("Malformed arguments for `timetable` statement")
 
@@ -169,7 +169,6 @@ class TimetableNode(Node):
                         results[f"{schedule.id}"] = []
                     for workshop_period in workshop_periods:
                         # Manually update the context for each iteration
-                        # context.push()
                         temp_ctx = {"schedule": schedule, "workshop_period": workshop_period}
                         with context.push(**temp_ctx):
                             rendered_content = self.nodelist.render(context)

@@ -51,7 +51,7 @@
       {% endfor %}
     </div>
 
-    {% if request.member.is_enabled_to_enroll(period) %}
+    {% if request.member.is_enabled_to_enroll(request.period) %}
     <div class="mt-3 mb-3">
         <a href="{{ url('enrollment', period_id=request.period.id) }}?force=true" class="btn btn-success">{% trans %}Click here to enroll in your workshops{% endtrans %}</a>
     </div>

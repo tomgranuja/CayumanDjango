@@ -206,6 +206,9 @@ class PeriodManager(models.Manager):
         now = timezone.now()
         return Period.objects.period_by_date(now.date())
 
+    def current_or_last(self):
+        return Period.objects.current() or Period.objects.last()
+
     @lru_cache
     def period_by_date(self, date):
         """
@@ -244,13 +247,20 @@ class Period(models.Model):
         """Returns a more human name for the period"""
         from django.utils.formats import date_format
 
+        now = timezone.now()
+
         month_1 = date_format(self.date_start, format="F")
         month_2 = date_format(self.date_end, format="F")
 
         if month_1 != month_2:
-            return f"{self.name} ({month_1}-{month_2})"
+            name = f"{self.name} ({month_1}-{month_2})"
         else:
-            return f"{self.name} ({month_1} {self.date_start.year})"
+            name = f"{self.name} ({month_1} {self.date_start.year})"
+
+        if now.year != self.date_start.year:
+            name = f"{name} {self.date_start.year}"
+
+        return name
 
     @cached_property
     def count_weeks(self):
@@ -351,13 +361,8 @@ class Cycle(models.Model):
         # self.available_workshop_periods_by_schedule.cache_clear()
         super().save(*args, **kwargs)
 
-    def available_workshop_periods_by_schedule(self, period: Optional[Period] = None) -> Dict[Schedule, "WorkshopPeriod"]:
+    def available_workshop_periods_by_schedule(self, period: Period) -> Dict[Schedule, "WorkshopPeriod"]:
         """Returns available workshop periods for a student cycle"""
-        if period is None:
-            period = Period.objects.current()
-        if period is None:
-            return {}
-
         wps_by_schedule = {}
         for s in Schedule.objects.ordered():
             for wp in s.workshopperiod_set.filter(period=period):
@@ -488,13 +493,8 @@ class StudentCycle(models.Model):
         return output
 
     @lru_cache(maxsize=None)
-    def workshop_periods_by_period(self, period: Optional[Period] = None) -> Set:
+    def workshop_periods_by_period(self, period: Period) -> Set:
         """Return this student's workshop_periods given a period, or all of them if no period given"""
-        if period is None:
-            period = Period.objects.current()
-        if period is None:
-            return set()
-
         wps_by_schedule = self.workshop_periods_by_schedule(period=period)
         return {wp for wp in wps_by_schedule.values()}
 
@@ -504,27 +504,15 @@ class StudentCycle(models.Model):
         return False
 
     @lru_cache(maxsize=None)
-    def is_schedule_full(self, period: Optional[Period] = None) -> bool:
+    def is_schedule_full(self, period: Period) -> bool:
         """Returns True or False depending if current student has a full schedule"""
-        if not period:
-            period = Period.objects.current()
-
-        if not period:
-            return False
-
         scount = Schedule.objects.all().count()
         lwps = len(self.workshop_periods_by_schedule(period=period))
         return scount == lwps
 
     @lru_cache(maxsize=None)
-    def is_enabled_to_enroll(self, period: Optional[Period] = None) -> bool:
+    def is_enabled_to_enroll(self, period: Period) -> bool:
         """Returns True or False depending if current student is enabled to enroll"""
-        if not period:
-            period = Period.objects.current()
-
-        if not period:
-            return False
-
         now = timezone.now().date()
 
         # It's never possible to enroll before `enrollment_start` and after `date_end`

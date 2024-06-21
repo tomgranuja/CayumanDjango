@@ -26,7 +26,7 @@ class PeriodMiddleware:
                 raise Http404
         else:
             # if not period_id then fill with current or last period
-            request.period = Period.objects.current() or Period.objects.last()
+            request.period = Period.objects.current_or_last()
 
         # Continue processing the request
         response = self.get_response(request)

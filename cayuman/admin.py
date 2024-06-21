@@ -188,9 +188,9 @@ class WorkshopPeriodAdmin(admin.ModelAdmin):
         from django.urls import reverse_lazy as reverse
         from django.http import HttpResponseRedirect
 
-        if not request.GET and Period.objects.current():
+        if not request.GET and Period.objects.current_or_last():
             # Construct the URL for the filtered view
-            current_period_id = Period.objects.current().id
+            current_period_id = Period.objects.current_or_last().id
             base_url = reverse("admin:%s_%s_changelist" % (self.model._meta.app_label, self.model._meta.model_name))
             query_string = f"period__id__exact={current_period_id}"
             return HttpResponseRedirect(f"{base_url}?{query_string}")
@@ -300,7 +300,7 @@ admin.site.register(WorkshopPeriod, WorkshopPeriodAdmin)
 
 class StudentCycleAdmin(admin.ModelAdmin):
     ordering = ("-date_joined",)
-    list_display = ("id", "student", "cycle", "date_joined", "this_period_workshops_html", "previous_periods_workshops", "active")
+    list_display = ("id", "student", "cycle", "date_joined", "this_period_workshops_html", "other_periods_workshops", "active")
     list_per_page = 20
     list_filter = ["cycle"]
     search_fields = ["student__first_name", "student__last_name", "cycle__name"]
@@ -311,18 +311,19 @@ class StudentCycleAdmin(admin.ModelAdmin):
     actions = [create_export_to_csv_action(["student", "cycle", "date_joined", "this_period_workshops_list", "active"])]
 
     def get_form(self, request, obj=None, **kwargs):
+        """Setting form to edit/create StudentCycle entries restricting the workshop_periods shown as much as possible"""
         form = super(StudentCycleAdmin, self).get_form(request, obj, **kwargs)
-        current_period = Period.objects.current()
+        period = Period.objects.current_or_last()
         if obj:
             # if obj exists then show only workshop_periods chosen in the past and workshop_periods corresponding to current period and cycle
             existing_workshop_period_ids = obj.workshop_periods.values_list("id", flat=True)
 
             form.base_fields["workshop_periods"].queryset = WorkshopPeriod.objects.filter(
-                Q(period=current_period, cycles=obj.cycle) | Q(id__in=existing_workshop_period_ids)
+                Q(period=period, cycles=obj.cycle) | Q(id__in=existing_workshop_period_ids)
             ).distinct()
         else:
             # if creating a new obj show workshop_periods only for current period
-            form.base_fields["workshop_periods"].queryset = WorkshopPeriod.objects.filter(period=current_period)
+            form.base_fields["workshop_periods"].queryset = WorkshopPeriod.objects.filter(period=period)
         return form
 
     def get_readonly_fields(self, request, obj=None):
@@ -338,39 +339,39 @@ class StudentCycleAdmin(admin.ModelAdmin):
         queryset = super().get_queryset(request)
         return queryset.filter(student__is_active=True)
 
-    @admin.display(description=_("Workshops %s") % (Period.objects.current()))
+    @admin.display(description=_("Workshops %s") % (Period.objects.current_or_last()))
     def this_period_workshops_html(self, obj):
         """Display function to use in Django admin list for this model"""
-        wps = obj.workshop_periods_by_period(Period.objects.current())
+        period = Period.objects.current_or_last()
+        wps = obj.workshop_periods.filter(period=period)
         if wps:
-            if obj.is_schedule_full(Period.objects.current()):
+            if obj.is_schedule_full(period):
                 text = _("Full schedule")
             else:
                 text = _("Partial schedule")
-            url = reverse("admin:cayuman_studentcycle_workshops", kwargs={"object_id": obj.id, "period_id": Period.objects.current().id})
+            url = reverse("admin:cayuman_studentcycle_workshops", kwargs={"object_id": obj.id, "period_id": period.id})
             return format_html(f'<a href="{url}">{text} ({len(wps)})</a>')
         else:
             return _("No workshops yet")
 
-    @admin.display(description=_("Workshops %s") % (Period.objects.current()))
+    @admin.display(description=_("Workshops %s") % (Period.objects.current_or_last()))
     def this_period_workshops_list(self, obj):
         """Display function to use when exporting these entries to CSV"""
-        wps = obj.workshop_periods_by_period(Period.objects.current())
+        period = Period.objects.current_or_last()
+        wps = obj.workshop_periods.filter(period=period)
         if wps:
             return ", ".join([wp.workshop.name for wp in wps])
         else:
             return ""
 
-    @admin.display(description=_("Previous Periods Workshops"))
-    def previous_periods_workshops(self, obj):
-        current_period = Period.objects.current()
-        period = Period.objects.filter(id__lt=current_period.id).order_by("-id").first()
-        if period:
-            return format_html(
-                f'<a href="{reverse("admin:cayuman_studentcycle_workshops", kwargs={"object_id": obj.id, "period_id": period.id})}">'
-                f'{_("Workshops %s") % (period)}'
-                "</a>"
-            )
+    @admin.display(description=_("Other Periods Workshops"))
+    def other_periods_workshops(self, obj):
+        from django.template.loader import render_to_string
+
+        current_period = Period.objects.current_or_last()
+        periods = Period.objects.exclude(id=current_period.id).order_by("-id")
+        if periods:
+            return format_html(render_to_string("admin/student_cycle_periods_list.html", {"periods": periods, "obj": obj}))
 
     @admin.display(boolean=True, description=_("Active"))
     def active(self, obj):

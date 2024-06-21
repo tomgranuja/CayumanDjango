@@ -206,6 +206,16 @@ def test_current_period():
     with patch("cayuman.models.timezone") as mock_datetime:
         mock_datetime.now.return_value = datetime(2024, 6, 17)
         mock_datetime.now.date.return_value = datetime(2024, 6, 17).date()
+        assert Period.objects.current() is None
+        assert period_1.is_current() is False
+        assert period_2.is_current() is False
+        assert period_1.is_enabled_to_preview() is False
+        assert period_2.is_enabled_to_preview() is True
+
+    # test date after or equal to date_start
+    with patch("cayuman.models.timezone") as mock_datetime:
+        mock_datetime.now.return_value = datetime(2024, 6, 21)
+        mock_datetime.now.date.return_value = datetime(2024, 6, 21).date()
         assert Period.objects.current() == period_2
         assert period_1.is_current() is False
         assert period_2.is_current() is True
