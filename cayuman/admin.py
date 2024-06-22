@@ -3,8 +3,9 @@ from django.contrib.auth.admin import UserAdmin
 from django.db.models import Q
 from django.urls import path
 from django.urls import reverse_lazy as reverse
+from django.utils.functional import lazy
 from django.utils.html import format_html
-from django.utils.translation import gettext as _
+from django.utils.translation import gettext_lazy as _
 
 from .forms import AdminMemberChangeForm
 from .forms import AdminStudentCycleForm
@@ -339,7 +340,7 @@ class StudentCycleAdmin(admin.ModelAdmin):
         queryset = super().get_queryset(request)
         return queryset.filter(student__is_active=True)
 
-    @admin.display(description=_("Workshops %s") % (Period.objects.current_or_last()))
+    @admin.display(description=_("Workshops %s") % (lazy(Period.objects.current_or_last, Period)()))
     def this_period_workshops_html(self, obj):
         """Display function to use in Django admin list for this model"""
         period = Period.objects.current_or_last()
@@ -354,7 +355,7 @@ class StudentCycleAdmin(admin.ModelAdmin):
         else:
             return _("No workshops yet")
 
-    @admin.display(description=_("Workshops %s") % (Period.objects.current_or_last()))
+    @admin.display(description=_("Workshops %s") % (lazy(Period.objects.current_or_last, Period)()))
     def this_period_workshops_list(self, obj):
         """Display function to use when exporting these entries to CSV"""
         period = Period.objects.current_or_last()

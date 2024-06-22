@@ -201,13 +201,13 @@ class PeriodManager(models.Manager):
         Current period is defined as this:
         - That period where current_date is between date_start and date_end
         - Else None
-        Method makes of `period_by_date` to take advantage of caching, while `current` is not cached
+        Method makes use of `period_by_date` to take advantage of caching, while `current` is not cached
         """
         now = timezone.now()
-        return Period.objects.period_by_date(now.date())
+        return self.period_by_date(now.date())
 
     def current_or_last(self):
-        return Period.objects.current() or Period.objects.last()
+        return self.current() or self.get_queryset().order_by("-date_end").first()
 
     @lru_cache
     def period_by_date(self, date):
@@ -228,7 +228,7 @@ class Period(models.Model):
     name = models.CharField(max_length=50, verbose_name=_("Name"))
     description = models.TextField(blank=True, verbose_name=_("Description"))
     preview_date = models.DateField(blank=True, null=True, verbose_name=_("Preview date"))
-    enrollment_start = models.DateField(blank=True, verbose_name=_("Enrollment start date"))
+    enrollment_start = models.DateTimeField(blank=True, verbose_name=_("Enrollment start date and time"))
     enrollment_end = models.DateField(blank=True, null=True, verbose_name=_("Enrollment end date"))
     date_start = models.DateField(verbose_name=_("Start date"))
     date_end = models.DateField(verbose_name=_("End date"))
@@ -282,22 +282,22 @@ class Period(models.Model):
 
     def clean(self):
         if not self.preview_date:
-            self.preview_date = self.enrollment_start
+            self.preview_date = self.enrollment_start.date()
 
-        if self.preview_date > self.enrollment_start:
+        if self.preview_date > self.enrollment_start.date():
             raise ValidationError({"preview_date": _("Preview date must be before enrollment start date")})
 
         if not self.enrollment_end and self.enrollment_start:
             # Fill enrollment_end automatically to enrollment_start + 5 days
-            self.enrollment_end = self.enrollment_start + timezone.timedelta(days=5)
+            self.enrollment_end = self.enrollment_start.date() + timezone.timedelta(days=5)
 
         if self.date_start >= self.date_end:
             raise ValidationError({"date_start": _("Start date must be before end date")})
 
-        if self.enrollment_start >= self.enrollment_end:
+        if self.enrollment_start.date() >= self.enrollment_end:
             raise ValidationError({"enrollment_start": _("Enrollment start date must be before enrollment end date")})
 
-        if self.enrollment_start and self.enrollment_start > self.date_start:
+        if self.enrollment_start and self.enrollment_start.date() > self.date_start:
             raise ValidationError({"enrollment_start": _("Enrollment start date must be before start date")})
 
         # Can't collide with another period in terms of date_start and date_end
@@ -333,7 +333,7 @@ class Period(models.Model):
         now_date = now.date()
 
         # It's never possible to enroll before `enrollment_start` and after `date_end`
-        if now_date > self.date_end or now_date < self.enrollment_start:
+        if now_date > self.date_end or now < self.enrollment_start:
             return False
 
         return True
@@ -513,7 +513,8 @@ class StudentCycle(models.Model):
     @lru_cache(maxsize=None)
     def is_enabled_to_enroll(self, period: Period) -> bool:
         """Returns True or False depending if current student is enabled to enroll"""
-        now = timezone.now().date()
+        now = timezone.now()
+        now_date = now.date()
 
         # It's never possible to enroll before `enrollment_start` and after `date_end`
         if not period.is_enabled_to_enroll():
@@ -521,7 +522,7 @@ class StudentCycle(models.Model):
 
         # students with full schedule can only re-enroll between `enrollment_start` and `enrollment_end`
         if self.is_schedule_full(period):
-            if period.enrollment_start <= now <= period.enrollment_end:
+            if period.enrollment_start <= now and now_date <= period.enrollment_end:
                 return True
         else:
             # students without full schedule can enroll anytime until `date_end`

@@ -90,10 +90,9 @@ msgid "No workshops yet"
 msgstr "Sin talleres aún"
 
 #: cayuman/admin.py:367
-#, fuzzy
 #| msgid "Previous Periods Workshops"
 msgid "Other Periods Workshops"
-msgstr "Talleres de periodos previos"
+msgstr "Talleres de otro periodos"
 
 #: cayuman/admin.py:432
 #, python-format
@@ -438,10 +437,9 @@ msgid "View on site"
 msgstr "Ver en el sitio"
 
 #: cayuman/templates/admin/student_cycle_periods_list.html:4
-#, fuzzy
 #| msgid "Period"
 msgid "Select Period"
-msgstr "Periodo"
+msgstr "Selecciona un periodo"
 
 #: cayuman/templates/admin/student_cycle_workshop_periods.html:7
 #: cayuman/templates/admin/workshop_period_students.html:6
