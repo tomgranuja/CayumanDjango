@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2024-06-22 17:42-0400\n"
+"POT-Creation-Date: 2024-06-22 18:59-0400\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -19,82 +19,81 @@ msgstr ""
 "Plural-Forms: nplurals=3; plural=n == 1 ? 0 : n != 0 && n % 1000000 == 0 ? "
 "1 : 2;\n"
 
-#: cayuman/admin.py:84
+#: cayuman/admin.py:85
 msgid "Export Selected to CSV"
 msgstr "Exportar seleccionados a CSV"
 
-#: cayuman/admin.py:96 cayuman/models.py:105
+#: cayuman/admin.py:97 cayuman/models.py:105
 msgid "Full Name"
 msgstr "Nombre Completo"
 
-#: cayuman/admin.py:103
+#: cayuman/admin.py:104
 msgid "Is Student"
 msgstr "Es Estudiante"
 
-#: cayuman/admin.py:107
+#: cayuman/admin.py:108
 msgid "Is Teacher"
 msgstr "Es Profesor"
 
-#: cayuman/admin.py:111 cayuman/admin.py:159
+#: cayuman/admin.py:112 cayuman/admin.py:160
 #: cayuman/migrations/0002_alter_cycle_options_alter_member_options_and_more.py:15
 #: cayuman/models.py:377 cayuman/models.py:463
 #: cayuman/templates/admin/workshop_period_students.html:24
 msgid "Cycle"
 msgstr "Ciclo"
 
-#: cayuman/admin.py:140 cayuman/admin.py:201 cayuman/admin.py:376
+#: cayuman/admin.py:141 cayuman/admin.py:202 cayuman/admin.py:377
 msgid "Active"
 msgstr "Activo"
 
-#: cayuman/admin.py:205
+#: cayuman/admin.py:206
 msgid "Link"
 msgstr "Enlace"
 
-#: cayuman/admin.py:209
+#: cayuman/admin.py:210
 #: cayuman/migrations/0002_alter_cycle_options_alter_member_options_and_more.py:15
 #: cayuman/models.py:378 cayuman/models.py:386
 msgid "Cycles"
 msgstr "Ciclos"
 
-#: cayuman/admin.py:213
+#: cayuman/admin.py:214
 #: cayuman/migrations/0002_alter_cycle_options_alter_member_options_and_more.py:29
 #: cayuman/models.py:195 cayuman/models.py:387
 #: cayuman/templates/admin/student_cycle_workshop_periods.html:78
 msgid "Schedules"
 msgstr "Bloques Horarios"
 
-#: cayuman/admin.py:221
+#: cayuman/admin.py:222
 msgid "Enrolled Students"
 msgstr "Estudiantes inscritos"
 
-#: cayuman/admin.py:276
+#: cayuman/admin.py:277
 #, python-format
 msgid "Student Cycles: %s"
 msgstr "Estudiantes por ciclo: %s"
 
-#: cayuman/admin.py:342 cayuman/admin.py:357
+#: cayuman/admin.py:343 cayuman/admin.py:358
 #, python-format
 msgid "Workshops %s"
 msgstr "Talleres %s"
 
-#: cayuman/admin.py:349
+#: cayuman/admin.py:350
 msgid "Full schedule"
 msgstr "Horario completo"
 
-#: cayuman/admin.py:351
+#: cayuman/admin.py:352
 msgid "Partial schedule"
 msgstr "Horario parcial"
 
-#: cayuman/admin.py:355
+#: cayuman/admin.py:356
 msgid "No workshops yet"
 msgstr "Sin talleres aún"
 
-#: cayuman/admin.py:367
-#| msgid "Previous Periods Workshops"
+#: cayuman/admin.py:368
 msgid "Other Periods Workshops"
 msgstr "Talleres de otro periodos"
 
-#: cayuman/admin.py:432
+#: cayuman/admin.py:433
 #, python-format
 msgid "Workshop Periods %s for: %s"
 msgstr "Talleres por periodo %s para: %s"
@@ -127,12 +126,12 @@ msgstr ""
 msgid "There's already another workshop period overlapping with current one"
 msgstr "Ya existe otro taller por periodo colisionando con el actual"
 
-#: cayuman/forms.py:123 cayuman/models.py:573
+#: cayuman/forms.py:123 cayuman/models.py:574
 #, python-format
 msgid "Workshop period `%s` has reached its quota of students"
 msgstr "El taller `%s` ha alcanzado su número máximo de estudiantes"
 
-#: cayuman/forms.py:127 cayuman/models.py:578
+#: cayuman/forms.py:127 cayuman/models.py:579
 #, python-format
 msgid ""
 "Student `%(st)s` cannot be associated with workshop period `%(wp)s` because "
@@ -141,7 +140,7 @@ msgstr ""
 "El estudiante `%(st)s` no puede inscribirse en el taller `%(wp)s` porque no "
 "coinciden en los ciclos"
 
-#: cayuman/forms.py:137 cayuman/models.py:588
+#: cayuman/forms.py:137 cayuman/models.py:589
 #, python-format
 msgid "Workshop periods `%(w1)s` and `%(w2)s` have colliding schedules."
 msgstr "Los talleres `%(w1)s` y `%(w2)s` tienen una colisión de horario"
@@ -200,12 +199,12 @@ msgid "Schedule"
 msgstr "Bloque Horario"
 
 #: cayuman/migrations/0002_alter_cycle_options_alter_member_options_and_more.py:37
-#: cayuman/models.py:543
+#: cayuman/models.py:544
 msgid "Students Cycle"
 msgstr "Estudiante por ciclo"
 
 #: cayuman/migrations/0002_alter_cycle_options_alter_member_options_and_more.py:38
-#: cayuman/models.py:544
+#: cayuman/models.py:545
 msgid "Students Cycles"
 msgstr "Estudiantes por ciclo"
 
@@ -293,7 +292,8 @@ msgid "Preview date"
 msgstr "Fecha de previsualización"
 
 #: cayuman/models.py:231
-msgid "Enrollment start date"
+#| msgid "Enrollment start date"
+msgid "Enrollment start date and time"
 msgstr "Fecha de inicio de inscripción"
 
 #: cayuman/models.py:232
@@ -368,7 +368,7 @@ msgstr "Talleres por periodo"
 msgid "Student must belong to the `%(g)s` group"
 msgstr "El estudiante debe pertenecer al grupo `%(g)s`"
 
-#: cayuman/models.py:563
+#: cayuman/models.py:564
 #, python-format
 msgid "Workshop period `%(wp)s` is already associated with this student"
 msgstr "El taller `%(wp)s` ya está asociado con este estudiante"
@@ -437,7 +437,6 @@ msgid "View on site"
 msgstr "Ver en el sitio"
 
 #: cayuman/templates/admin/student_cycle_periods_list.html:4
-#| msgid "Period"
 msgid "Select Period"
 msgstr "Selecciona un periodo"
 
