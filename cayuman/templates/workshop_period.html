@@ -22,7 +22,6 @@
     display: inline;
   }
 }
-
     </style>
   </head>
   <body style="padding-top: 5px">
@@ -50,46 +49,15 @@
       </div>
 
       <div>
-        <table class="table caption-top table-bordered table-responsive">
-          <caption>{% trans %}Schedules{% endtrans %}</caption>
-          <thead class="overflow-x-hidden">
-            <tr>
-              <th scope="col" width="10%">{% trans %}Hour{% endtrans %}</th>
-              {% for day in days %}
-              <th scope="col" width="18%">
-                <span class="tlong">{{ day.1 }}</span><span class="tshort text-uppercase">{{ day.1 | truncate(3, True, '', 0) }}</span>
-              </th>
-              {% endfor %}
-            </tr>
-          </thead>
-          <tbody>
-            {% for block in blocks %}
-            <tr>
-                <th scope="row" width="10%">{{ block.0.strftime('%H:%M') }} - {{ block.1.strftime('%H:%M') }}</th>
-                {% for sched in schedules %}
-                    {% if sched.time_start == block.0 %}
-                        {% set ns = namespace(seen=false) %}
-                        {% for wp_sched in wp.schedules.all() %}
-                            {% if wp_sched == sched %}
-                                <td class="table-primary" width="18%">
-                                  <div class="d-flex justify-content-center align-items-center icon-link" style="font-size: 2em">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-check-lg" viewBox="0 0 16 16">
-                                      <path d="M12.736 3.97a.733.733 0 0 1 1.047 0c.286.289.29.756.01 1.05L7.88 12.01a.733.733 0 0 1-1.065.02L3.217 8.384a.757.757 0 0 1 0-1.06.733.733 0 0 1 1.047 0l3.052 3.093 5.4-6.425z"/>
-                                    </svg>
-                                  </div>
-                                </td>
-                                {% set ns.seen = true %}
-                            {% endif %}
-                        {% endfor %}
-                        {% if not ns.seen %}
-                            <td></td>
-                        {% endif %}
-                    {% endif %}
-                {% endfor %}
-            </tr>
-            {% endfor %}
-          </tbody>
-        </table>
+        {% timetable [wp], caption=gettext("Schedules"), table_class="table caption-top table-bordered table-responsive", thead_class="overflow-x-hidden", td_class="table-primary" %}
+            {% if schedule in workshop_period.schedules.all() %}
+            <div class="d-flex justify-content-center align-items-center icon-link" style="font-size: 2em" style="background-color: green;">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-check-lg" viewBox="0 0 16 16">
+                <path d="M12.736 3.97a.733.733 0 0 1 1.047 0c.286.289.29.756.01 1.05L7.88 12.01a.733.733 0 0 1-1.065.02L3.217 8.384a.757.757 0 0 1 0-1.06.733.733 0 0 1 1.047 0l3.052 3.093 5.4-6.425z"/>
+              </svg>
+            </div>
+            {% endif %}
+        {% endtimetable %}
       </div>
     </div>
 <!-- Google tag (gtag.js) -->

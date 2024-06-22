@@ -30,7 +30,7 @@ def mock_date(given_date):
         @functools.wraps(test_func)
         def wrapper(*args, **kwargs):
             # Clear the cache before running the test
-            with patch("cayuman.models.datetime") as mock_datetime:
+            with patch("cayuman.models.timezone") as mock_datetime:
                 # Set the mocked datetime
                 mock_datetime.now.return_value = datetime(given_date.year, given_date.month, given_date.day)
                 mock_datetime.now.date.return_value = given_date
@@ -87,7 +87,7 @@ def create_teacher(create_groups):
 @pytest.fixture(autouse=True)
 def create_period():
     return Period.objects.create(
-        name="Period X",
+        name="Period 1",
         preview_date=date(2024, 4, 17),
         enrollment_start=date(2024, 4, 19),
         enrollment_end=date(2024, 4, 26),
@@ -140,275 +140,300 @@ def client_authenticated_teacher(client, create_teacher):
     return client
 
 
+parameterized_tests = {
+    # anon redirected to login
+    "0": (reverse("home"), date(2024, 1, 1), None, None, None, False, 302, reverse("login") + "?next=/", [], []),
+    # teacher redirected to admin login
+    "home-teacher-user": (reverse("home"), date(2024, 1, 1), "client_authenticated_teacher", None, None, False, 302, reverse("admin:login"), [], []),
+    # student redirected to workshop_periods when no full schedule and before preview_date
+    "1": (
+        reverse("home"),
+        date(2024, 4, 16),  # before preview_date
+        "client_authenticated_student",
+        "create_workshop_period",
+        None,
+        False,
+        302,
+        reverse("workshop_periods", kwargs={"period_id": 1}),
+        [],
+        [],
+    ),
+    # student without student cycle gets warning when no associated StudentCycle
+    "2": (
+        reverse("workshop_periods", kwargs={"period_id": 1}),
+        date(2024, 4, 18),  # between preview_date and enrollment_start
+        "client_authenticated_student",
+        "create_workshop_period",
+        None,
+        False,
+        200,
+        None,
+        ["Hello", "Your student account is not associated with any Cycle"],
+        ["These are the workshop options for", "Click here to enroll in your workshops", "card-title mb-2 text-body-primar"],
+    ),
+    # student with student cycle get list of workshops, no enrollment button when after preview_date and before enrollment_start
+    "3": (
+        reverse("workshop_periods", kwargs={"period_id": 1}),
+        date(2024, 4, 18),  # between preview_date and enrollment_start
+        "client_authenticated_student",
+        "create_workshop_period",
+        "create_student_cycle",
+        False,
+        200,
+        None,
+        ["Hello", "These are the workshop options for", "card-title mb-2 text-body-primar"],
+        ["Click here to enroll in your workshops", "Your student account is not associated with any Cycle"],
+    ),
+    # student gets list of workshops and enrollment button if no full schedule and after enrollment_start
+    "4": (
+        reverse("workshop_periods", kwargs={"period_id": 1}),
+        date(2024, 4, 20),  # after enrollment_start
+        "client_authenticated_student",
+        "create_workshop_period",
+        "create_student_cycle",
+        False,  # no full schedule
+        200,
+        None,
+        ["Hello", "These are the workshop options for", "Click here to enroll in your workshops", "card-title mb-2 text-body-primar"],
+        ["Your student account is not associated with any Cycle"],
+    ),
+    # student with full schedule is redirected to weekly-schedule when visiting home
+    "5": (
+        reverse("home"),
+        date(2024, 4, 20),
+        "client_authenticated_student",
+        "create_workshop_period",
+        "create_student_cycle",
+        True,  # with full schedule
+        302,
+        reverse("weekly_schedule", kwargs={"period_id": 1}),
+        [],
+        [],
+    ),
+    # student without workshops gets list of workshops and enrollment button even after enrollment_end and before date_start
+    "6": (
+        reverse("workshop_periods", kwargs={"period_id": 1}),
+        date(2024, 4, 27),  # after enrollment_end
+        "client_authenticated_student",
+        "create_workshop_period",
+        "create_student_cycle",
+        False,  # no full schedule
+        200,
+        None,
+        ["Hello", "These are the workshop options for", "Click here to enroll in your workshops"],
+        ["Your student account is not associated with any Cycle"],
+    ),
+    # student with full schedule redirected to weekly-schedule after enrollment end
+    "7": (
+        reverse("home"),
+        date(2024, 4, 27),  # after enrollment end
+        "client_authenticated_student",
+        "create_workshop_period",
+        "create_student_cycle",
+        True,
+        302,
+        reverse("weekly_schedule", kwargs={"period_id": 1}),
+        [],
+        [],
+    ),
+    # student without full schedule is allowed into workshop periods even after date_start
+    "8": (
+        reverse("workshop_periods", kwargs={"period_id": 1}),
+        date(2024, 5, 10),  # after date_start
+        "client_authenticated_student",
+        "create_workshop_period",
+        "create_student_cycle",
+        False,
+        200,
+        None,
+        ["Hello", "These are the workshop options for", "Click here to enroll in your workshops"],
+        ["Your student account is not associated with any Cycle"],
+    ),
+    # student is redirected to weekly schedule if full schedule after date_start
+    "9": (
+        reverse("home"),
+        date(2024, 5, 10),  # after date_start
+        "client_authenticated_student",
+        "create_workshop_period",
+        "create_student_cycle",
+        True,
+        302,
+        reverse("weekly_schedule", kwargs={"period_id": 1}),
+        [],
+        [],
+    ),
+    # student shown workshops and enrollment button if full schedule and between enrollment_start and enrollment_end
+    # i.e. chosen workshop periods can be changed by the student until date_start
+    "10": (
+        reverse("workshop_periods", kwargs={"period_id": 1}),
+        date(2024, 4, 20),  # between enrollment_start and enrollment_end
+        "client_authenticated_student",
+        "create_workshop_period",
+        "create_student_cycle",
+        True,
+        200,
+        None,
+        ["Hello", "These are the workshop options for", "Click here to enroll in your workshops"],
+        ["Your student account is not associated with any Cycle"],
+    ),
+    # student without full schedule is allowed to change their workshops even after date_start
+    "11": (
+        reverse("weekly_schedule", kwargs={"period_id": 1}),
+        date(2024, 5, 10),  # after date_start
+        "client_authenticated_student",
+        "create_workshop_period",
+        "create_student_cycle",
+        False,
+        200,
+        None,
+        ["Weekly Workshop Schedule", "Change my Workshops"],
+        ["If you need to change your workshops"],
+    ),
+    # student with full schedule cannot change workshops after date_start
+    "12": (
+        reverse("weekly_schedule", kwargs={"period_id": 1}),
+        date(2024, 5, 10),  # after date_start
+        "client_authenticated_student",
+        "create_workshop_period",
+        "create_student_cycle",
+        True,
+        200,
+        None,
+        ["Weekly Workshop Schedule", "If you need to change your workshops"],
+        ["Change my Workshops"],
+    ),
+    # student without full schedule is sent to weekly-schedule before preview_date
+    "13": (
+        reverse("enrollment", kwargs={"period_id": 1}),
+        date(2024, 4, 16),  # before preview_date
+        "client_authenticated_student",
+        "create_workshop_period",
+        "create_student_cycle",
+        False,
+        302,
+        reverse("weekly_schedule", kwargs={"period_id": 1}),
+        [],
+        [],
+    ),
+    # student with full schedule sent to weekly-schedule before preview_date (this case shouldn't happen)
+    "14": (
+        reverse("enrollment", kwargs={"period_id": 1}),
+        date(2024, 4, 16),  # before preview_date
+        "client_authenticated_student",
+        "create_workshop_period",
+        "create_student_cycle",
+        True,
+        302,
+        reverse("weekly_schedule", kwargs={"period_id": 1}),
+        [],
+        [],
+    ),
+    # student redirected to weekly-schedule before enrollment_start
+    "15": (
+        reverse("enrollment", kwargs={"period_id": 1}),
+        date(2024, 4, 18),  # before enrollment_start
+        "client_authenticated_student",
+        "create_workshop_period",
+        "create_student_cycle",
+        False,
+        302,
+        reverse("weekly_schedule", kwargs={"period_id": 1}),
+        [],
+        [],
+    ),
+    # student redirected to weekly-schedule if full_schedule and before enrollment_start (this shouldn't happen)
+    "16": (
+        reverse("enrollment", kwargs={"period_id": 1}),
+        date(2024, 4, 18),
+        "client_authenticated_student",
+        "create_workshop_period",
+        "create_student_cycle",
+        True,
+        302,
+        reverse("weekly_schedule", kwargs={"period_id": 1}),
+        [],
+        [],
+    ),
+    # student without full schedule is shown enrollment form after enrollment_start
+    "17": (
+        reverse("enrollment", kwargs={"period_id": 1}),
+        date(2024, 4, 20),  # after enrollment_start
+        "client_authenticated_student",
+        "create_workshop_period",
+        "create_student_cycle",
+        False,  # no full schedule
+        200,
+        None,
+        ["These are the available workshops"],
+        ["No enrollment available at this time"],
+    ),
+    # student without full schedule is shown enrollment form even after date_start
+    "18": (
+        reverse("enrollment", kwargs={"period_id": 1}),
+        date(2024, 5, 10),  # after date_start
+        "client_authenticated_student",
+        "create_workshop_period",
+        "create_student_cycle",
+        False,
+        200,
+        None,
+        ["These are the available workshops"],
+        ["No enrollment available at this time"],
+    ),
+    # student with full schedule redirected to weekly-schedule after date_start
+    "19": (
+        reverse("enrollment", kwargs={"period_id": 1}),
+        date(2024, 5, 10),  # after date_start
+        "client_authenticated_student",
+        "create_workshop_period",
+        "create_student_cycle",
+        True,
+        302,
+        reverse("weekly_schedule", kwargs={"period_id": 1}),
+        [],
+        [],
+    ),
+    # student without student cycle is sent to workshop_periods after date_start
+    "20": (
+        reverse("enrollment", kwargs={"period_id": 1}),
+        date(2024, 5, 10),  # after date_start
+        "client_authenticated_student",
+        "create_workshop_period",
+        None,
+        False,
+        302,
+        reverse("workshop_periods", kwargs={"period_id": 1}),
+        [],
+        [],
+    ),
+    # student without studentcycle is shown warning workshops are not yet visible before preview_date
+    "21": (
+        reverse("workshop_periods", kwargs={"period_id": 1}),
+        date(2024, 4, 16),  # before preview_date
+        "client_authenticated_student",
+        "create_workshop_period",
+        None,
+        False,
+        200,
+        None,
+        ["Hello", "It is still not the time to visualize workshops for the upcoming period"],
+        [
+            "Your student account is not associated with any Cycle",
+            "These are the workshop options for",
+            "Click here to enroll in your workshops",
+            "card-title mb-2 text-body-primar",
+        ],
+    ),
+}
+
+
 @pytest.mark.parametrize(
     (
         "url, current_date, member_session, workshop_period, student_cycle, "
         "assign_student_cycle_workshop_period, status_code, redirect_url, wanted_words, unwanted_words"
     ),
-    [
-        # home
-        (reverse("home"), date(2024, 1, 1), None, None, None, False, 302, reverse("login") + "?next=/", [], []),
-        (reverse("home"), date(2024, 1, 1), "client_authenticated_teacher", None, None, False, 302, reverse("admin:login"), [], []),
-        (
-            reverse("home"),
-            date(2024, 4, 16),
-            "client_authenticated_student",
-            "create_workshop_period",
-            None,
-            False,
-            200,
-            None,
-            ["Hello", "It is still not the time to visualize workshops for the upcoming period"],
-            [
-                "Your student account is not associated with any Cycle",
-                "These are the workshop options for",
-                "Click here to enroll in your workshops",
-                "card-title mb-2 text-body-primar",
-            ],
-        ),
-        (
-            reverse("home"),
-            date(2024, 4, 18),
-            "client_authenticated_student",
-            "create_workshop_period",
-            None,
-            False,
-            200,
-            None,
-            ["Hello", "Your student account is not associated with any Cycle"],
-            ["These are the workshop options for", "Click here to enroll in your workshops", "card-title mb-2 text-body-primar"],
-        ),
-        (
-            reverse("home"),
-            date(2024, 4, 18),
-            "client_authenticated_student",
-            "create_workshop_period",
-            "create_student_cycle",
-            False,
-            200,
-            None,
-            ["Hello", "These are the workshop options for", "card-title mb-2 text-body-primar"],
-            ["Click here to enroll in your workshops", "Your student account is not associated with any Cycle"],
-        ),
-        (
-            reverse("home"),
-            date(2024, 4, 20),
-            "client_authenticated_student",
-            "create_workshop_period",
-            "create_student_cycle",
-            False,
-            200,
-            None,
-            ["Hello", "These are the workshop options for", "Click here to enroll in your workshops", "card-title mb-2 text-body-primar"],
-            ["Your student account is not associated with any Cycle"],
-        ),
-        (
-            reverse("home"),
-            date(2024, 4, 20),
-            "client_authenticated_student",
-            "create_workshop_period",
-            "create_student_cycle",
-            True,
-            302,
-            reverse("weekly_schedule"),
-            [],
-            [],
-        ),
-        (
-            reverse("home"),
-            date(2024, 4, 27),
-            "client_authenticated_student",
-            "create_workshop_period",
-            "create_student_cycle",
-            False,
-            200,
-            None,
-            ["Hello", "These are the workshop options for", "Click here to enroll in your workshops"],
-            ["Your student account is not associated with any Cycle"],
-        ),
-        (
-            reverse("home"),
-            date(2024, 4, 27),
-            "client_authenticated_student",
-            "create_workshop_period",
-            "create_student_cycle",
-            True,
-            302,
-            reverse("weekly_schedule"),
-            [],
-            [],
-        ),
-        (
-            reverse("home"),
-            date(2024, 5, 10),
-            "client_authenticated_student",
-            "create_workshop_period",
-            "create_student_cycle",
-            False,
-            200,
-            None,
-            ["Hello", "These are the workshop options for", "Click here to enroll in your workshops"],
-            ["Your student account is not associated with any Cycle"],
-        ),
-        (
-            reverse("home"),
-            date(2024, 5, 10),
-            "client_authenticated_student",
-            "create_workshop_period",
-            "create_student_cycle",
-            True,
-            302,
-            reverse("weekly_schedule"),
-            [],
-            [],
-        ),
-        # home?force=true
-        (
-            reverse("home") + "?force=true",
-            date(2024, 4, 20),
-            "client_authenticated_student",
-            "create_workshop_period",
-            "create_student_cycle",
-            True,
-            200,
-            None,
-            ["Hello", "These are the workshop options for", "Click here to enroll in your workshops"],
-            ["Your student account is not associated with any Cycle"],
-        ),
-        # weekly-schedule
-        (
-            reverse("weekly_schedule"),
-            date(2024, 5, 10),
-            "client_authenticated_student",
-            "create_workshop_period",
-            "create_student_cycle",
-            False,
-            200,
-            None,
-            ["Weekly Workshop Schedule", "Change my Workshops"],
-            ["If you need to change your workshops"],
-        ),
-        (
-            reverse("weekly_schedule"),
-            date(2024, 5, 10),
-            "client_authenticated_student",
-            "create_workshop_period",
-            "create_student_cycle",
-            True,
-            200,
-            None,
-            ["Weekly Workshop Schedule", "If you need to change your workshops"],
-            ["Change my Workshops"],
-        ),
-        # enrollment
-        (
-            reverse("enrollment"),
-            date(2024, 4, 16),
-            "client_authenticated_student",
-            "create_workshop_period",
-            "create_student_cycle",
-            False,
-            302,
-            reverse("weekly_schedule"),
-            [],
-            [],
-        ),
-        (
-            reverse("enrollment"),
-            date(2024, 4, 16),
-            "client_authenticated_student",
-            "create_workshop_period",
-            "create_student_cycle",
-            True,
-            302,
-            reverse("weekly_schedule"),
-            [],
-            [],
-        ),
-        (
-            reverse("enrollment"),
-            date(2024, 4, 18),
-            "client_authenticated_student",
-            "create_workshop_period",
-            "create_student_cycle",
-            False,
-            302,
-            reverse("weekly_schedule"),
-            [],
-            [],
-        ),
-        (
-            reverse("enrollment"),
-            date(2024, 4, 18),
-            "client_authenticated_student",
-            "create_workshop_period",
-            "create_student_cycle",
-            True,
-            302,
-            reverse("weekly_schedule"),
-            [],
-            [],
-        ),
-        (
-            reverse("enrollment"),
-            date(2024, 4, 20),
-            "client_authenticated_student",
-            "create_workshop_period",
-            "create_student_cycle",
-            False,
-            200,
-            None,
-            ["These are the available workshops"],
-            ["No enrollment available at this time"],
-        ),
-        (
-            reverse("enrollment"),
-            date(2024, 5, 10),
-            "client_authenticated_student",
-            "create_workshop_period",
-            "create_student_cycle",
-            False,
-            200,
-            None,
-            ["These are the available workshops"],
-            ["No enrollment available at this time"],
-        ),
-        (
-            reverse("enrollment"),
-            date(2024, 5, 10),
-            "client_authenticated_student",
-            "create_workshop_period",
-            "create_student_cycle",
-            True,
-            302,
-            reverse("weekly_schedule"),
-            [],
-            [],
-        ),
-    ],
-    ids=[
-        "home-anon-user",
-        "home-teacher-user",
-        "home-student-user-before-preview",
-        "home-student-user-after-preview-no-student_cycle",
-        "home-student-user-after-preview-with-student_cycle",
-        "home-student-user-after-enrollment_start",
-        "home-student-user-after-enrollment_start-with-student_cycle-workshop_period",
-        "home-student-user-after-enrollment_end-no-student_cycle-workshop_period",
-        "home-student-user-after-enrollment_end-with-student_cycle-workshop_period",
-        "home-student-user-after-date_start-no-student_cycle-workshop_period",
-        "home-student-user-after-date_start-with-student_cycle-workshop_period",
-        "home-force-student-user-after-enrollment_start-with-student_cycle-workshop_period",
-        "weekly_schedule-student-user-after-date_start-no-student_cycle-workshop_period",
-        "weekly_schedule-student-user-after-date_start-with-student_cycle-workshop_period",
-        "enrollment-student-user-before-preview-no-student_cycle-workshop_period",
-        "enrollment-student-user-before-preview-with-student_cycle-workshop_period",
-        "enrollment-student-user-before-enrollment_start-no-student_cycle-workshop_period",
-        "enrollment-student-user-before-enrollment_start-with-student_cycle-workshop_period",
-        "enrollment-student-user-after-enrollment_start-no-student_cycle-workshop_period",
-        "enrollment-student-user-after-date_start-no-student_cycle-workshop_period",
-        "enrollment-student-user-after-date_start-with-student_cycle-workshop_period",
-    ],
+    list(parameterized_tests.values()),
+    ids=list(parameterized_tests.keys()),
 )
 def test_url(
     request,
@@ -436,7 +461,7 @@ def test_url(
     if assign_student_cycle_workshop_period:
         student_cycle.workshop_periods.add(workshop_period)
 
-    with patch("cayuman.models.datetime") as mock_datetime:
+    with patch("cayuman.models.timezone") as mock_datetime:
         # Set the mocked datetime
         mock_datetime.now.return_value = datetime(current_date.year, current_date.month, current_date.day)
         mock_datetime.now.date.return_value = current_date

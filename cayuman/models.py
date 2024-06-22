@@ -200,27 +200,25 @@ class PeriodManager(models.Manager):
         """
         Current period is defined as this:
         - That period where current_date is between date_start and date_end
-        - Else, last one stored on DB
+        - Else None
+        Method makes of `period_by_date` to take advantage of caching, while `current` is not cached
         """
-        from django.db.models import Q
+        now = timezone.now()
+        return Period.objects.period_by_date(now.date())
 
-        now = datetime.now().date()
+    def current_or_last(self):
+        return Period.objects.current() or Period.objects.last()
+
+    @lru_cache
+    def period_by_date(self, date):
+        """
+        Returns the period that contains the given date.
+        - given_date must be a date object
+        """
         try:
-            date_condition = Q(enrollment_start__lte=now) | Q(preview_date__lte=now)
-            end_condition = Q(date_end__gte=now)
-            val = self.get_queryset().get(date_condition & end_condition)
-        except self.model.MultipleObjectsReturned:
-            try:
-                val = self.get_queryset().get(date_start__lte=now, date_end__gte=now)
-            except self.model.DoesNotExist:
-                val = None
-        except self.model.DoesNotExist:
+            val = self.get_queryset().get(date_start__lte=date, date_end__gte=date)
+        except (self.model.MultipleObjectsReturned, self.model.DoesNotExist):
             val = None
-
-        if not val:
-            # return latest in terms of id
-            val = self.get_queryset().order_by("-id").first()
-
         return val
 
 
@@ -249,13 +247,20 @@ class Period(models.Model):
         """Returns a more human name for the period"""
         from django.utils.formats import date_format
 
+        now = timezone.now()
+
         month_1 = date_format(self.date_start, format="F")
         month_2 = date_format(self.date_end, format="F")
 
         if month_1 != month_2:
-            return f"{self.name} ({month_1}-{month_2})"
+            name = f"{self.name} ({month_1}-{month_2})"
         else:
-            return f"{self.name} ({month_1} {self.date_start.year})"
+            name = f"{self.name} ({month_1} {self.date_start.year})"
+
+        if now.year != self.date_start.year:
+            name = f"{name} {self.date_start.year}"
+
+        return name
 
     @cached_property
     def count_weeks(self):
@@ -315,11 +320,23 @@ class Period(models.Model):
     def is_current(self):
         return self == Period.objects.current()
 
-    def can_be_previewed(self):
-        now = datetime.now().date()
+    def is_enabled_to_preview(self):
+        now = timezone.now()
+        now_date = now.date()
         if self.preview_date:
-            return self.preview_date <= now and self.date_end >= now
-        return self.enrollment_start <= now and self.date_end >= now
+            return self.preview_date <= now_date and self.date_end >= now_date
+        return self.enrollment_start <= now and self.date_end >= now_date
+
+    def is_enabled_to_enroll(self) -> bool:
+        """Returns True or False depending if current period is enabled to enroll"""
+        now = timezone.now()
+        now_date = now.date()
+
+        # It's never possible to enroll before `enrollment_start` and after `date_end`
+        if now_date > self.date_end or now_date < self.enrollment_start:
+            return False
+
+        return True
 
     def save(self, *args, **kwargs):
         self.clean()
@@ -341,17 +358,11 @@ class Cycle(models.Model):
         return f"{self.__class__.__name__}(name='{self.name}')"
 
     def save(self, *args, **kwargs):
-        self.available_workshop_periods_by_schedule.cache_clear()
+        # self.available_workshop_periods_by_schedule.cache_clear()
         super().save(*args, **kwargs)
 
-    @lru_cache(maxsize=None)
-    def available_workshop_periods_by_schedule(self, period: Optional[Period] = None) -> Dict[Schedule, "WorkshopPeriod"]:
+    def available_workshop_periods_by_schedule(self, period: Period) -> Dict[Schedule, "WorkshopPeriod"]:
         """Returns available workshop periods for a student cycle"""
-        if period is None:
-            period = Period.objects.current()
-        if period is None:
-            return {}
-
         wps_by_schedule = {}
         for s in Schedule.objects.ordered():
             for wp in s.workshopperiod_set.filter(period=period):
@@ -482,13 +493,8 @@ class StudentCycle(models.Model):
         return output
 
     @lru_cache(maxsize=None)
-    def workshop_periods_by_period(self, period: Optional[Period] = None) -> Set:
+    def workshop_periods_by_period(self, period: Period) -> Set:
         """Return this student's workshop_periods given a period, or all of them if no period given"""
-        if period is None:
-            period = Period.objects.current()
-        if period is None:
-            return set()
-
         wps_by_schedule = self.workshop_periods_by_schedule(period=period)
         return {wp for wp in wps_by_schedule.values()}
 
@@ -498,31 +504,19 @@ class StudentCycle(models.Model):
         return False
 
     @lru_cache(maxsize=None)
-    def is_schedule_full(self, period: Optional[Period] = None) -> bool:
+    def is_schedule_full(self, period: Period) -> bool:
         """Returns True or False depending if current student has a full schedule"""
-        if not period:
-            period = Period.objects.current()
-
-        if not period:
-            return False
-
         scount = Schedule.objects.all().count()
         lwps = len(self.workshop_periods_by_schedule(period=period))
         return scount == lwps
 
     @lru_cache(maxsize=None)
-    def is_enabled_to_enroll(self, period: Optional[Period] = None) -> bool:
+    def is_enabled_to_enroll(self, period: Period) -> bool:
         """Returns True or False depending if current student is enabled to enroll"""
-        if not period:
-            period = Period.objects.current()
-
-        if not period:
-            return False
-
-        now = datetime.now().date()
+        now = timezone.now().date()
 
         # It's never possible to enroll before `enrollment_start` and after `date_end`
-        if now > period.date_end or now < period.enrollment_start:
+        if not period.is_enabled_to_enroll():
             return False
 
         # students with full schedule can only re-enroll between `enrollment_start` and `enrollment_end`

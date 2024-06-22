@@ -1,4 +1,5 @@
 {% extends "admin/base_site.html" %}
+{% load cayuman %}
 {% load i18n admin_urls %}
 
 {% block breadcrumbs %}
@@ -12,10 +13,63 @@
 {% endblock %}
 
 {% block content %}
+<style>
+  /* Ocultar el span con clase "small" por defecto */
+  .tshort {
+    display: none;
+  }
+
+  /* Cuando el ancho de la página es menor a 720px */
+  @media (max-width: 720px) {
+    /* Ocultar el span con clase "big" */
+    .tlong {
+      display: none;
+    }
+    /* Mostrar el span con clase "small" */
+    .tshort {
+      display: inline;
+    }
+  }
+
+  #as-list {
+    display: none;
+  }
+
+  #as-timetable {
+    display: block;
+  }
+</style>
 <div id="content-main">
+
+  <ul class="object-tools">
+    <li>
+  <label for="view-toggle">{% translate 'View:' %}</label>
+    <select id="view-toggle">
+      <option value="timetable">{% translate 'Timetable' %}</option>
+      <option value="list">{% translate 'List' %}</option>
+    </select>
+
+  <script>
+    document.getElementById('view-toggle').addEventListener('change', function() {
+      var selectedValue = this.value;
+      var asList = document.getElementById('as-list');
+      var asTimetable = document.getElementById('as-timetable');
+      if (selectedValue === 'list') {
+        asList.style.display = 'block';
+        asTimetable.style.display = 'none';
+      } else {
+        asList.style.display = 'none';
+        asTimetable.style.display = 'block';
+      }
+    });
+  </script>
+  </li>
+  </ul>
+
 <div id="change-history" class="module">
 
 {% if workshop_periods_list %}
+    <div id="as-list">
     <table>
         <thead>
         <tr>
@@ -44,12 +98,22 @@
           {% elif i == workshop_periods_list.number %}
             <span class="this-page">{{ i }}</span>
           {% else %}
-            <a href="?{{ page_var }}={{ i }}" {% if i == workshop_periods_list.paginator.num_pages %} class="end" {% endif %}>{{ i }}</a>
+            <a href="?{{ page_var }}={{ i }}" {% if i == workshop_periods_list.paginator.num_pages %} class="end"{% endif %}>{{ i }}</a>
           {% endif %}
         {% endfor %}
       {% endif %}
       {{ workshop_periods_list.paginator.count }} {% blocktranslate count counter=workshop_periods_list.paginator.count %}entry{% plural %}entries{% endblocktranslate %}
     </p>
+    </div>
+
+    <div id="as-timetable">
+    {% timetable workshop_periods table_class="lol" td_class=object.pk %}
+      {% if schedule in workshop_period.schedules.all %}
+        <strong>{{workshop_period.workshop.name}}</strong>
+        <br /><small>{{workshop_period.teacher.get_full_name}}</small>
+      {% endif %}
+    {% endtimetable %}
+    </div>
 {% else %}
     <p>{% translate 'There are no workshop periods associated with this student cycle for ' %} {{period}}</period></p>
 {% endif %}

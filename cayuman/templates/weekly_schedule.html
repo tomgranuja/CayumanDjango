@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 
 {% block title %}
-{% trans name=member.get_full_name() %}{{name}}'s Weekly Schedule{% endtrans %} | Cayuman
+{% trans name=request.member.get_full_name() %}{{name}}'s Weekly Schedule{% endtrans %} | Cayuman
 {% endblock %}
 
 {% block head %}
@@ -11,6 +11,22 @@
   width: 100%;
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;
+}
+
+.tshort {
+  display: none;
+}
+
+/* Cuando el ancho de la página es menor a 720px */
+@media (max-width: 720px) {
+  /* Ocultar el span con clase "big" */
+  .tlong {
+    display: none;
+  }
+  /* Mostrar el span con clase "small" */
+  .tshort {
+    display: inline;
+  }
 }
 </style>
 {% endblock %}
@@ -22,45 +38,23 @@
     {% endfor %}
 {% endif %}
 <h2>
-    {% trans name=member.get_full_name(), human_period=period.human_name %}
+    {% trans name=request.member.get_full_name(), human_period=request.period.human_name %}
     Weekly Workshop Schedule for {{name}} <small>{{human_period}}</small>
     {% endtrans %}
 </h2>
 
-<table class="table table-responsive" style="overflow: scroll">
-    <thead>
-        <tr>
-            <th scope="col" style="width: 10%">{% trans %}Hour{% endtrans %}</th>
-            {% for day in days %}
-            <th scope="col" style="width: 18%">{{ day.1 }}</th>
-            {% endfor %}
-        </tr>
-    </thead>
-    <tbody>
-        {% for block in blocks %}
-            <tr>
-                <th scope="row">{{ block.0.strftime('%H:%M') }} - {{ block.1.strftime('%H:%M') }}</th>
-
-            {% for sched, wp in data.items() %}
-                {% if sched.time_start == block.0 %}
-                    <td>
-                        {% if wp %}
-                        <a href="{{ url('workshop_period', workshop_period_id=wp.id) }}">{{wp.workshop.name}}</a>
-                        <br /><small>{{wp.teacher.get_full_name()}}</small>
-                        {% endif %}
-                    </td>
-                {% endif %}
-            {% endfor %}
-            </tr>
-        {% endfor %}
-    </tbody>
-</table>
+{% timetable workshop_periods %}
+    {% if schedule in workshop_period.schedules.all() %}
+        <a href="{{ url('workshop_period', workshop_period_id=workshop_period.id) }}">{{workshop_period.workshop.name}}</a>
+        <br /><small>{{workshop_period.teacher.get_full_name()}}</small>
+    {% endif %}
+{% endtimetable %}
 
 <div style="text-align: center;">
-    {% if member.current_student_cycle.is_enabled_to_enroll(period) %}
-    <a href="{{ url('enrollment') }}?force=true" class="btn btn-outline-warning btn-lg">&larr; {% trans %}Change my Workshops{% endtrans %}</a>
+    {% if request.member.current_student_cycle.is_enabled_to_enroll(request.period) %}
+    <a href="{{ url('enrollment', period_id=request.period.id) }}?force=true" class="btn btn-outline-warning btn-lg">&larr; {% trans %}Change my Workshops{% endtrans %}</a>
     {% else %}
-    <small>{% trans %}If you need to change your workshops please contact your teachers.{% endtrans %} <a href="/?force=true">{% trans %}Click here{% endtrans %}</a> {% trans %}to check the list of available workshops during this period{% endtrans %}.</small>
+    <small>{% trans %}If you need to change your workshops please contact your teachers.{% endtrans %} <a href="{{ url('workshop_periods', period_id=request.period.id) }}">{% trans %}Click here{% endtrans %}</a> {% trans %}to check the list of available workshops during this period{% endtrans %}.</small>
     {% endif %}
 </div>
 {% endblock %}
