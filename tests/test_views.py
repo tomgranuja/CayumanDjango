@@ -1,6 +1,5 @@
 import functools
 import random
-from datetime import date
 from datetime import datetime
 from datetime import time
 from unittest.mock import patch
@@ -88,11 +87,11 @@ def create_teacher(create_groups):
 def create_period():
     return Period.objects.create(
         name="Period 1",
-        preview_date=date(2024, 4, 17),
-        enrollment_start=date(2024, 4, 19),
-        enrollment_end=date(2024, 4, 26),
-        date_start=date(2024, 5, 4),
-        date_end=date(2024, 6, 15),
+        preview_date=timezone.make_aware(datetime(2024, 4, 17)).date(),
+        enrollment_start=timezone.make_aware(datetime(2024, 4, 19)),
+        enrollment_end=timezone.make_aware(datetime(2024, 4, 26)).date(),
+        date_start=timezone.make_aware(datetime(2024, 5, 4)).date(),
+        date_end=timezone.make_aware(datetime(2024, 6, 15)).date(),
     )
 
 
@@ -142,13 +141,13 @@ def client_authenticated_teacher(client, create_teacher):
 
 parameterized_tests = {
     # anon redirected to login
-    "0": (reverse("home"), date(2024, 1, 1), None, None, None, False, 302, reverse("login") + "?next=/", [], []),
+    "0": (reverse("home"), datetime(2024, 1, 1), None, None, None, False, 302, reverse("login") + "?next=/", [], []),
     # teacher redirected to admin login
-    "home-teacher-user": (reverse("home"), date(2024, 1, 1), "client_authenticated_teacher", None, None, False, 302, reverse("admin:login"), [], []),
+    "0-2": (reverse("home"), datetime(2024, 1, 1), "client_authenticated_teacher", None, None, False, 302, reverse("admin:login"), [], []),
     # student redirected to workshop_periods when no full schedule and before preview_date
     "1": (
         reverse("home"),
-        date(2024, 4, 16),  # before preview_date
+        datetime(2024, 4, 16),  # before preview_date
         "client_authenticated_student",
         "create_workshop_period",
         None,
@@ -161,7 +160,7 @@ parameterized_tests = {
     # student without student cycle gets warning when no associated StudentCycle
     "2": (
         reverse("workshop_periods", kwargs={"period_id": 1}),
-        date(2024, 4, 18),  # between preview_date and enrollment_start
+        datetime(2024, 4, 18),  # between preview_date and enrollment_start
         "client_authenticated_student",
         "create_workshop_period",
         None,
@@ -169,38 +168,42 @@ parameterized_tests = {
         200,
         None,
         ["Hello", "Your student account is not associated with any Cycle"],
-        ["These are the workshop options for", "Click here to enroll in your workshops", "card-title mb-2 text-body-primar"],
+        ["Fill up the following form choosing one workshop", "Click here to enroll in your workshops"],
     ),
     # student with student cycle get list of workshops, no enrollment button when after preview_date and before enrollment_start
     "3": (
         reverse("workshop_periods", kwargs={"period_id": 1}),
-        date(2024, 4, 18),  # between preview_date and enrollment_start
+        datetime(2024, 4, 18),  # between preview_date and enrollment_start
         "client_authenticated_student",
         "create_workshop_period",
         "create_student_cycle",
         False,
         200,
         None,
-        ["Hello", "These are the workshop options for", "card-title mb-2 text-body-primar"],
-        ["Click here to enroll in your workshops", "Your student account is not associated with any Cycle"],
+        ["Hello", "No workshops available for this period"],
+        [
+            "Fill up the following form choosing one workshop",
+            "Click here to enroll in your workshops",
+            "Your student account is not associated with any Cycle",
+        ],
     ),
     # student gets list of workshops and enrollment button if no full schedule and after enrollment_start
     "4": (
         reverse("workshop_periods", kwargs={"period_id": 1}),
-        date(2024, 4, 20),  # after enrollment_start
+        datetime(2024, 4, 20),  # after enrollment_start
         "client_authenticated_student",
         "create_workshop_period",
         "create_student_cycle",
         False,  # no full schedule
         200,
         None,
-        ["Hello", "These are the workshop options for", "Click here to enroll in your workshops", "card-title mb-2 text-body-primar"],
+        ["Hello", "Click here to enroll in your workshops", "card-title mb-2 text-body-primar"],
         ["Your student account is not associated with any Cycle"],
     ),
     # student with full schedule is redirected to weekly-schedule when visiting home
     "5": (
         reverse("home"),
-        date(2024, 4, 20),
+        datetime(2024, 4, 20),
         "client_authenticated_student",
         "create_workshop_period",
         "create_student_cycle",
@@ -213,20 +216,20 @@ parameterized_tests = {
     # student without workshops gets list of workshops and enrollment button even after enrollment_end and before date_start
     "6": (
         reverse("workshop_periods", kwargs={"period_id": 1}),
-        date(2024, 4, 27),  # after enrollment_end
+        datetime(2024, 4, 27),  # after enrollment_end
         "client_authenticated_student",
         "create_workshop_period",
         "create_student_cycle",
         False,  # no full schedule
         200,
         None,
-        ["Hello", "These are the workshop options for", "Click here to enroll in your workshops"],
+        ["Hello", "Click here to enroll in your workshops"],
         ["Your student account is not associated with any Cycle"],
     ),
     # student with full schedule redirected to weekly-schedule after enrollment end
     "7": (
         reverse("home"),
-        date(2024, 4, 27),  # after enrollment end
+        datetime(2024, 4, 27),  # after enrollment end
         "client_authenticated_student",
         "create_workshop_period",
         "create_student_cycle",
@@ -239,20 +242,20 @@ parameterized_tests = {
     # student without full schedule is allowed into workshop periods even after date_start
     "8": (
         reverse("workshop_periods", kwargs={"period_id": 1}),
-        date(2024, 5, 10),  # after date_start
+        datetime(2024, 5, 10),  # after date_start
         "client_authenticated_student",
         "create_workshop_period",
         "create_student_cycle",
         False,
         200,
         None,
-        ["Hello", "These are the workshop options for", "Click here to enroll in your workshops"],
+        ["Hello", "Click here to enroll in your workshops"],
         ["Your student account is not associated with any Cycle"],
     ),
     # student is redirected to weekly schedule if full schedule after date_start
     "9": (
         reverse("home"),
-        date(2024, 5, 10),  # after date_start
+        datetime(2024, 5, 10),  # after date_start
         "client_authenticated_student",
         "create_workshop_period",
         "create_student_cycle",
@@ -266,33 +269,33 @@ parameterized_tests = {
     # i.e. chosen workshop periods can be changed by the student until date_start
     "10": (
         reverse("workshop_periods", kwargs={"period_id": 1}),
-        date(2024, 4, 20),  # between enrollment_start and enrollment_end
+        datetime(2024, 4, 20),  # between enrollment_start and enrollment_end
         "client_authenticated_student",
         "create_workshop_period",
         "create_student_cycle",
         True,
         200,
         None,
-        ["Hello", "These are the workshop options for", "Click here to enroll in your workshops"],
+        ["Hello", "Click here to enroll in your workshops"],
         ["Your student account is not associated with any Cycle"],
     ),
     # student without full schedule is allowed to change their workshops even after date_start
     "11": (
         reverse("weekly_schedule", kwargs={"period_id": 1}),
-        date(2024, 5, 10),  # after date_start
+        datetime(2024, 5, 10),  # after date_start
         "client_authenticated_student",
         "create_workshop_period",
         "create_student_cycle",
         False,
         200,
         None,
-        ["Weekly Workshop Schedule", "Change my Workshops"],
+        ["Weekly Workshop Schedule", "Click here to enroll in your workshops"],
         ["If you need to change your workshops"],
     ),
     # student with full schedule cannot change workshops after date_start
     "12": (
         reverse("weekly_schedule", kwargs={"period_id": 1}),
-        date(2024, 5, 10),  # after date_start
+        datetime(2024, 5, 10),  # after date_start
         "client_authenticated_student",
         "create_workshop_period",
         "create_student_cycle",
@@ -305,85 +308,85 @@ parameterized_tests = {
     # student without full schedule is sent to weekly-schedule before preview_date
     "13": (
         reverse("enrollment", kwargs={"period_id": 1}),
-        date(2024, 4, 16),  # before preview_date
+        datetime(2024, 4, 16),  # before preview_date
         "client_authenticated_student",
         "create_workshop_period",
         "create_student_cycle",
         False,
         302,
-        reverse("weekly_schedule", kwargs={"period_id": 1}),
+        reverse("workshop_periods", kwargs={"period_id": 1}),
         [],
         [],
     ),
     # student with full schedule sent to weekly-schedule before preview_date (this case shouldn't happen)
     "14": (
         reverse("enrollment", kwargs={"period_id": 1}),
-        date(2024, 4, 16),  # before preview_date
+        datetime(2024, 4, 16),  # before preview_date
         "client_authenticated_student",
         "create_workshop_period",
         "create_student_cycle",
         True,
         302,
-        reverse("weekly_schedule", kwargs={"period_id": 1}),
+        reverse("workshop_periods", kwargs={"period_id": 1}),
         [],
         [],
     ),
     # student redirected to weekly-schedule before enrollment_start
     "15": (
         reverse("enrollment", kwargs={"period_id": 1}),
-        date(2024, 4, 18),  # before enrollment_start
+        datetime(2024, 4, 18),  # before enrollment_start
         "client_authenticated_student",
         "create_workshop_period",
         "create_student_cycle",
         False,
         302,
-        reverse("weekly_schedule", kwargs={"period_id": 1}),
+        reverse("workshop_periods", kwargs={"period_id": 1}),
         [],
         [],
     ),
     # student redirected to weekly-schedule if full_schedule and before enrollment_start (this shouldn't happen)
     "16": (
         reverse("enrollment", kwargs={"period_id": 1}),
-        date(2024, 4, 18),
+        datetime(2024, 4, 18),
         "client_authenticated_student",
         "create_workshop_period",
         "create_student_cycle",
         True,
         302,
-        reverse("weekly_schedule", kwargs={"period_id": 1}),
+        reverse("workshop_periods", kwargs={"period_id": 1}),
         [],
         [],
     ),
     # student without full schedule is shown enrollment form after enrollment_start
     "17": (
         reverse("enrollment", kwargs={"period_id": 1}),
-        date(2024, 4, 20),  # after enrollment_start
+        datetime(2024, 4, 20),  # after enrollment_start
         "client_authenticated_student",
         "create_workshop_period",
         "create_student_cycle",
         False,  # no full schedule
         200,
         None,
-        ["These are the available workshops"],
+        ["Fill up the following form choosing one workshop"],
         ["No enrollment available at this time"],
     ),
     # student without full schedule is shown enrollment form even after date_start
     "18": (
         reverse("enrollment", kwargs={"period_id": 1}),
-        date(2024, 5, 10),  # after date_start
+        datetime(2024, 5, 10),  # after date_start
         "client_authenticated_student",
         "create_workshop_period",
         "create_student_cycle",
         False,
         200,
         None,
-        ["These are the available workshops"],
+        ["Fill up the following form choosing one workshop"],
         ["No enrollment available at this time"],
     ),
     # student with full schedule redirected to weekly-schedule after date_start
     "19": (
         reverse("enrollment", kwargs={"period_id": 1}),
-        date(2024, 5, 10),  # after date_start
+        datetime(2024, 5, 10),  # after date_start
         "client_authenticated_student",
         "create_workshop_period",
         "create_student_cycle",
@@ -396,7 +399,7 @@ parameterized_tests = {
     # student without student cycle is sent to workshop_periods after date_start
     "20": (
         reverse("enrollment", kwargs={"period_id": 1}),
-        date(2024, 5, 10),  # after date_start
+        datetime(2024, 5, 10),  # after date_start
         "client_authenticated_student",
         "create_workshop_period",
         None,
@@ -409,19 +412,31 @@ parameterized_tests = {
     # student without studentcycle is shown warning workshops are not yet visible before preview_date
     "21": (
         reverse("workshop_periods", kwargs={"period_id": 1}),
-        date(2024, 4, 16),  # before preview_date
+        datetime(2024, 4, 16),  # before preview_date
         "client_authenticated_student",
         "create_workshop_period",
         None,
         False,
         200,
         None,
-        ["Hello", "It is still not the time to visualize workshops for the upcoming period"],
+        ["Hello", "The period you are viewing is not yet open", "Your student account is not associated with any Cycle"],
+        ["Fill up the following form choosing one workshop", "Click here to enroll in your workshops"],
+    ),
+    # student with studentcycle is shown warning workshops are not yet visible before preview_date
+    "22": (
+        reverse("workshop_periods", kwargs={"period_id": 1}),
+        datetime(2024, 4, 16),  # before preview_date
+        "client_authenticated_student",
+        "create_workshop_period",
+        "create_student_cycle",
+        False,
+        200,
+        None,
+        ["Hello", "The period you are viewing is not yet open"],
         [
             "Your student account is not associated with any Cycle",
-            "These are the workshop options for",
+            "Fill up the following form choosing one workshop",
             "Click here to enroll in your workshops",
-            "card-title mb-2 text-body-primar",
         ],
     ),
 }
@@ -463,8 +478,8 @@ def test_url(
 
     with patch("cayuman.models.timezone") as mock_datetime:
         # Set the mocked datetime
-        mock_datetime.now.return_value = datetime(current_date.year, current_date.month, current_date.day)
-        mock_datetime.now.date.return_value = current_date
+        mock_datetime.now.return_value = timezone.make_aware(datetime(current_date.year, current_date.month, current_date.day))
+        mock_datetime.now.date.return_value = timezone.make_aware(current_date).date()
 
         response = member_session.get(url)
         assert response.status_code == status_code

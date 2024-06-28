@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+{% block navbar %}
+{% if request and request.member %}
+<nav class="navbar navbar-expand-lg bg-body-tertiary mb-2 d-flex">
+  <div class="container-fluid">
+    <a class="navbar-brand" href="/">
+      <img src="https://comunidadeducativacayuman.cl/wp-content/uploads/2021/02/Recurso-5.png" alt="Logo" height="24" class="d-inline-block align-text-top">
+      {% trans user=request.member.first_name %}Hello {{ user }}!{% endtrans %}
+    </a>
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarToggler" aria-controls="navbarToggler" aria-expanded="false" aria-label="Toggle navigation">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+
+    <div class="collapse navbar-collapse justify-content-end text-end" id="navbarToggler">
+      <span class="navbar-text">{% trans %}Viewing{% endtrans %}:</span>
+      <ul class="navbar-nav text-end">
+        <!-- periods list -->
+        <li class="nav-item dropdown">
+          <a class="nav-link dropdown-toggle {% if request.period.is_current() %}fw-bolder{% endif %}" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+            {{request.period}}
+          </a>
+          {% if request.other_periods %}
+          <ul class="dropdown-menu text-end">
+            {% for op in request.other_periods %}
+              <li><a class="dropdown-item {% if op.is_current() %}fw-bolder{% endif %}" href="{{ url_switch_period(period_id=op.id) }}">{{op}}</a></li>
+            {% endfor %}
+          </ul>
+          {% endif %}
+        </li>
+        <!-- /periods list -->
+
+        <!-- cycle pill -->
+        <li class="nav-item pt-2"><span class="badge rounded-pill text-bg-success">{{request.member.current_student_cycle.cycle}}</span></li>
+        <!-- /cycle pill -->
+
+        {% if request.member.current_student_cycle and request.member.current_student_cycle.is_enabled_to_enroll(request.period) %}
+          <!-- enroll -->
+          <li class="nav-item"><a class="nav-link fw-bolder" href="{{ url('enrollment', period_id=request.period.id) }}">{% trans %}Enroll{% endtrans %}</a></li>
+          <!-- /enroll -->
+        {% endif %}
+        <li class="nav-item"><a class="nav-link" href="{{ url('weekly_schedule', period_id=request.period.id) }}">{% trans %}Timetable{% endtrans %}</a></li>
+        <li class="nav-item">
+          <a class="nav-link" href="{{ url('workshop_periods', period_id=request.period.id) }}">{% trans %}Workshops{% endtrans %}</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="javascript: document.getElementById('logout-frm').submit()">{% trans %}Log Out{% endtrans %}</a>
+        </li>
+      </ul>
+    </div>
+  </div>
+</nav>
+<form class="d-none" id="logout-frm" action="{{ url('logout') }}" method="post">
+  {% csrf_token %}
+</form>
+{% endif %}
+{% endblock %}
+{% block content %}
+{% endblock %}

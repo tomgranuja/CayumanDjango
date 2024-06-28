@@ -6,6 +6,7 @@ import pytest
 from django.conf import settings
 from django.contrib.auth.models import Group
 from django.core.exceptions import ValidationError
+from django.utils import timezone
 
 from cayuman.models import Cycle
 from cayuman.models import Member
@@ -43,10 +44,10 @@ def create_period():
     # Period
     Period.objects.create(
         name="Period 1",
-        date_start=datetime(2023, 1, 1),
-        date_end=datetime(2023, 12, 31),
-        enrollment_start=datetime(2022, 12, 23),
-        enrollment_end=datetime(2022, 12, 27),
+        date_start=timezone.make_aware(datetime(2023, 1, 1)).date(),
+        date_end=timezone.make_aware(datetime(2023, 12, 31)).date(),
+        enrollment_start=timezone.make_aware(datetime(2022, 12, 23)),
+        enrollment_end=timezone.make_aware(datetime(2022, 12, 27)).date(),
     )
     return Period.objects.all()[0]
 
@@ -306,32 +307,32 @@ def test_is_enabled_to_enroll(create_student, create_period, create_cycles):
         with patch("cayuman.models.timezone") as mock_datetime:
             # Mock current date before enrollment_start
             sc.is_enabled_to_enroll.cache_clear()
-            mock_datetime.now.return_value = datetime(2022, 12, 21)
-            mock_datetime.now.date.return_value = datetime(2022, 12, 21).date()
+            mock_datetime.now.return_value = timezone.make_aware(datetime(2022, 12, 21))
+            mock_datetime.now.date.return_value = timezone.make_aware(datetime(2022, 12, 21)).date()
             assert sc.is_enabled_to_enroll(period=period) is False
 
             # Mock current date within enrollment_start and enrollment_end
             sc.is_enabled_to_enroll.cache_clear()
-            mock_datetime.now.return_value = datetime(2022, 12, 25)
-            mock_datetime.now.date.return_value = datetime(2022, 12, 25).date()
+            mock_datetime.now.return_value = timezone.make_aware(datetime(2022, 12, 25))
+            mock_datetime.now.date.return_value = timezone.make_aware(datetime(2022, 12, 25)).date()
             assert sc.is_enabled_to_enroll(period=period) is True
 
             # Mock current date within enrollment_end and date_start
             sc.is_enabled_to_enroll.cache_clear()
-            mock_datetime.now.return_value = datetime(2022, 12, 31)
-            mock_datetime.now.date.return_value = datetime(2022, 12, 31).date()
+            mock_datetime.now.return_value = timezone.make_aware(datetime(2022, 12, 31))
+            mock_datetime.now.date.return_value = timezone.make_aware(datetime(2022, 12, 31)).date()
             assert sc.is_enabled_to_enroll(period=period) is False
 
             # Mock current date after date_start and before date_end
             sc.is_enabled_to_enroll.cache_clear()
-            mock_datetime.now.return_value = datetime(2023, 1, 1)
-            mock_datetime.now.date.return_value = datetime(2023, 1, 1).date()
+            mock_datetime.now.return_value = timezone.make_aware(datetime(2023, 1, 1))
+            mock_datetime.now.date.return_value = timezone.make_aware(datetime(2023, 1, 1)).date()
             assert sc.is_enabled_to_enroll(period=period) is False
 
             # Mock current date after date_end
             sc.is_enabled_to_enroll.cache_clear()
-            mock_datetime.now.return_value = datetime(2024, 1, 1)
-            mock_datetime.now.date.return_value = datetime(2024, 1, 1).date()
+            mock_datetime.now.return_value = timezone.make_aware(datetime(2024, 1, 1))
+            mock_datetime.now.date.return_value = timezone.make_aware(datetime(2024, 1, 1)).date()
             assert sc.is_enabled_to_enroll(period=period) is False
 
     # Mock is_schedule_full to return False
@@ -340,30 +341,30 @@ def test_is_enabled_to_enroll(create_student, create_period, create_cycles):
         with patch("cayuman.models.timezone") as mock_datetime:
             # Mock current date before enrollment_start
             sc.is_enabled_to_enroll.cache_clear()
-            mock_datetime.now.return_value = datetime(2022, 12, 21)
-            mock_datetime.now.date.return_value = datetime(2022, 12, 21).date()
+            mock_datetime.now.return_value = timezone.make_aware(datetime(2022, 12, 21))
+            mock_datetime.now.date.return_value = timezone.make_aware(datetime(2022, 12, 21)).date()
             assert sc.is_enabled_to_enroll(period=period) is False
 
             # Mock current date within enrollment_start and enrollment_end
             sc.is_enabled_to_enroll.cache_clear()
-            mock_datetime.now.return_value = datetime(2022, 12, 25)
-            mock_datetime.now.date.return_value = datetime(2022, 12, 25).date()
+            mock_datetime.now.return_value = timezone.make_aware(datetime(2022, 12, 25))
+            mock_datetime.now.date.return_value = timezone.make_aware(datetime(2022, 12, 25)).date()
             assert sc.is_enabled_to_enroll(period=period) is True
 
             # Mock current date after date_start and before date_end
             sc.is_enabled_to_enroll.cache_clear()
-            mock_datetime.now.return_value = datetime(2023, 1, 1)
-            mock_datetime.now.date.return_value = datetime(2023, 1, 1).date()
+            mock_datetime.now.return_value = timezone.make_aware(datetime(2023, 1, 1))
+            mock_datetime.now.date.return_value = timezone.make_aware(datetime(2023, 1, 1)).date()
             assert sc.is_enabled_to_enroll(period=period) is True
 
             # Mock current date after date_start and before date_end
             sc.is_enabled_to_enroll.cache_clear()
-            mock_datetime.now.return_value = datetime(2023, 1, 1)
-            mock_datetime.now.date.return_value = datetime(2023, 1, 1).date()
+            mock_datetime.now.return_value = timezone.make_aware(datetime(2023, 1, 1))
+            mock_datetime.now.date.return_value = timezone.make_aware(datetime(2023, 1, 1)).date()
             assert sc.is_enabled_to_enroll(period=period) is True
 
             # Mock current date after date_end
             sc.is_enabled_to_enroll.cache_clear()
-            mock_datetime.now.return_value = datetime(2024, 1, 1)
-            mock_datetime.now.date.return_value = datetime(2024, 1, 1).date()
+            mock_datetime.now.return_value = timezone.make_aware(datetime(2024, 1, 1))
+            mock_datetime.now.date.return_value = timezone.make_aware(datetime(2024, 1, 1)).date()
             assert sc.is_enabled_to_enroll(period=period) is False

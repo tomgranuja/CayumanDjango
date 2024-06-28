@@ -101,6 +101,9 @@ TEMPLATES = [
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
             ],
+            "globals": {
+                "url_switch_period": "cayuman.templatetags.cayuman.url_switch_period",
+            },
             "auto_reload": DEBUG,
             "autoescape": True,
             "translation_engine": "django.utils.translation",

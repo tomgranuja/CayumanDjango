@@ -5,6 +5,7 @@ import pytest
 from django.conf import settings
 from django.contrib.auth.models import Group
 from django.core.exceptions import ValidationError
+from django.utils import timezone
 
 from cayuman.models import Member
 from cayuman.models import Period
@@ -49,10 +50,10 @@ def create_period():
     # Period
     Period.objects.create(
         name="Period 1",
-        date_start=datetime(2023, 1, 1),
-        date_end=datetime(2023, 12, 31),
-        enrollment_start=datetime(2022, 12, 23),
-        enrollment_end=datetime(2022, 12, 27),
+        date_start=timezone.make_aware(datetime(2023, 1, 1)).date(),
+        date_end=timezone.make_aware(datetime(2023, 12, 31)).date(),
+        enrollment_start=timezone.make_aware(datetime(2022, 12, 23)),
+        enrollment_end=timezone.make_aware(datetime(2022, 12, 27)).date(),
     )
     return Period.objects.all()[0]
 

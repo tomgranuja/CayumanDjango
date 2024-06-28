@@ -39,9 +39,18 @@ class EnrollmentView(LoginRequiredMixin, View):
         student_cycle = request.member.current_student_cycle
 
         # check if student is enabled to enroll, otherwise redirect to weekly-schedule with a warning message
-        if not student_cycle.is_enabled_to_enroll(request.period):
-            messages.warning(request, _("Online enrollment is no longer enabled. If you need to change your workshops please contact your teachers."))
-            return HttpResponseRedirect(reverse("weekly_schedule", kwargs={"period_id": request.period.id}))
+        if request.period.is_enabled_to_enroll():
+            if not student_cycle.is_enabled_to_enroll(request.period):
+                messages.warning(
+                    request, _("Online enrollment is no longer enabled. If you need to change your workshops please contact your teachers.")
+                )
+                return HttpResponseRedirect(reverse("weekly_schedule", kwargs={"period_id": request.period.id}))
+        else:
+            # Go back to workshop periods and no feedback as it will be handled by the middleware
+            if request.period.is_in_the_past():
+                return HttpResponseRedirect(reverse("weekly_schedule", kwargs={"period_id": request.period.id}))
+            else:
+                return HttpResponseRedirect(reverse("workshop_periods", kwargs={"period_id": request.period.id}))
 
         if not request.GET.get("force") and student_cycle.is_schedule_full(request.period):
             return HttpResponseRedirect(reverse("weekly_schedule", kwargs={"period_id": request.period.id}))
@@ -136,13 +145,14 @@ def weekly_schedule(request, period_id: int):
     )
 
 
+@login_required(login_url=reverse("login"))
+@student_required
 def workshop_period(request, workshop_period_id: int):
     """View detailed information about a workshop period"""
     try:
         wp = WorkshopPeriod.objects.get(id=workshop_period_id)
     except WorkshopPeriod.DoesNotExist:
         raise Http404
-
     return render(request, "workshop_period.html", {"wp": wp})
 
 
@@ -150,17 +160,29 @@ def workshop_period(request, workshop_period_id: int):
 @student_required
 def workshop_periods(request, period_id: int):
     """View showing the list of all available workshops for the given logged in student"""
-    # Period middleware guarantees request.period won't be null but it's still necessary to analyze if it's an active period or not
+    from cayuman.utils import generate_fake_workshops
+
     wps = set()
+    fwps = []
+    show_workshop_periods = False  # By default do not show anything
 
     current_student_cycle = request.member.current_student_cycle
-    if not request.period.is_enabled_to_preview():
-        messages.warning(request, _("It is still not the time to visualize workshops for the upcoming period. Please return later."))
-    else:
-        # Get all available workshop periods for this student and return
-        if current_student_cycle:
+    # Get all available workshop periods for this student and return
+    if current_student_cycle:
+        # calculate show_workshop_periods according if the period is current, or is in the past or member is enabled to enroll
+        show_workshop_periods = (
+            request.period.is_current() or request.period.is_in_the_past() or current_student_cycle.is_enabled_to_enroll(request.period)
+        )
+        if show_workshop_periods:
             wps_by_schedule = current_student_cycle.available_workshop_periods_by_schedule(request.period)
             wps = {wp for sublist in wps_by_schedule.values() for wp in sublist}
-        else:
-            messages.warning(request, _("Your student account is not associated with any Cycle. Please ask your teachers to fix this."))
-    return render(request, "workshop_periods.html", {"workshop_periods": wps})
+    else:
+        messages.warning(request, _("Your student account is not associated with any Cycle. Please ask your teachers to fix this."))
+
+    show_workshop_periods = bool(wps)  # coordinate flag var with the list of workshops
+
+    if not show_workshop_periods:
+        fwps = generate_fake_workshops(8)  # Generate fake workshops data to fill in case it's not yet time to enroll or no wps data
+    return render(
+        request, "workshop_periods.html", {"workshop_periods": wps, "fake_workshop_periods": fwps, "show_workshop_periods": show_workshop_periods}
+    )

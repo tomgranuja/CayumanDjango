@@ -4,10 +4,34 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
     <title>{% block title %}Cayuman{% endblock %}</title>
+    <style>
+      .table-responsive {
+        display: block;
+        width: 100%;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+      }
+
+      .tshort {
+        display: none;
+      }
+
+      /* Cuando el ancho de la página es menor a 720px */
+      @media (max-width: 720px) {
+        /* Ocultar el span con clase "big" */
+        .tlong {
+          display: none;
+        }
+        /* Mostrar el span con clase "small" */
+        .tshort {
+          display: inline;
+        }
+      }
+    </style>
     {% block head %}
     {% endblock %}
   </head>
-  <body style="padding-top: 5px; padding-bottom: 5px">
+  <body>
     <svg xmlns="http://www.w3.org/2000/svg" class="d-none">
       <symbol id="check-circle-fill" viewBox="0 0 16 16">
         <path d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0zm-3.97-3.03a.75.75 0 0 0-1.08.022L7.477 9.417 5.384 7.323a.75.75 0 0 0-1.06 1.06L6.97 11.03a.75.75 0 0 0 1.079-.02l3.992-4.99a.75.75 0 0 0-.01-1.05z"/>
@@ -19,35 +43,30 @@
         <path d="M8.982 1.566a1.13 1.13 0 0 0-1.96 0L.165 13.233c-.457.778.091 1.767.98 1.767h13.713c.889 0 1.438-.99.98-1.767L8.982 1.566zM8 5c.535 0 .954.462.9.995l-.35 3.507a.552.552 0 0 1-1.1 0L7.1 5.995A.905.905 0 0 1 8 5zm.002 6a1 1 0 1 1 0 2 1 1 0 0 1 0-2z"/>
       </symbol>
     </svg>
-    <div class="container" style="max-width: 1024px;">
-      <div class="clearfix">
-        <div class="mt-3 mb-5" style="float: left">
-          <a href="/"><img src="https://comunidadeducativacayuman.cl/wp-content/uploads/2021/02/Recurso-5.png" style="width: 400px;" /></a>
-        </div>
-        <div class="mt-3 mb-5" style="float: right">
-          {% if request.member %}
-          <form action="{{ url('logout') }}" method="post">
-            {% csrf_token %}
-            <button class="btn btn-outline-info" type="submit">{% trans %}Log Out{% endtrans %}</button>
-          </form>
-          {% endif %}
-        </div>
-      </div>
-      <div>
-      {% block content %}{% endblock %}
+    <div class="container-md">
+      {% block navbar %}{% endblock %}
+      {% block alerts %}
+        {% if messages %}
+          {% for message in messages %}
+            <div class="alert alert-{{ message.tags }} text-center" role="alert">{{ message }}</div>
+          {% endfor %}
+        {% endif %}
+      {% endblock %}
+      <div class="pb-3 pt-3">
+        {% block content %}{% endblock %}
       </div>
     </div>
 
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
     {% block bottom %}
     {% endblock %}
-    <!-- Google tag (gtag.js) -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-T8R8R0NWNC"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-
-  gtag('config', 'G-T8R8R0NWNC');
-</script>
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-T8R8R0NWNC"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-T8R8R0NWNC');
+    </script>
   </body>
 </html>

@@ -221,6 +221,10 @@ class PeriodManager(models.Manager):
             val = None
         return val
 
+    @lru_cache
+    def other_periods(self, period):
+        return self.get_queryset().exclude(pk=period.pk)
+
 
 class Period(models.Model):
     """Represent a period of time"""
@@ -319,6 +323,14 @@ class Period(models.Model):
 
     def is_current(self):
         return self == Period.objects.current()
+
+    def is_in_the_past(self):
+        now = timezone.now()
+        return self.date_end < now.date()
+
+    def is_in_the_future(self):
+        now = timezone.now()
+        return now.date() < self.preview_date
 
     def is_enabled_to_preview(self):
         now = timezone.now()
