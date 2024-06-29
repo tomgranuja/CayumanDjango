@@ -17,7 +17,7 @@ class PeriodMiddleware:
 
     def __call__(self, request):
         # Resolve the current path to access URL kwargs
-        if "/admin/" in request.path_info:
+        if "/admin/" in request.path_info or "/login/" in request.path_info:
             # do nothing in django admin
             response = self.get_response(request)
             return response
