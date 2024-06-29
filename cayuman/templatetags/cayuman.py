@@ -1,5 +1,6 @@
 from functools import lru_cache
 
+import jinja2
 from django.template import Context
 from django.template import Library
 from django.template import Node
@@ -9,6 +10,7 @@ from django.template.base import kwarg_re
 from django.template.loader import render_to_string
 from django.utils.safestring import mark_safe
 from django.utils.safestring import SafeString
+from django_jinja import library
 from jinja2 import nodes
 from jinja2 import Template as JinjaTemplate
 from jinja2.ext import Extension
@@ -266,3 +268,27 @@ class TimetableExtension(Extension):
         params = {"tbody": self._render_block(params_tbody), "days": days}
         params.update(kwargs)
         return self._render_template("timetable_template.html", params)
+
+
+@library.global_function
+@jinja2.pass_context
+def url_switch_period(context, period_id: int):
+    """Simple jinja2 filters that transforms any url to the same one but switched to the given period"""
+    from django.urls import reverse, resolve
+    from django.urls.exceptions import NoReverseMatch
+
+    request = context.get("request")
+
+    # Get the current URL path and its resolver match
+    match = resolve(request.path_info)
+
+    # Prepare new kwargs for URL reversing
+    new_kwargs = {**match.kwargs, "period_id": period_id}
+
+    # Create the new URL
+    try:
+        new_url = reverse(match.view_name, args=match.args, kwargs=new_kwargs)
+    except NoReverseMatch:
+        # if url does not use period_id kwarg then just return the same url
+        new_url = reverse(match.view_name, kwargs=match.kwargs)
+    return new_url

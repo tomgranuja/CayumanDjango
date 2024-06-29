@@ -1,60 +1,89 @@
-{% extends "base.html" %}
-
-{% block title %}
-{% trans name=request.member.get_full_name() %}{{name}}'s Weekly Schedule{% endtrans %} | Cayuman
-{% endblock %}
-
+{% extends "base_internal.html" %}
+{% block title %}{% trans name=request.member.get_full_name() %}{{name}}'s Weekly Schedule{% endtrans %} | Cayuman{% endblock %}
 {% block head %}
 <style>
-.table-responsive {
-  display: block;
-  width: 100%;
-  overflow-x: auto;
-  -webkit-overflow-scrolling: touch;
+.data-container {
+    position: relative;
+    width: 100%;
 }
 
-.tshort {
-  display: none;
+{% if not workshop_periods %}
+.data-container .table {
+    filter: blur(2px);
 }
 
-/* Cuando el ancho de la página es menor a 720px */
-@media (max-width: 720px) {
-  /* Ocultar el span con clase "big" */
-  .tlong {
-    display: none;
-  }
-  /* Mostrar el span con clase "small" */
-  .tshort {
-    display: inline;
-  }
+.data-container .overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(255, 255, 255, 0.7); /* Semi-transparent white background */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 10;
 }
+{% endif %}
 </style>
 {% endblock %}
-
 {% block content %}
-{% if messages %}
-    {% for message in messages %}
-    <div class="alert alert-{{ message.tags }} text-center" role="alert">{{ message }}</div>
-    {% endfor %}
-{% endif %}
-<h2>
-    {% trans name=request.member.get_full_name(), human_period=request.period.human_name %}
-    Weekly Workshop Schedule for {{name}} <small>{{human_period}}</small>
-    {% endtrans %}
-</h2>
+<div class="mx-auto" style="max-width: 1024px">
+  <h2 class="text-center mb-3">
+    {% trans name=request.member.get_full_name(), human_period=request.period.human_name %}Weekly Workshop Schedule for {{name}} <small>{{human_period}}</small>{% endtrans %}
+  </h2>
 
-{% timetable workshop_periods %}
-    {% if schedule in workshop_period.schedules.all() %}
-        <a href="{{ url('workshop_period', workshop_period_id=workshop_period.id) }}">{{workshop_period.workshop.name}}</a>
-        <br /><small>{{workshop_period.teacher.get_full_name()}}</small>
-    {% endif %}
-{% endtimetable %}
-
-<div style="text-align: center;">
-    {% if request.member.current_student_cycle.is_enabled_to_enroll(request.period) %}
-    <a href="{{ url('enrollment', period_id=request.period.id) }}?force=true" class="btn btn-outline-warning btn-lg">&larr; {% trans %}Change my Workshops{% endtrans %}</a>
+  <div class="data-container">
+    <!-- timetable -->
+    {% timetable workshop_periods %}
+        {% if schedule in workshop_period.schedules.all() %}
+            <a href="{{ url('workshop_period', workshop_period_id=workshop_period.id) }}">{{workshop_period.workshop.name}}</a>
+            <br /><small>{{workshop_period.teacher.get_full_name()}}</small>
+        {% endif %}
+    {% endtimetable %}
+    <!-- workshop_periods may imply: period is ON, OFF or full or partial schedule -->
+    {% if workshop_periods %}
+      <div class="text-center">
+        {% if request.member.current_student_cycle.is_enabled_to_enroll(request.period) %}
+            <!-- user enabled to enroll then partial schedule or full_schedule but enrollment period is still ON -->
+            <a href="{{ url('enrollment', period_id=request.period.id) }}?force=true" class="btn btn-outline-warning btn-lg">&larr;
+            {% if request.member.is_schedule_full(request.period) %}
+                {% trans %}Change my Workshops{% endtrans %}
+            {% else %}
+                <!-- complete enrollment -->
+                {% trans %}Complete my enrollment{% endtrans %}
+            {% endif %}
+              </a>
+        {% else %}
+            <!-- user not enabled to enroll but workshops_periods: period is in the past or enrollment period is over-->
+            {% if not request.period.is_in_the_past() %}
+                {% trans %}If you need to change your workshops please contact your teachers.{% endtrans %} <a href="{{ url('workshop_periods', period_id=request.period.id) }}">{% trans %}Click here{% endtrans %}</a> {% trans %}to check the list of available workshops during this period{% endtrans %}.
+            {% endif %}
+        {% endif %}
+      </div>
     {% else %}
-    <small>{% trans %}If you need to change your workshops please contact your teachers.{% endtrans %} <a href="{{ url('workshop_periods', period_id=request.period.id) }}">{% trans %}Click here{% endtrans %}</a> {% trans %}to check the list of available workshops during this period{% endtrans %}.</small>
+      <div class="overlay text-center">
+        <div class="d-block">
+          <h4>{% trans %}Your weekly schedule is empty{% endtrans %} :(</h4>
+          <p>
+            {% if request.member.current_student_cycle.is_enabled_to_enroll(request.period) %}
+              <!-- user has not yet enrolled-->
+              <p>{% trans %}Enrollment for this period is open! Do it by clicking this button{% endtrans %}</p>
+              <a href="{{ url('enrollment', period_id=request.period.id) }}?force=true" class="btn btn-outline-success btn-lg">
+                {% trans %}Click here to enroll in your workshops{% endtrans %}
+              </a>
+            {% else %}
+              {% if not request.period.is_enabled_to_enroll() %}
+                {% trans %}Workshops enrollment for this period is not yet open. Please come back later.{% endtrans %}
+              {% else %}
+                {% trans %}Your student account is not associated with any Cycle. Please ask your teachers to fix this.{% endtrans %}
+              {% endif %}
+            {% endif %}
+          </p>
+        </div>
+      </div>
     {% endif %}
+  </div>
+
 </div>
 {% endblock %}

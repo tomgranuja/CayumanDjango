@@ -1,69 +1,104 @@
-<!doctype html>
-<html>
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1">
+{% extends "base_internal.html" %}
+{% block title %}{% trans human_period=request.period %}Workshops for {{human_period}}{% endtrans %} | Cayuman{% endblock %}
+{% block head %}
+<style>
+.data-container {
+    position: relative;
+    width: 100%;
+    {% if not show_workshop_periods %}
+    max-height: 55vh;
+    overflow-y: hidden;
+    {% endif %}
+}
 
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+{% if not show_workshop_periods %}
+.data-container .col {
+    filter: blur(5px);
+}
 
-    <title>{% trans %}Home{% endtrans %} | Cayuman</title>
+.data-container .overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(255, 255, 255, 0.5); /* Semi-transparent white background */
+    display: flex;
+    justify-content: center;
+    z-index: 10;
+}
+{% endif %}
+</style>
+{% endblock %}
+{% block content %}
 
-  </head>
-  <body>
-    <div class="container-md">
+<h2 class="text-center mb-3">{% trans human_period=request.period.human_name %}Workshop schedule for {{human_period}}{% endtrans %}</h2>
 
-      <div class="mb-3">
-        <h1 class="display-2">{% trans user=request.member.get_full_name() %}Hello {{ user }}!{% endtrans %}</h1>
-        {% if request.member.current_student_cycle %}
-        <p>
-            {% trans human_period=request.period.human_name, cycle_name=request.member.current_student_cycle.cycle.name %}
-            These are the workshop options for <span>{{human_period}}</span> available for <span>{{cycle_name}}</span> cycle.
-            {% endtrans %}
-        </p>
-        {% endif %}
-      </div>
 
-      {% if messages %}
-        {% for message in messages %}
-          <div class="alert alert-{{ message.tags }} text-center" role="alert">{{ message }}</div>
-        {% endfor %}
-      {% endif %}
+{% if workshop_periods %}
+<div class="mb-3 text-center">
+    <p>
+      {% trans human_period=request.period.human_name, cycle_name=request.member.current_student_cycle.cycle.name %}
+      These are the workshop options for <span>{{human_period}}</span> available for <span>{{cycle_name}}</span> cycle.
+      {% endtrans %}
+    </p>
+</div>
+{% endif %}
 
-      {% if request.member.is_enabled_to_enroll(request.period) %}
-      <div class="mb-3">
-        <a href="{{ url('enrollment', period_id=request.period.id) }}?force=true" class="btn btn-success">{% trans %}Click here to enroll in your workshops{% endtrans %}</a>
-      </div>
-      {% endif %}
+{% if request.member.is_enabled_to_enroll(request.period) and workshop_periods %}
+  <div class="mb-3 text-center">
+    <a href="{{ url('enrollment', period_id=request.period.id) }}?force=true" class="btn btn-success">{% trans %}Click here to enroll in your workshops{% endtrans %}</a>
+  </div>
+{% endif %}
 
-      <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-4 g-4">
-
-      {% for wp in workshop_periods %}
-        <div class="col">
-          <div class="card h-100">
-            <div class="card-body">
-              <h3 class="card-title mb-2 text-body-primary">{{wp.workshop.name}}</h3>
-              <h6 class="card-subtitle mb-2 text-body-secondary">{{wp.teacher.get_full_name()}}</h6>
-              <p class="card-text fw-light"><small>{{ wp.workshop.description | truncate (150) }}</small></p>
-              <a href="{{ url('workshop_period', workshop_period_id=wp.id) }}" class="card-link">{% trans %}Read more{% endtrans %}</a>
-            </div>
+<div class="data-container row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-4 g-4 flex-grow-1">
+{% if workshop_periods %}
+  <!-- implicitly we know show_workshop_periods is true -->
+  {% for wp in workshop_periods %}
+      <div class="col">
+        <div class="card h-100">
+          <div class="card-body">
+            <h3 class="card-title mb-2 text-body-primary">{{wp.workshop.name}}</h3>
+            <h6 class="card-subtitle mb-2 text-body-secondary">{{wp.teacher.get_full_name()}}</h6>
+            <p class="card-text fw-light"><small>{{ wp.workshop.description | truncate (150) }}</small></p>
+            <a href="{{ url('workshop_period', workshop_period_id=wp.id) }}" class="card-link">{% trans %}Read more{% endtrans %}</a>
           </div>
         </div>
-      {% endfor %}
-    </div>
+      </div>
+  {% endfor %}
+{% else %}
+  {% for fwp in fake_workshop_periods %}
+      <div class="col">
+        <div class="card h-100">
+          <div class="card-body">
+            <h3 class="card-title mb-2 text-body-primary">{{fwp.name}}</h3>
+            <h6 class="card-subtitle mb-2 text-body-secondary">{{fwp.teacher}}</h6>
+            <p class="card-text fw-light"><small>{{ fwp.description | truncate (150) }}</small></p>
+            <a href="#" class="card-link">{% trans %}Read more{% endtrans %}</a>
+          </div>
+        </div>
+      </div>
+  {% endfor %}
 
-    {% if request.member.is_enabled_to_enroll(request.period) %}
-    <div class="mt-3 mb-3">
-        <a href="{{ url('enrollment', period_id=request.period.id) }}?force=true" class="btn btn-success">{% trans %}Click here to enroll in your workshops{% endtrans %}</a>
-    </div>
+  <div class="overlay text-center">
+    <div class="mt-4" style="display: block">
+    {% if not request.period.is_enabled_to_preview() and not request.period.is_in_the_past() %}
+        <h4>{% trans %}Oops! You can't see the workshops for this period yet{% endtrans %}</h4>
+        <p>{% trans %}It is still not the time to visualize workshops for the upcoming period. Please return later.{% endtrans %}</p>
+    {% else %}
+        <h4>{% trans %}No workshops available for this period{% endtrans %} :(</h4>
+        <p>{% trans %}Our teachers are working hard to bring you a nice offer of workshops, but they are not ready yet. Please check back later.{% endtrans %}</p>
     {% endif %}
-<!-- Google tag (gtag.js) -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-T8R8R0NWNC"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
+    </div>
+  </div>
 
-  gtag('config', 'G-T8R8R0NWNC');
-</script>
-  </body>
-</html>
+{% endif %}
+</div>
+
+{% if request.member.is_enabled_to_enroll(request.period) and workshop_periods %}
+  <div class="mt-3 mb-3 text-center">
+    <a href="{{ url('enrollment', period_id=request.period.id) }}?force=true" class="btn btn-success">{% trans %}Click here to enroll in your workshops{% endtrans %}</a>
+  </div>
+{% endif %}
+
+{% endblock %}
