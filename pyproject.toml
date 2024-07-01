@@ -16,6 +16,7 @@ odfpy = "^1.4.1"
 pandas = "^2.2.1"
 django-maintenance-mode = "^0.21.1"
 mysql-to-sqlite3 = "^2.1.11"
+django-impersonate = "^1.9.4"
 
 [tool.poetry.group.test]
 optional = true

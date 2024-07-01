@@ -54,6 +54,7 @@ INSTALLED_APPS = [
     "django_jinja",
     "maintenance_mode",
     "tests",
+    "impersonate",
     "cayuman",
 ]
 
@@ -66,7 +67,9 @@ MIDDLEWARE = [
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "maintenance_mode.middleware.MaintenanceModeMiddleware",
+    "impersonate.middleware.ImpersonateMiddleware",
     "cayuman.middleware.PeriodMiddleware",
+    "cayuman.middleware.ThreadLocalMiddleware",
 ]
 
 ROOT_URLCONF = "cayuman.urls"
@@ -266,6 +269,10 @@ LOGGING = {
         },
     },
 }
+
+# Impersonate
+IMPERSONATE_REQUIRE_SUPERUSER = True
+IMPERSONATE_LOGOUT_REDIRECT_URL = "/admin/"
 
 # Cayuman specific settings
 STUDENTS_GROUP = _("Students")

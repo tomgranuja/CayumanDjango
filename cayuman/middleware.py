@@ -1,10 +1,33 @@
+import threading
+
 from django.contrib import messages
 from django.core.exceptions import ObjectDoesNotExist
 from django.http import Http404
 from django.urls import resolve
 from django.utils.translation import gettext as _
 
-from cayuman.models import Period
+# Crear un objeto local para hilos
+_thread_locals = threading.local()
+
+
+def get_current_request():
+    """
+    Obtener la request actual almacenada en el espacio de almacenamiento local del hilo.
+    Si no hay request almacenada, retorna None.
+    """
+    return getattr(_thread_locals, "request", None)
+
+
+class ThreadLocalMiddleware:
+    def __init__(self, get_response):
+        self.get_response = get_response
+
+    def __call__(self, request):
+        # Almacenar la request actual en el espacio de almacenamiento local del hilo
+        _thread_locals.request = request
+        response = self.get_response(request)
+        # Limpiar la request del almacenamiento local del hilo al finalizar la respuesta
+        return response
 
 
 class PeriodMiddleware:
@@ -16,6 +39,8 @@ class PeriodMiddleware:
         self.get_response = get_response
 
     def __call__(self, request):
+        from cayuman.models import Period
+
         # Resolve the current path to access URL kwargs
         if "/admin/" in request.path_info or "/login/" in request.path_info:
             # do nothing in django admin

@@ -179,9 +179,18 @@ class WorkshopSelectionForm(forms.Form):
         **kwargs,
     ) -> None:
         super().__init__(*args, **kwargs)
+
+        self.submission = False if not bool(self.data) else True
         self.member = member
         self.period = period
         self.schedules_with_workshops = schedules_with_workshops
+        print()
+        print("__init__")
+        print(f"{self.data=}")
+        print(f"{self.initial=}")
+        print(f"{self.schedules_with_workshops=}")
+        print(f"{self.initial=}")
+        print(f"{self.submission=}")
         if schedules_with_workshops:
             for schedule, workshop_periods in schedules_with_workshops.items():
                 workshop_choices = [(wp.id, mark_safe(self.choice_label(wp))) for wp in workshop_periods]
@@ -194,12 +203,30 @@ class WorkshopSelectionForm(forms.Form):
 
     def choice_label(self, workshop_period: WorkshopPeriod) -> str:
         """Returns a label for a workshop period adding remaining quota badge and workshop description popover"""
+        sched_key = None
+        for sched in self.schedules_with_workshops:
+            if str(workshop_period.id) == self.data.get(f"schedule_{sched.id}") or workshop_period.id == self.initial.get(f"schedule_{sched.id}"):
+                print()
+                print(f"Found coincidence for {workshop_period.workshop.name} ({workshop_period.id}) in schedule_{sched.id}")
+                sched_key = f"schedule_{sched.id}"
+
+        new_value = None
+        if sched_key:
+            new_value = (
+                False if workshop_period.id == self.initial[sched_key] else True
+            )  # tells whether this value is incoming (being saved) or being replaced
+            print(new_value)
+
         remaining_quota = workshop_period.remaining_quota()
-        badge = (
-            f'<span class="badge rounded-pill text-bg-secondary">{remaining_quota}</span>'
-            if remaining_quota is not None and remaining_quota >= 0
-            else ""
-        )
+        if self.submission and new_value is not None:
+            print(f"quota for {workshop_period.workshop.name} = {remaining_quota}")
+            if new_value:
+                remaining_quota -= 1
+            else:
+                remaining_quota += 1
+            print(f"quota for {workshop_period.workshop.name} = {remaining_quota}")
+        human_remaining_quota = remaining_quota if remaining_quota is not None and remaining_quota >= 0 else 0  # never show quota < 0
+        badge = f'<span class="badge rounded-pill text-bg-secondary" data-value="{remaining_quota}">{human_remaining_quota}</span>'
         popover = (
             f'<a href="#/" data-bs-toggle="popover" data-bs-trigger="focus" data-bs-title="{escape(workshop_period.workshop.name)}" data-bs-content="{escape(workshop_period.workshop.description)}">(?)</a>'  # noqa E501
             if workshop_period.workshop.description

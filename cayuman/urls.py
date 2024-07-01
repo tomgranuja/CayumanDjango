@@ -1,6 +1,7 @@
 # from django.contrib import admin
 from django.contrib import admin
 from django.contrib.auth import views as auth_views
+from django.urls import include
 from django.urls import path
 
 from .views import EnrollmentView
@@ -18,5 +19,6 @@ urlpatterns = [
     path("workshop-period/<int:workshop_period_id>/", workshop_period, name="workshop_period"),
     path("workshop-periods/<int:period_id>/", workshop_periods, name="workshop_periods"),
     path("enrollment/<int:period_id>/", EnrollmentView.as_view(), name="enrollment"),
+    path("impersonate/", include("impersonate.urls")),
     path("", home, name="home"),
 ]

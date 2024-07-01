@@ -561,6 +561,8 @@ class StudentCycle(models.Model):
 def student_cycle_workshop_period_changed(sender, instance, action, *args, **kwargs):
     """Validation procedure for the StudentCycle.workshop_periods m2m relation"""
     # instance.available_workshop_periods_by_schedule.cache_clear()
+    from cayuman.middleware import get_current_request
+
     instance.workshop_periods_by_schedule.cache_clear()
     instance.is_schedule_full.cache_clear()
     instance.workshop_periods_by_period.cache_clear()
@@ -568,6 +570,8 @@ def student_cycle_workshop_period_changed(sender, instance, action, *args, **kwa
 
     if action == "pre_add":
         # Get all workshop periods for this student's cycle, including incoming ones
+        request = get_current_request()
+
         wps = set()
         for wp in instance.workshop_periods.all():
             wps.add(wp)
@@ -577,20 +581,23 @@ def student_cycle_workshop_period_changed(sender, instance, action, *args, **kwa
             wps.add(wp)
 
         # apply validations
-        for wp in wps:
-            # check if workshop period is full
-            if wp.max_students > 0:
-                # Count students in this cycle without counting current student
-                curr_count = wp.studentcycle_set.exclude(student__id=instance.student.id).count()
-                if wp.max_students <= curr_count:
-                    raise ValidationError(_("Workshop period `%s` has reached its quota of students") % (wp.workshop.name))
+        print(request)
+        print(getattr(request, "impersonator"))
+        if not request or (request and not getattr(request, "impersonator")):
+            for wp in wps:
+                # check if workshop period is full
+                if wp.max_students > 0:
+                    # Count students in this cycle without counting current student
+                    curr_count = wp.studentcycle_set.exclude(student__id=instance.student.id).count()
+                    if wp.max_students <= curr_count:
+                        raise ValidationError(_("Workshop period `%s` has reached its quota of students") % (wp.workshop.name))
 
-            # check if workshop periods' cycles all belong to the same student cycle's cycle
-            if instance.cycle not in wp.cycles.all():
-                raise ValidationError(
-                    _("Student `%(st)s` cannot be associated with workshop period `%(wp)s` because they belong to the same cycle.")
-                    % {"st": instance.student.get_full_name(), "wp": wp.workshop.name}
-                )
+                # check if workshop periods' cycles all belong to the same student cycle's cycle
+                if instance.cycle not in wp.cycles.all():
+                    raise ValidationError(
+                        _("Student `%(st)s` cannot be associated with workshop period `%(wp)s` because they belong to the same cycle.")
+                        % {"st": instance.student.get_full_name(), "wp": wp.workshop.name}
+                    )
 
             # check for collitions between this student's cycle's workshop_period's schedules and incoming workshop_period's schedules
             for wp_2 in wps:

@@ -12,6 +12,7 @@ from django.utils.decorators import method_decorator
 from django.utils.translation import gettext as _
 from django.views import View
 
+from .decorators import enrollment_access_required
 from .decorators import student_required
 from .decorators import studentcycle_required
 from .forms import StudentLoginForm
@@ -28,6 +29,7 @@ class StudentLoginView(LoginView):
 @method_decorator(login_required, name="dispatch")
 @method_decorator(student_required, name="dispatch")
 @method_decorator(studentcycle_required, name="dispatch")
+@method_decorator(enrollment_access_required, name="dispatch")
 class EnrollmentView(LoginRequiredMixin, View):
     """Enrollment form view, where students can choose their workshops"""
 
@@ -38,27 +40,10 @@ class EnrollmentView(LoginRequiredMixin, View):
         """GET view for the enrollment form"""
         student_cycle = request.member.current_student_cycle
 
-        # check if student is enabled to enroll, otherwise redirect to weekly-schedule with a warning message
-        if request.period.is_enabled_to_enroll():
-            if not student_cycle.is_enabled_to_enroll(request.period):
-                messages.warning(
-                    request, _("Online enrollment is no longer enabled. If you need to change your workshops please contact your teachers.")
-                )
-                return HttpResponseRedirect(reverse("weekly_schedule", kwargs={"period_id": request.period.id}))
-        else:
-            # Go back to workshop periods and no feedback as it will be handled by the middleware
-            if request.period.is_in_the_past():
-                return HttpResponseRedirect(reverse("weekly_schedule", kwargs={"period_id": request.period.id}))
-            else:
-                return HttpResponseRedirect(reverse("workshop_periods", kwargs={"period_id": request.period.id}))
-
-        if not request.GET.get("force") and student_cycle.is_schedule_full(request.period):
-            return HttpResponseRedirect(reverse("weekly_schedule", kwargs={"period_id": request.period.id}))
-
         # current data
         wps_by_schedule = student_cycle.available_workshop_periods_by_schedule(request.period)
-        data = {f"schedule_{sched.id}": wp.id for sched, wp in student_cycle.workshop_periods_by_schedule(period=request.period).items()}
-        form = WorkshopSelectionForm(initial=data, schedules_with_workshops=wps_by_schedule, member=request.member)
+        initial_data = {f"schedule_{sched.id}": wp.id for sched, wp in student_cycle.workshop_periods_by_schedule(period=request.period).items()}
+        form = WorkshopSelectionForm(initial=initial_data, schedules_with_workshops=wps_by_schedule, member=request.member)
 
         return render(request, "enrollment.html", {"form": form})
 
@@ -66,14 +51,12 @@ class EnrollmentView(LoginRequiredMixin, View):
         """Save workshop periods for current student cycle"""
         student_cycle = request.member.current_student_cycle
 
-        # check if student is enabled to enroll, otherwise redirect to weekly-schedule with a warning message
-        if not student_cycle.is_enabled_to_enroll(request.period):
-            messages.warning(request, _("Online enrollment is no longer enabled. If you need to change your workshops please contact your teachers."))
-            return HttpResponseRedirect(reverse("weekly_schedule", kwargs={"period_id": request.period.id}))
-
         # Pass schedules_with_workshops when instantiating the form for POST
         wps_by_schedule = student_cycle.available_workshop_periods_by_schedule(request.period)
-        form = WorkshopSelectionForm(request.POST, schedules_with_workshops=wps_by_schedule, member=request.member, period=request.period)
+        initial_data = {f"schedule_{sched.id}": wp.id for sched, wp in student_cycle.workshop_periods_by_schedule(period=request.period).items()}
+        form = WorkshopSelectionForm(
+            request.POST, initial=initial_data, schedules_with_workshops=wps_by_schedule, member=request.member, period=request.period
+        )
         if form.is_valid():
             # Form is valid, proceed with saving data or other post-submission processes
             workshop_period_ids = set()
@@ -146,7 +129,6 @@ def weekly_schedule(request, period_id: int):
 
 
 @login_required(login_url=reverse("login"))
-@student_required
 def workshop_period(request, workshop_period_id: int):
     """View detailed information about a workshop period"""
     try:

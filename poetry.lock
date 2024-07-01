@@ -96,6 +96,16 @@ argon2 = ["argon2-cffi (>=19.1.0)"]
 bcrypt = ["bcrypt"]
 
 [[package]]
+name = "django-impersonate"
+version = "1.9.4"
+description = "Django app to allow superusers to impersonate other users."
+optional = false
+python-versions = "*"
+files = [
+    {file = "django_impersonate-1.9.4.tar.gz", hash = "sha256:77b1ad339ad2e5e90c1250b13731a77f50f7621abaaa2758c5a629a05f67396b"},
+]
+
+[[package]]
 name = "django-jinja"
 version = "2.11.0"
 description = "Jinja2 templating language integrated in Django."
@@ -970,4 +980,4 @@ test = ["covdefaults (>=2.3)", "coverage (>=7.2.7)", "coverage-enable-subprocess
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.10"
-content-hash = "0fa705c2a6f4659a5732a82b4908e94ca3f77d22dda15f3876071eb82b3d0dbf"
+content-hash = "23a3a1ccc163ad83edd3ea7befd2f6c8d7f3c189f73c18b8a065f0257659546e"
