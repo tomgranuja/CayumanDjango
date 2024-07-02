@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 """Helper script for initial members load from ods file."""
+import csv
 import datetime
 
-import pandas as pd
 from django.conf import settings
 from django.contrib.auth.models import Group
 from django.core.management.base import BaseCommand
@@ -43,16 +43,25 @@ teacher_username = {
 cycle_pairs = {"ulmos": ["Ulmos"], "canelos y manios": ["Canelos", "Mañíos"], "coihues y avellanos": ["Coigües", "Avellanos"]}
 
 
-# Convert ods table to dataframe and fix time coordinates
-def ws_table(filename, drop_c=False, nan_names=None):
-    t = pd.read_excel(filename, dtype={"period": "int"})
-    if nan_names is not None:
-        t.loc[t["name"].isna(), "name"] = nan_names
-    t["coords"] = t.loc[:, "c1":"c3"].apply(row_coords, axis=1)
-    t.teacher = t.teacher.apply(lambda x: teacher_username[x])
-    if drop_c:
-        t = t.drop(columns=t.loc[:, "c1":"c3"].columns)
-    return t
+# Convert csv table to row-dict list, fix time coordinates and teacher
+def from_csv_table(fname, drop_c=False, blank_name=None):
+    with open(fname, newline="") as csvfile:
+        reader = csv.DictReader(csvfile)
+        t = [row for row in reader]
+        for i, row in enumerate(t):
+            row["coords"] = [tup_from_cell_coord(s) for s in (row["c1"], row["c2"]) if s != ""]
+            try:
+                row["period"] = int(row["period"])
+            except ValueError:
+                print((f"""Warning! {fname} {i}: """ f"""Unable to cast period "{row['period']}" to int."""))
+            row["teacher"] = teacher_username[row["teacher"]]
+            if drop_c:
+                del row["c1"]
+                del row["c2"]
+            if blank_name is not None:
+                if row["name"] == "":
+                    row["name"] = blank_name
+        return t
 
 
 def tup_from_cell_coord(s):
@@ -66,11 +75,6 @@ def tup_from_cell_coord(s):
     }
     d, h = s[:2], s[2:]
     return (int(h) - 1, day_idx[d.lower()])
-
-
-def row_coords(row):
-    r = row[row.notna()]
-    return r.apply(tup_from_cell_coord).to_list()
 
 
 def coord_to_dict(coord):
@@ -98,12 +102,12 @@ class Command(BaseCommand):
         filename = options["filename"]
         period_n = options["period_n"]
         try:
-            t = ws_table(filename, drop_c=True, nan_names="Not defined")
+            t = from_csv_table(filename, drop_c=True, blank_name="Not defined")
         except FileNotFoundError:
             raise CommandError('File "%s" does not exist' % filename)
 
         self.stdout.write(self.style.SUCCESS(f"Read {len(t)} entries"))
-        t = t[t.period == period_n]
+        t = [row for row in t if row["period"] == period_n]
         self.stdout.write(self.style.SUCCESS(f"Filtering to {len(t)} entries of period {period_n}."))
 
         teachers_group, _ = Group.objects.get_or_create(name=settings.TEACHERS_GROUP)
@@ -115,12 +119,12 @@ class Command(BaseCommand):
             message = f"Period {period_n} doesn't exist, " "stopping without touching database."
             raise CommandError(message)
 
-        for i, row in t.iloc[:].iterrows():
+        for i, row in enumerate(t[:3]):
             print(f"Adding entry at index {i}, {row['name']}...")
             # Find database workshopperiod with same workshop, period and teacher
 
             # Teacher
-            teacher, created = Member.objects.get_or_create(username=row.teacher)
+            teacher, created = Member.objects.get_or_create(username=row["teacher"])
             if created:
                 teacher.first_name = "No name"
                 teacher.last_name = "workshop teacher"
@@ -130,24 +134,23 @@ class Command(BaseCommand):
 
             # Workshop
             defaults = {}
-            if pd.notna(row["description"]):
+            if row["description"] != "":
                 defaults["description"] = row["description"]
-            if pd.notna(row["full_name"]):
+            if row["full_name"] != "":
                 defaults["full_name"] = row["full_name"]
             ws, created = Workshop.objects.update_or_create(name=row["name"].strip(), defaults=defaults)
             if not created:
                 print(f"    {repr(ws)} updated.")
 
             # Schedules
-
-            schedules = [Schedule.objects.get_or_create(**coord_to_dict(coord)) for coord in row.coords]
+            schedules = [Schedule.objects.get_or_create(**coord_to_dict(coord)) for coord in row["coords"]]
             for sc, created in schedules:
                 if created:
                     print(f"    {repr(sc)} created.")
             schedules = [sc[0] for sc in schedules]
 
             # Cycle
-            cycles = [Cycle.objects.get_or_create(name=name) for name in cycle_pairs[row.cycle]]
+            cycles = [Cycle.objects.get_or_create(name=name) for name in cycle_pairs[row["cycle"]]]
             for cycle, created in cycles:
                 if created:
                     print(f"    {repr(cycle)} created.")
@@ -167,7 +170,7 @@ class Command(BaseCommand):
             except WorkshopPeriod.DoesNotExist:
                 wp = WorkshopPeriod.objects.create(workshop=ws, period=period, teacher=teacher)
             finally:
-                wp.max_students = row.quota
+                wp.max_students = row["quota"]
                 wp.save()
             wp.cycles.add(*cycles)
             wp.schedules.add(*schedules)
