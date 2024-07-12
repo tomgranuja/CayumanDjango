@@ -88,7 +88,7 @@ def create_export_to_csv_action(fields):
 
 class MemberAdmin(UserAdmin):
     ordering = ("-date_joined",)
-    list_display = ("id", "name", "cycle", "date_joined", "is_student", "is_teacher", "is_staff", "is_active")
+    list_display = ("id", "name", "cycle", "date_joined", "is_student", "is_teacher", "is_staff", "is_active", "impersonate")
     filter_horizontal = ("groups", "user_permissions")
     list_per_page = 20
 
@@ -112,6 +112,11 @@ class MemberAdmin(UserAdmin):
     @admin.display(description=_("Cycle"))
     def cycle(self, obj):
         return format_html(obj.current_student_cycle.cycle.name if obj.is_student and obj.current_student_cycle else "-")
+
+    @admin.display(description=_("Impersonate"))
+    def impersonate(self, obj):
+        if obj.is_student:
+            return format_html('<a href="{}">{}</a>'.format(reverse("impersonate-start", args=[obj.pk]), _("Impersonate")))
 
 
 admin.site.register(Member, MemberAdmin)
@@ -221,9 +226,12 @@ class WorkshopPeriodAdmin(admin.ModelAdmin):
 
     @admin.display(description=_("Enrolled Students"))
     def num_students(self, obj):
-        return format_html(
-            f'<a href="{reverse("admin:cayuman_workshopperiod_student_cycles", kwargs={"object_id": obj.id})}">{obj.count_students()}</a>'
-        )
+        count = obj.count_students()
+        if count > obj.max_students:
+            text = f"{count} ({_('overflow')})"
+        else:
+            text = f"{count}"
+        return format_html(f'<a href="{reverse("admin:cayuman_workshopperiod_student_cycles", kwargs={"object_id": obj.id})}">{text}</a>')
 
     def get_urls(self):
         """Add url for custom `students` view"""
@@ -301,7 +309,7 @@ admin.site.register(WorkshopPeriod, WorkshopPeriodAdmin)
 
 class StudentCycleAdmin(admin.ModelAdmin):
     ordering = ("-date_joined",)
-    list_display = ("id", "student", "cycle", "date_joined", "this_period_workshops_html", "other_periods_workshops", "active")
+    list_display = ("id", "student", "cycle", "date_joined", "this_period_workshops_html", "other_periods_workshops", "active", "impersonate")
     list_per_page = 20
     list_filter = ["cycle"]
     search_fields = ["student__first_name", "student__last_name", "cycle__name"]
@@ -452,6 +460,11 @@ class StudentCycleAdmin(admin.ModelAdmin):
             "admin/student_cycle_workshop_periods.html",
             context,
         )
+
+    @admin.display(description=_("Impersonate"))
+    def impersonate(self, obj):
+        if obj.student.is_student:
+            return format_html('<a href="{}">{}</a>'.format(reverse("impersonate-start", args=[obj.student.pk]), _("Impersonate")))
 
 
 admin.site.register(StudentCycle, StudentCycleAdmin)

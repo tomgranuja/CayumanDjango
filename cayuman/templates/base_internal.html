@@ -1,31 +1,38 @@
 {% extends "base.html" %}
 {% block navbar %}
-{% if request and request.member %}
+{% if request.member %}
 <nav class="navbar navbar-expand-lg bg-body-tertiary mb-2 d-flex">
   <div class="container-fluid">
     <a class="navbar-brand" href="/">
       <img src="https://comunidadeducativacayuman.cl/wp-content/uploads/2021/02/Recurso-5.png" alt="Logo" height="24" class="d-inline-block align-text-top">
-      {% trans user=request.member.first_name %}Hello {{ user }}!{% endtrans %}
+      {% if request.impersonator %}
+        {% trans user=request.member.get_full_name() %}Impersonating {{user}}{% endtrans %} <a href="{{ url('impersonate-stop') }}">{% trans %}Stop{% endtrans %}</a>
+      {% else %}
+        {% trans user=request.member.first_name %}Hello {{ user }}!{% endtrans %}
+      {% endif %}
     </a>
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarToggler" aria-controls="navbarToggler" aria-expanded="false" aria-label="Toggle navigation">
       <span class="navbar-toggler-icon"></span>
     </button>
 
     <div class="collapse navbar-collapse justify-content-end text-end" id="navbarToggler">
+      {% if request.member.is_student %}
       <span class="navbar-text">{% trans %}Viewing{% endtrans %}:</span>
+      {% endif %}
       <ul class="navbar-nav text-end">
+        {% if request.member.is_student %}
         <!-- periods list -->
         <li class="nav-item dropdown">
           <a class="nav-link dropdown-toggle {% if request.period.is_current() %}fw-bolder{% endif %}" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
             {{request.period}}
           </a>
-          {% if request.other_periods %}
+          <!-- list -->
           <ul class="dropdown-menu text-end">
-            {% for op in request.other_periods %}
+            {% for op in other_periods() %}
               <li><a class="dropdown-item {% if op.is_current() %}fw-bolder{% endif %}" href="{{ url_switch_period(period_id=op.id) }}">{{op}}</a></li>
             {% endfor %}
           </ul>
-          {% endif %}
+          <!-- /list -->
         </li>
         <!-- /periods list -->
 
@@ -33,15 +40,24 @@
         <li class="nav-item pt-2"><span class="badge rounded-pill text-bg-success">{{request.member.current_student_cycle.cycle}}</span></li>
         <!-- /cycle pill -->
 
-        {% if request.member.current_student_cycle and request.member.current_student_cycle.is_enabled_to_enroll(request.period) %}
+        {% if request.member.is_enabled_to_enroll(request.period) or (request.impersonator and request.impersonator.is_enabled_to_enroll(request.period)) %}
           <!-- enroll -->
-          <li class="nav-item"><a class="nav-link fw-bolder" href="{{ url('enrollment', period_id=request.period.id) }}">{% trans %}Enroll{% endtrans %}</a></li>
+          <li class="nav-item">
+            <a class="nav-link fw-bolder" href="{{ url('enrollment', period_id=request.period.id) }}">
+              {% if request.impersonator %}
+                {% trans %}Modify Workshops{% endtrans %}
+              {% else %}
+                {% trans %}Enroll{% endtrans %}
+              {% endif %}
+            </a>
+          </li>
           <!-- /enroll -->
         {% endif %}
         <li class="nav-item"><a class="nav-link" href="{{ url('weekly_schedule', period_id=request.period.id) }}">{% trans %}Timetable{% endtrans %}</a></li>
         <li class="nav-item">
           <a class="nav-link" href="{{ url('workshop_periods', period_id=request.period.id) }}">{% trans %}Workshops{% endtrans %}</a>
         </li>
+        {% endif %}
         <li class="nav-item">
           <a class="nav-link" href="javascript: document.getElementById('logout-frm').submit()">{% trans %}Log Out{% endtrans %}</a>
         </li>

@@ -42,11 +42,16 @@ class Member(User):
     def current_student_cycle(self):
         return StudentCycle.objects.filter(student=self).order_by("-date_joined").first()
 
-    def is_enabled_to_enroll(self, *args, **kwargs) -> bool:
+    def is_enabled_to_enroll(self, period) -> bool:
         # Returns true or false depending on whether the user is enabled to enroll or not.
-        # If no student_cycle then it returns False
-        if self.current_student_cycle:
-            return self.current_student_cycle.is_enabled_to_enroll(*args, **kwargs)
+        if self.is_student:
+            # If student and student_cycle is enabled to enroll
+            if self.current_student_cycle:
+                return self.current_student_cycle.is_enabled_to_enroll(period)
+        elif self.is_superuser:
+            # if superuser then allow if period is not over
+            if not period.is_in_the_past():
+                return True
         return False
 
     def is_schedule_full(self, *args, **kwargs) -> bool:
@@ -351,6 +356,11 @@ class Period(models.Model):
         return True
 
     def save(self, *args, **kwargs):
+        """Save period instances"""
+        # clear caches
+        Period.objects.other_periods.cache_clear()
+        Period.objects.period_by_date.cache_clear()
+
         self.clean()
         super().save(*args, **kwargs)
 
@@ -561,6 +571,8 @@ class StudentCycle(models.Model):
 def student_cycle_workshop_period_changed(sender, instance, action, *args, **kwargs):
     """Validation procedure for the StudentCycle.workshop_periods m2m relation"""
     # instance.available_workshop_periods_by_schedule.cache_clear()
+    from cayuman.middleware import get_current_request
+
     instance.workshop_periods_by_schedule.cache_clear()
     instance.is_schedule_full.cache_clear()
     instance.workshop_periods_by_period.cache_clear()
@@ -577,9 +589,15 @@ def student_cycle_workshop_period_changed(sender, instance, action, *args, **kwa
             wps.add(wp)
 
         # apply validations
+        request = get_current_request()
+        should_check_quota = (
+            not request
+            or (request and not getattr(request, "impersonator"))
+            or (request and hasattr(request, "user") and not getattr(request.user, "is_superuser"))
+        )
         for wp in wps:
             # check if workshop period is full
-            if wp.max_students > 0:
+            if should_check_quota and wp.max_students > 0:
                 # Count students in this cycle without counting current student
                 curr_count = wp.studentcycle_set.exclude(student__id=instance.student.id).count()
                 if wp.max_students <= curr_count:

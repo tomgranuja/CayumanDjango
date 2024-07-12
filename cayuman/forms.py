@@ -179,6 +179,8 @@ class WorkshopSelectionForm(forms.Form):
         **kwargs,
     ) -> None:
         super().__init__(*args, **kwargs)
+
+        self.submission = False if not bool(self.data) else True  # Flag telling this form has been submitted (True) or just shown (False)
         self.member = member
         self.period = period
         self.schedules_with_workshops = schedules_with_workshops
@@ -193,13 +195,35 @@ class WorkshopSelectionForm(forms.Form):
                 )
 
     def choice_label(self, workshop_period: WorkshopPeriod) -> str:
-        """Returns a label for a workshop period adding remaining quota badge and workshop description popover"""
-        remaining_quota = workshop_period.remaining_quota()
-        badge = (
-            f'<span class="badge rounded-pill text-bg-secondary">{remaining_quota}</span>'
-            if remaining_quota is not None and remaining_quota >= 0
-            else ""
+        """Returns a label for a workshop period radio, returning name, teacher, remaining quota badge and workshop description popover"""
+        # Get form's field name for current workshop_period being rendered
+        choice_name = (
+            None  # store radio field name value == workshop_period.id, on incoming data or initial data. If workshop was not selected then None
         )
+        for sched in self.schedules_with_workshops:
+            if str(workshop_period.id) in (str(self.data.get(f"schedule_{sched.id}")), str(self.initial.get(f"schedule_{sched.id}"))):
+                choice_name = f"schedule_{sched.id}"
+                break
+
+        # Get flag telling if the this form field's value has changed (True), or is the same (False) or it's not been selected before (None)
+        choice_value_changed = (
+            None  # True if value of field changed, False if it didn't change, None if workshop has not been selected on initial or incoming data
+        )
+        if choice_name is not None:
+            choice_value_changed = (
+                False if workshop_period.id == self.initial[choice_name] else True
+            )  # tells whether this value is incoming (being saved) or being replaced
+
+        # Prepare vars to render this field's label
+        # Calc `remaining_quota`: if field value has changed substract 1. If it's the same add 1. If it's not been selected before keep DB value
+        remaining_quota = workshop_period.remaining_quota()
+        if self.submission and choice_value_changed is not None:  # if form was just submitted and form field value has been selected before or after
+            if choice_value_changed:  # this field value was just selected
+                remaining_quota -= 1  # -1 because quota is reduced by 1 when user selected this value
+            else:  # this field value was de-selected
+                remaining_quota += 1  # +1 because quota was increased by 1 when user de-selected this value
+        human_remaining_quota = remaining_quota if remaining_quota is not None and remaining_quota >= 0 else 0  # never show quota < 0
+        badge = f'<span class="badge rounded-pill text-bg-secondary" data-value="{remaining_quota}">{human_remaining_quota}</span>'
         popover = (
             f'<a href="#/" data-bs-toggle="popover" data-bs-trigger="focus" data-bs-title="{escape(workshop_period.workshop.name)}" data-bs-content="{escape(workshop_period.workshop.description)}">(?)</a>'  # noqa E501
             if workshop_period.workshop.description

@@ -71,119 +71,143 @@
 
 {% block bottom %}
 <script>
+    const isAdmin = {% if request.impersonator %}true{% else %}false{%endif %};
+    //let workshops = {};
     document.addEventListener('DOMContentLoaded', () => {
         const radios = document.querySelectorAll('input[type="radio"]');
-        let radioStates = {};
+        let workshops = {};
 
         // Initialize the tracking object with the current state of each radio button
         radios.forEach(radio => {
-            radioStates[radio.value] = radio.checked;
+            // store all workshops in a dict by `radio.value` (i.e. workshop identifier)
+            const span = radio.closest('div').querySelector('span.badge');
+            if (!workshops.hasOwnProperty(radio.value)) {
+                workshops[radio.value] = {
+                    "elements": [[radio, span]],
+                    "checked": radio.checked,
+                    "quota": parseInt(span.dataset.value),
+                    "check": function(radioEl) {
+                        this.checked = true;
+                        this.quota -= 1;
+
+                        for (const idx in this.elements) {
+                            const otherRadio = this.elements[idx][0];
+                            const spanBadge = this.elements[idx][1];
+
+                            // re-render badge with new quota
+                            this.renderBadge(spanBadge);
+
+                            // set attributes for other radio
+                            if (otherRadio.name != radioEl.name) {
+                                // set same value of checked
+                                otherRadio.checked = this.checked;
+
+                                // highlight
+                                this.highlight(otherRadio);
+                            }
+                        }
+                    },
+                    "uncheck": function() {
+                        // set checked to false
+                        this.checked = false;
+                        this.quota += 1;
+
+                        for (const idx in this.elements) {
+                            const otherRadio = this.elements[idx][0];
+                            const spanBadge = this.elements[idx][1];
+
+                            // re-render badge
+                            this.renderBadge(spanBadge);
+
+                            // set attributes for other radio
+                            otherRadio.checked = this.checked;
+
+                            // toggle
+                            this.switchEnable(otherRadio, spanBadge);
+
+                            // highlight
+                            this.highlight(otherRadio);
+                        }
+                    },
+                    "highlight": function(radioEl) {
+                        // Apply the orange background immediately
+                        const label = radioEl.parentElement;
+                        label.classList.add('highlight');
+
+                        // Remove the orange background after a short delay, allowing the fade effect to show
+                        setTimeout(() => {
+                            label.classList.remove('highlight');
+                        }, 2000);
+                    },
+                    "renderBadge": function(spanBadge) {
+                        // Convert the text to an integer
+                        spanBadge.dataset.value = this.quota.toString();
+
+                        if(isAdmin) {
+                            if(this.quota >= 0) {
+                                spanBadge.classList.remove('text-bg-danger');
+                                spanBadge.classList.add('text-bg-secondary');
+                                spanBadge.textContent = this.quota.toString();
+                            } else {
+                                spanBadge.classList.remove('text-bg-secondary');
+                                spanBadge.classList.add('text-bg-danger');
+                                spanBadge.textContent = '{% if request.impersonator %}{% trans %}overflow{% endtrans %}{% endif %}: ' + this.quota.toString();
+                            }
+                        } else {
+                            // Set the new value as the text content of spanBadge
+                            if(this.quota >= 0)
+                                spanBadge.textContent = this.quota.toString();
+                        }
+                    },
+                    "switchEnable": function(radioEl, badge) {
+                        const value = parseInt(badge.dataset.value, 10);
+                        if (value <= 0) {
+                            if (radioEl && !isAdmin) {
+                                radioEl.disabled = true;
+                            }
+                        } else {
+                            if (radioEl) {
+                                radioEl.disabled = false;
+                            }
+                        }
+                    }
+                };
+            } else {
+                // append radio to siblings
+                workshops[radio.value].elements.push([radio, span]);
+            }
         });
 
-        function highlightLabel(label) {
-            // Apply the orange background immediately
-            label.classList.add('highlight');
+        //toggleRadioButtons(); // on document load disable radio buttons if badge == 0
 
-            // Remove the orange background after a short delay, allowing the fade effect to show
-            setTimeout(() => {
-                label.classList.remove('highlight');
-            }, 2000);
-        }
 
-        function increaseQuota(radio) {
-            const commonParent = radio.closest('div');
-            const spanBadge = commonParent.querySelector('span.badge');
-
-            if (spanBadge) {
-                // Get the current text content of spanBadge, trim it to remove any leading/trailing spaces
-                let currentValue = spanBadge.textContent.trim();
-
-                // Convert the text to an integer
-                let intValue = parseInt(currentValue, 10);
-
-                // Check if the conversion was successful to avoid NaN results
-                if (!isNaN(intValue)) {
-                    // Add 1 to the integer value
-                    intValue += 1;
-
-                    // Set the new value as the text content of spanBadge
-                    spanBadge.textContent = intValue.toString();
-                }
-            }
-        }
-
-        function decreaseQuota(radio) {
-            const commonParent = radio.closest('div');
-            const spanBadge = commonParent.querySelector('span.badge');
-
-            if (spanBadge) {
-                // Get the current text content of spanBadge, trim it to remove any leading/trailing spaces
-                let currentValue = spanBadge.textContent.trim();
-
-                // Convert the text to an integer
-                let intValue = parseInt(currentValue, 10);
-
-                // Check if the conversion was successful to avoid NaN results
-                if (!isNaN(intValue)) {
-                    // Add 1 to the integer value
-                    intValue -= 1;
-
-                    // Set the new value as the text content of spanBadge
-                    spanBadge.textContent = intValue.toString();
-                }
-            }
-        }
-
-        function toggleRadioButtons() {
-            const spans = document.querySelectorAll('span.badge');
-            spans.forEach(span => {
-                const radio = span.closest('div').querySelector('input[type="radio"]');
-                if (span.textContent.trim() === '0') {
-                    if (radio) {
-                        radio.disabled = true;
-                    }
-                } else {
-                    if (radio) {
-                        radio.disabled = false;
-                    }
-                }
-            });
-        }
-        toggleRadioButtons(); // on document load disable radio buttons if badge == 0
-
+        // add listener to the radio change event to our logic runs as expected
         radios.forEach(radio => {
             radio.addEventListener('change', () => {
-                decreaseQuota(radio);
-                radioStates[radio.value] = radio.checked;
+                workshops[radio.value].check(radio);  // set checked = true, decreaseQuota of both radios but highlight only the other one
 
-                // Enabled related radio buttons when one is checked
+                // walk over all elements of `workshops` other than `radio.value`
                 radios.forEach(otherRadio => {
-                    if (otherRadio.value === radio.value && otherRadio.name !== radio.name) {
-                        otherRadio.checked = radio.checked;
-                        decreaseQuota(otherRadio);
-                        // Call highlightLabel on change
-                        highlightLabel(otherRadio.parentElement);
-                    }
-                });
-
-                // Disable related radio buttons when one is unchecked
-                radios.forEach(otherRadio => {
-                    if (radioStates[otherRadio.value] != otherRadio.checked) {
-                        radioStates[otherRadio.value] = otherRadio.checked;
-
-                        radios.forEach(anotherRadio => {
-                            if (anotherRadio.value == otherRadio.value) {
-                                anotherRadio.checked = otherRadio.checked;
-                                increaseQuota(anotherRadio);
-                                toggleRadioButtons();
-                                // Call highlightLabel on change
-                                highlightLabel(anotherRadio.parentElement);
-                            }
-                        });
+                    if(otherRadio.value != radio.value) {
+                        otherWorkshop = workshops[otherRadio.value];
+                        if(otherWorkshop.checked != otherRadio.checked)
+                            otherWorkshop.uncheck();  // set checked = false, increaseQuota for both siblings, toggleradiobuttons, highlight both
                     }
                 });
             });
         });
+
+        // enable/disable radio buttons
+        for (const name in workshops) {
+            let ws = workshops[name];
+            for (const idx in ws.elements) {
+                const radioEl = ws.elements[idx][0];
+                const spanBadge = ws.elements[idx][1];
+                ws.renderBadge(spanBadge);
+                ws.switchEnable(radioEl, spanBadge);
+            }
+        }
+
 
         // re-enable disabled radios before submitting
         const form = document.getElementById('enrollment'); // Select the form by ID
