@@ -30,7 +30,7 @@ class ThreadLocalMiddleware:
         return response
 
 
-class PeriodMiddleware:
+class CayumanMiddleware:
     """
     Django middleware to fill several properties and do checks related to periods
     """
@@ -39,14 +39,17 @@ class PeriodMiddleware:
         self.get_response = get_response
 
     def __call__(self, request):
-        from cayuman.models import Period
+        from cayuman.models import Period, Member
 
         # Resolve the current path to access URL kwargs
-        if "/admin/" in request.path_info or "/login/" in request.path_info:
+        if "/admin/" in request.path_info:
             # do nothing in django admin
             response = self.get_response(request)
             return response
 
+        request.member = None  # default
+
+        # Fill period
         resolved = resolve(request.path_info)
         period_id = resolved.kwargs.get("period_id")
 
@@ -60,17 +63,23 @@ class PeriodMiddleware:
             # if not period_id then fill with current or last period
             request.period = Period.objects.current_or_last()
 
-        # Now get list of other periods (using cached method)
-        request.other_periods = Period.objects.other_periods(request.period)
-
+        # Add warnings if period is no longer active
         msg = None
         if request.period.is_in_the_past():
             msg = _("The period you are viewing has already ended. To choose a more recent one use the dropdown menu in the navbar.")
         elif request.period.is_in_the_future():
             msg = _("The period you are viewing is not yet open. Please come back later or choose another one from the dropdown menu in the navbar.")
-
         if msg and msg not in [msg.message for msg in messages.get_messages(request)]:
             messages.warning(request, msg)
+
+        # Fill member if logged in
+        if request.user.is_authenticated and request.user.is_active:
+            request.member = Member.objects.get(id=request.user.id)
+            if request.impersonator:
+                request.member.is_impersonate = request.user.is_impersonate
+                request.impersonator = Member.objects.get(id=request.impersonator.id)
+            else:
+                request.member.is_impersonate = False
 
         # Continue processing the request
         response = self.get_response(request)

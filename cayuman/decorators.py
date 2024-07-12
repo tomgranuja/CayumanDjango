@@ -6,19 +6,11 @@ from django.urls import reverse_lazy as reverse
 
 def student_required(view_func):
     """Decorator to ensure a view counts with a valid active student"""
-    from cayuman.models import Member
 
     @wraps(view_func)
     def _wrapped_view(request, *args, **kwargs):
-        try:
-            member = Member.objects.get(id=request.user.id)
-            if not member.is_student or not member.is_active:
-                return HttpResponseRedirect(reverse("admin:login"))
-
-            request.member = member
-        except Member.DoesNotExist:
-            return HttpResponseRedirect(reverse("login"))
-
+        if not request.member.is_student:
+            return HttpResponseRedirect(reverse("admin:login"))
         return view_func(request, *args, **kwargs)
 
     return _wrapped_view
@@ -48,7 +40,7 @@ def enrollment_access_required(view_func):
 
     @wraps(view_func)
     def _wrapped_view(request, *args, **kwargs):
-        if request.impersonator:
+        if request.impersonator and request.impersonator.is_enabled_to_enroll(request.period):
             return view_func(request, *args, **kwargs)
 
         student_cycle = request.member.current_student_cycle

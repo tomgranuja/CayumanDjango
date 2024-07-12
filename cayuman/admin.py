@@ -116,7 +116,7 @@ class MemberAdmin(UserAdmin):
     @admin.display(description=_("Impersonate"))
     def impersonate(self, obj):
         if obj.is_student:
-            return format_html('<a href="{}">Impersonate</a>'.format(reverse("impersonate-start", args=[obj.pk])))
+            return format_html('<a href="{}">{}</a>'.format(reverse("impersonate-start", args=[obj.pk]), _("Impersonate")))
 
 
 admin.site.register(Member, MemberAdmin)
@@ -228,7 +228,7 @@ class WorkshopPeriodAdmin(admin.ModelAdmin):
     def num_students(self, obj):
         count = obj.count_students()
         if count > obj.max_students:
-            text = f"{count} (sobrecupo)"
+            text = f"{count} ({_('overflow')})"
         else:
             text = f"{count}"
         return format_html(f'<a href="{reverse("admin:cayuman_workshopperiod_student_cycles", kwargs={"object_id": obj.id})}">{text}</a>')
@@ -464,7 +464,7 @@ class StudentCycleAdmin(admin.ModelAdmin):
     @admin.display(description=_("Impersonate"))
     def impersonate(self, obj):
         if obj.student.is_student:
-            return format_html('<a href="{}">Impersonate</a>'.format(reverse("impersonate-start", args=[obj.student.pk])))
+            return format_html('<a href="{}">{}</a>'.format(reverse("impersonate-start", args=[obj.student.pk]), _("Impersonate")))
 
 
 admin.site.register(StudentCycle, StudentCycleAdmin)

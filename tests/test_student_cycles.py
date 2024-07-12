@@ -169,7 +169,7 @@ def test_student_cycle_fail_schedule_collision(create_student, create_teacher, c
     # create schedule for wp2
     wp2.schedules.add(schedule_1)  # collision with schedule from wp1
 
-    sc = StudentCycle.objects.create(student=student, cycle=cycles[0], date_joined=time(10, 15))  # no cycle coincidence
+    sc = StudentCycle.objects.create(student=student, cycle=cycles[0])  # no cycle coincidence
 
     # assign workshop periods to student cycle
     with pytest.raises(ValidationError, match=r"have colliding schedules"):

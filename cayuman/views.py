@@ -142,10 +142,7 @@ def workshop_period(request, workshop_period_id: int):
 @student_required
 def workshop_periods(request, period_id: int):
     """View showing the list of all available workshops for the given logged in student"""
-    from cayuman.utils import generate_fake_workshops
-
     wps = set()
-    fwps = []
     show_workshop_periods = False  # By default do not show anything
 
     current_student_cycle = request.member.current_student_cycle
@@ -163,8 +160,4 @@ def workshop_periods(request, period_id: int):
 
     show_workshop_periods = bool(wps)  # coordinate flag var with the list of workshops
 
-    if not show_workshop_periods:
-        fwps = generate_fake_workshops(8)  # Generate fake workshops data to fill in case it's not yet time to enroll or no wps data
-    return render(
-        request, "workshop_periods.html", {"workshop_periods": wps, "fake_workshop_periods": fwps, "show_workshop_periods": show_workshop_periods}
-    )
+    return render(request, "workshop_periods.html", {"workshop_periods": wps, "show_workshop_periods": show_workshop_periods})
