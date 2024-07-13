@@ -132,8 +132,8 @@ def do_timetable(parser, token):
 
     workshop_periods = parser.compile_filter(bits[1])
 
+    kwargs = {}
     if len(bits) >= 3:
-        kwargs = {}
         bits = bits[2:]
 
         for bit in bits:

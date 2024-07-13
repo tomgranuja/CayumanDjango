@@ -107,7 +107,7 @@
     </div>
 
     <div id="as-timetable">
-    {% timetable workshop_periods table_class="lol" td_class=object.pk %}
+    {% timetable workshop_periods %}
       {% if schedule in workshop_period.schedules.all %}
         <strong>{{workshop_period.workshop.name}}</strong>
         <br /><small>{{workshop_period.teacher.get_full_name}}</small>
