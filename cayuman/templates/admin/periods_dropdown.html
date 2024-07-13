@@ -3,7 +3,7 @@
 <select onchange="window.location.href=this.value;">
         <option value="">{% translate 'Select Period' %}</option>
     {% for period in periods %}
-        <option value="{% url 'admin:cayuman_studentcycle_workshops' period_id=period.id object_id=obj.id %}">{{period}}</option>
+        <option value="{% url view period_id=period.id object_id=obj.id %}">{{period}}</option>
     {% endfor %}
 </select>
 {% endif %}

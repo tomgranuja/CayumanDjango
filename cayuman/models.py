@@ -227,8 +227,8 @@ class PeriodManager(models.Manager):
         return val
 
     @lru_cache
-    def other_periods(self, period):
-        return self.get_queryset().exclude(pk=period.pk)
+    def other_periods(self, period, order: Optional[str] = "id"):
+        return self.get_queryset().exclude(id=period.id).order_by(order)
 
 
 class Period(models.Model):

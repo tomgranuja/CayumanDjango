@@ -123,8 +123,89 @@ admin.site.register(Member, MemberAdmin)
 
 
 class CycleAdmin(admin.ModelAdmin):
-    list_display = ("id", "name", "description")
+    list_display = ("id", "name", "this_period_timetable", "other_periods_timetable", "description")
     list_per_page = 20
+
+    @admin.display(description=_("Timetable %s") % (lazy(Period.objects.current_or_last, Period)()))
+    def this_period_timetable(self, obj):
+        period = Period.objects.current_or_last()
+        return format_html('<a href="{}">{}</a>'.format(reverse("admin:cayuman_cycle_timetable", args=[obj.id, period.id]), _("Timetable")))
+
+    @admin.display(description=_("Other Periods Timetable"))
+    def other_periods_timetable(self, obj):
+        from django.template.loader import render_to_string
+
+        current_period = Period.objects.current_or_last()
+        periods = Period.objects.exclude(id=current_period.id).order_by("-id")
+        if periods:
+            return format_html(
+                render_to_string("admin/periods_dropdown.html", {"periods": periods, "obj": obj, "view": "admin:cayuman_cycle_timetable"})
+            )
+
+    def get_urls(self):
+        """Add url for custom `cycle` view"""
+        from functools import update_wrapper
+
+        def wrap(view):
+            def wrapper(*args, **kwargs):
+                return self.admin_site.admin_view(view)(*args, **kwargs)
+
+            wrapper.model_admin = self
+            return update_wrapper(wrapper, view)
+
+        info = self.opts.app_label, self.opts.model_name
+        urls = super().get_urls()
+        new_urls = [
+            path(
+                "<path:object_id>/timetable_by_period/<path:period_id>",
+                wrap(self.cycle_timetable_by_period_view),
+                name="%s_%s_timetable" % info,  # cayuman_cycle_timetable
+            ),
+        ]
+        return new_urls + urls
+
+    def cycle_timetable_by_period_view(self, request, object_id, period_id, extra_context=None):
+        """Admin view cycle timetable by period"""
+        from django.contrib.admin.utils import unquote
+        from django.core.exceptions import PermissionDenied
+        from django.utils.text import capfirst
+        from django.template.response import TemplateResponse
+
+        # Check permissions
+        model = self.model
+        obj = self.get_object(request, unquote(object_id))
+        if obj is None:
+            return self._get_obj_does_not_exist_redirect(request, model._meta, object_id)
+
+        if not self.has_view_or_change_permission(request, obj):
+            raise PermissionDenied
+
+        period = Period.objects.get(id=period_id)
+
+        # Then get students for this object.
+        # workshop_periods = list(obj.workshop_periods.filter(period=period))
+        workshop_periods = obj.workshopperiod_set.filter(period=period)
+
+        context = {
+            **self.admin_site.each_context(request),
+            "title": _("Timetable for %s during %s") % (obj, period),
+            "subtitle": None,
+            "workshop_periods": workshop_periods,
+            "period": period,
+            "module_name": str(capfirst(self.opts.verbose_name_plural)),
+            "object": obj,
+            "opts": self.opts,
+            "preserved_filters": self.get_preserved_filters(request),
+            **(extra_context or {}),
+        }
+
+        request.current_app = self.admin_site.name
+
+        return TemplateResponse(
+            request,
+            "admin/cycle_timetable_by_period.html",
+            context,
+        )
 
 
 admin.site.register(Cycle, CycleAdmin)
@@ -309,7 +390,7 @@ admin.site.register(WorkshopPeriod, WorkshopPeriodAdmin)
 
 class StudentCycleAdmin(admin.ModelAdmin):
     ordering = ("-date_joined",)
-    list_display = ("id", "student", "cycle", "date_joined", "this_period_workshops_html", "other_periods_workshops", "active", "impersonate")
+    list_display = ("id", "student", "cycle_html", "date_joined", "this_period_workshops_html", "other_periods_workshops", "active", "impersonate")
     list_per_page = 20
     list_filter = ["cycle"]
     search_fields = ["student__first_name", "student__last_name", "cycle__name"]
@@ -348,6 +429,12 @@ class StudentCycleAdmin(admin.ModelAdmin):
         queryset = super().get_queryset(request)
         return queryset.filter(student__is_active=True)
 
+    @admin.display(description=_("Cycle"))
+    def cycle_html(self, obj):
+        period = Period.objects.current_or_last()
+        url = reverse("admin:cayuman_cycle_timetable", args=(obj.cycle.id, period.id))
+        return format_html(f'<a href="{url}">{obj.cycle}</a>')
+
     @admin.display(description=_("Workshops %s") % (lazy(Period.objects.current_or_last, Period)()))
     def this_period_workshops_html(self, obj):
         """Display function to use in Django admin list for this model"""
@@ -380,7 +467,9 @@ class StudentCycleAdmin(admin.ModelAdmin):
         current_period = Period.objects.current_or_last()
         periods = Period.objects.exclude(id=current_period.id).order_by("-id")
         if periods:
-            return format_html(render_to_string("admin/student_cycle_periods_list.html", {"periods": periods, "obj": obj}))
+            return format_html(
+                render_to_string("admin/periods_dropdown.html", {"periods": periods, "obj": obj, "view": "admin:cayuman_studentcycle_workshops"})
+            )
 
     @admin.display(boolean=True, description=_("Active"))
     def active(self, obj):
