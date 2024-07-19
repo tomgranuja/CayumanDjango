@@ -211,7 +211,7 @@ class WorkshopSelectionForm(forms.Form):
         )
         if choice_name is not None:
             choice_value_changed = (
-                False if workshop_period.id == self.initial[choice_name] else True
+                False if workshop_period.id == self.initial.get(choice_name) else True
             )  # tells whether this value is incoming (being saved) or being replaced
 
         # Prepare vars to render this field's label

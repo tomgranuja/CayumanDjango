@@ -532,7 +532,7 @@ class StudentCycle(models.Model):
         lwps = len(self.workshop_periods_by_schedule(period=period))
         return scount == lwps
 
-    @lru_cache(maxsize=None)
+    # @lru_cache(maxsize=None)
     def is_enabled_to_enroll(self, period: Period) -> bool:
         """Returns True or False depending if current student is enabled to enroll"""
         now = timezone.now()
@@ -548,7 +548,8 @@ class StudentCycle(models.Model):
                 return True
         else:
             # students without full schedule can enroll anytime until `date_end`
-            return True
+            if now_date <= period.enrollment_end:
+                return True
 
         return False
 
@@ -557,7 +558,7 @@ class StudentCycle(models.Model):
         self.workshop_periods_by_schedule.cache_clear()
         self.is_schedule_full.cache_clear()
         self.workshop_periods_by_period.cache_clear()
-        self.is_enabled_to_enroll.cache_clear()
+        # self.is_enabled_to_enroll.cache_clear()
         super().save(*args, **kwargs)
 
     class Meta:
@@ -576,7 +577,7 @@ def student_cycle_workshop_period_changed(sender, instance, action, *args, **kwa
     instance.workshop_periods_by_schedule.cache_clear()
     instance.is_schedule_full.cache_clear()
     instance.workshop_periods_by_period.cache_clear()
-    instance.is_enabled_to_enroll.cache_clear()
+    # instance.is_enabled_to_enroll.cache_clear()
 
     if action == "pre_add":
         # Get all workshop periods for this student's cycle, including incoming ones

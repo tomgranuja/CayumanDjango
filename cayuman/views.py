@@ -85,7 +85,7 @@ class EnrollmentView(LoginRequiredMixin, View):
                     student_cycle.workshop_periods_by_schedule.cache_clear()
                     student_cycle.is_schedule_full.cache_clear()
                     student_cycle.workshop_periods_by_period.cache_clear()
-                    student_cycle.is_enabled_to_enroll.cache_clear()
+                    # student_cycle.is_enabled_to_enroll.cache_clear()
             except ValidationError as e:
                 # If a ValidationError occurs, the transaction will be rolled back automatically
                 form.add_error(None, e)
@@ -149,9 +149,7 @@ def workshop_periods(request, period_id: int):
     # Get all available workshop periods for this student and return
     if current_student_cycle:
         # calculate show_workshop_periods according if the period is current, or is in the past or member is enabled to enroll
-        show_workshop_periods = (
-            request.period.is_current() or request.period.is_in_the_past() or current_student_cycle.is_enabled_to_enroll(request.period)
-        )
+        show_workshop_periods = request.period.is_enabled_to_preview() or request.period.is_in_the_past()
         if show_workshop_periods:
             wps_by_schedule = current_student_cycle.available_workshop_periods_by_schedule(request.period)
             wps = {wp for sublist in wps_by_schedule.values() for wp in sublist}
