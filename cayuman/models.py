@@ -548,7 +548,7 @@ class StudentCycle(models.Model):
                 return True
         else:
             # students without full schedule can enroll anytime until `date_end`
-            if now_date <= period.enrollment_end:
+            if now_date <= period.date_end:
                 return True
 
         return False
