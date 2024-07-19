@@ -180,8 +180,9 @@ parameterized_tests = {
         False,
         200,
         None,
-        ["Hello", "No workshops available for this period"],
+        ["Hello"],
         [
+            "No workshops available for this period",
             "Fill up the following form choosing one workshop",
             "Click here to enroll in your workshops",
             "Your student account is not associated with any Cycle",
