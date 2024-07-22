@@ -46,7 +46,7 @@
       <div class="text-center">
         {% if request.member.current_student_cycle.is_enabled_to_enroll(request.period) %}
             <!-- user enabled to enroll then partial schedule or full_schedule but enrollment period is still ON -->
-            <a href="{{ url('enrollment', period_id=request.period.id) }}?force=true" class="btn btn-outline-warning btn-lg">&larr;
+            <a href="{{ url('enrollment', period_id=request.period.id) }}" class="btn btn-outline-warning btn-lg">&larr;
             {% if request.member.is_schedule_full(request.period) %}
                 {% trans %}Change my Workshops{% endtrans %}
             {% else %}
@@ -69,7 +69,7 @@
             {% if request.member.current_student_cycle.is_enabled_to_enroll(request.period) %}
               <!-- user has not yet enrolled-->
               <p>{% trans %}Enrollment for this period is open! Do it by clicking this button{% endtrans %}</p>
-              <a href="{{ url('enrollment', period_id=request.period.id) }}?force=true" class="btn btn-outline-success btn-lg">
+              <a href="{{ url('enrollment', period_id=request.period.id) }}" class="btn btn-outline-success btn-lg">
                 {% trans %}Click here to enroll in your workshops{% endtrans %}
               </a>
             {% else %}

@@ -592,9 +592,7 @@ def student_cycle_workshop_period_changed(sender, instance, action, *args, **kwa
         # apply validations
         request = get_current_request()
         should_check_quota = (
-            not request
-            or (request and not getattr(request, "impersonator"))
-            or (request and hasattr(request, "user") and not getattr(request.user, "is_superuser"))
+            False if request and (hasattr(request, "user") and getattr(request.user, "is_superuser") or getattr(request, "impersonator")) else True
         )
         for wp in wps:
             # check if workshop period is full

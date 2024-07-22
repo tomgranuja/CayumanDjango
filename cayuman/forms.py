@@ -217,13 +217,19 @@ class WorkshopSelectionForm(forms.Form):
         # Prepare vars to render this field's label
         # Calc `remaining_quota`: if field value has changed substract 1. If it's the same add 1. If it's not been selected before keep DB value
         remaining_quota = workshop_period.remaining_quota()
-        if self.submission and choice_value_changed is not None:  # if form was just submitted and form field value has been selected before or after
+        if (
+            remaining_quota is not None and self.submission and choice_value_changed is not None
+        ):  # if form was just submitted and form field value has been selected before or after
             if choice_value_changed:  # this field value was just selected
                 remaining_quota -= 1  # -1 because quota is reduced by 1 when user selected this value
             else:  # this field value was de-selected
                 remaining_quota += 1  # +1 because quota was increased by 1 when user de-selected this value
         human_remaining_quota = remaining_quota if remaining_quota is not None and remaining_quota >= 0 else 0  # never show quota < 0
-        badge = f'<span class="badge rounded-pill text-bg-secondary" data-value="{remaining_quota}">{human_remaining_quota}</span>'
+        if remaining_quota is not None:
+            badge = f'<span class="badge rounded-pill text-bg-secondary" data-value="{remaining_quota}">{human_remaining_quota}</span>'
+        else:
+            # if no max_students then set quota to 100 and make it invisible so it works ok in the UI
+            badge = f'<span class="badge rounded-pill text-bg-secondary d-none" data-value="100">{human_remaining_quota}</span>'
         popover = (
             f'<a href="#/" data-bs-toggle="popover" data-bs-trigger="focus" data-bs-title="{escape(workshop_period.workshop.name)}" data-bs-content="{escape(workshop_period.workshop.description)}">(?)</a>'  # noqa E501
             if workshop_period.workshop.description

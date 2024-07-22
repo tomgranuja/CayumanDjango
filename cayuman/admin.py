@@ -256,7 +256,18 @@ class WorkshopPeriodCyclesFilter(admin.SimpleListFilter):
 
 
 class WorkshopPeriodAdmin(admin.ModelAdmin):
-    list_display = ("id", "workshop", "teacher", "period", "cycles_list", "schedules_list", "num_students", "max_students", "external_link", "active")
+    list_display = (
+        "id",
+        "workshop",
+        "teacher",
+        "period",
+        "cycles_list",
+        "schedules_list",
+        "num_students_html",
+        "max_students_field",
+        "external_link",
+        "active",
+    )
     list_per_page = 20
     filter_horizontal = ("cycles", "schedules")
     list_filter = [
@@ -267,7 +278,9 @@ class WorkshopPeriodAdmin(admin.ModelAdmin):
 
     form = AdminWorkshopPeriodForm
     actions = [
-        create_export_to_csv_action(["workshop", "teacher", "period", "cycles_list", "schedules_list", "num_students", "max_students", "active"])
+        create_export_to_csv_action(
+            ["workshop", "teacher", "period", "cycles_list", "schedules_list", "num_students", "max_students_field", "active"]
+        )
     ]
 
     def changelist_view(self, request, extra_context=None):
@@ -305,14 +318,22 @@ class WorkshopPeriodAdmin(admin.ModelAdmin):
         output += "</ul>"
         return format_html(output)
 
+    @admin.display(description=_("Max Students"))
+    def max_students_field(self, obj):
+        return obj.max_students if obj.max_students > 0 else None
+
     @admin.display(description=_("Enrolled Students"))
-    def num_students(self, obj):
+    def num_students_html(self, obj):
         count = obj.count_students()
-        if count > obj.max_students:
+        if obj.max_students > 0 and count > obj.max_students:
             text = f"{count} ({_('overflow')})"
         else:
             text = f"{count}"
         return format_html(f'<a href="{reverse("admin:cayuman_workshopperiod_student_cycles", kwargs={"object_id": obj.id})}">{text}</a>')
+
+    @admin.display(description=_("Enrolled Students"))
+    def num_students(self, obj):
+        return obj.count_students()
 
     def get_urls(self):
         """Add url for custom `students` view"""

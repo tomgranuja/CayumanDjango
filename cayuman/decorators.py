@@ -59,9 +59,6 @@ def enrollment_access_required(view_func):
             else:
                 return HttpResponseRedirect(reverse("workshop_periods", kwargs={"period_id": request.period.id}))
 
-        if not request.GET.get("force") and student_cycle.is_schedule_full(request.period):
-            return HttpResponseRedirect(reverse("weekly_schedule", kwargs={"period_id": request.period.id}))
-
         return view_func(request, *args, **kwargs)
 
     return _wrapped_view
