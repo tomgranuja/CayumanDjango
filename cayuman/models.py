@@ -238,7 +238,7 @@ class Period(models.Model):
     description = models.TextField(blank=True, verbose_name=_("Description"))
     preview_date = models.DateField(blank=True, null=True, verbose_name=_("Preview date"))
     enrollment_start = models.DateTimeField(blank=True, verbose_name=_("Enrollment start date and time"))
-    enrollment_end = models.DateField(blank=True, null=True, verbose_name=_("Enrollment end date"))
+    enrollment_end = models.DateTimeField(blank=True, null=True, verbose_name=_("Enrollment end date and time"))
     date_start = models.DateField(verbose_name=_("Start date"))
     date_end = models.DateField(verbose_name=_("End date"))
 
@@ -298,13 +298,13 @@ class Period(models.Model):
 
         if not self.enrollment_end and self.enrollment_start:
             # Fill enrollment_end automatically to enrollment_start + 5 days
-            self.enrollment_end = self.enrollment_start.date() + timezone.timedelta(days=5)
+            self.enrollment_end = self.enrollment_start + timezone.timedelta(days=5)
 
         if self.date_start >= self.date_end:
             raise ValidationError({"date_start": _("Start date must be before end date")})
 
-        if self.enrollment_start.date() >= self.enrollment_end:
-            raise ValidationError({"enrollment_start": _("Enrollment start date must be before enrollment end date")})
+        if self.enrollment_start >= self.enrollment_end:
+            raise ValidationError({"enrollment_start": _("Enrollment start must be before enrollment end date")})
 
         if self.enrollment_start and self.enrollment_start.date() > self.date_start:
             raise ValidationError({"enrollment_start": _("Enrollment start date must be before start date")})
@@ -544,7 +544,7 @@ class StudentCycle(models.Model):
 
         # students with full schedule can only re-enroll between `enrollment_start` and `enrollment_end`
         if self.is_schedule_full(period):
-            if period.enrollment_start <= now and now_date <= period.enrollment_end:
+            if period.enrollment_start <= now and now <= period.enrollment_end:
                 return True
         else:
             # students without full schedule can enroll anytime until `date_end`
