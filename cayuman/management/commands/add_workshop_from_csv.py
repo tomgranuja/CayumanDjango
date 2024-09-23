@@ -38,6 +38,7 @@ teacher_username = {
     "Javiera": "17788558-4",
     "Paulina": "15696924-9",
     "Salvador": "15971521-3",
+    "Carolina Arias": "14386684-k",
 }
 
 cycle_pairs = {"ulmos": ["Ulmos"], "canelos y manios": ["Canelos", "Mañíos"], "coihues y avellanos": ["Coigües", "Avellanos"]}
