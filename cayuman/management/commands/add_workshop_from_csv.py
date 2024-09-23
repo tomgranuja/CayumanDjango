@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-"""Helper script for initial members load from ods file."""
+"""Helper script for workshopperiods load from csv file."""
 import csv
 import datetime
 
@@ -119,7 +119,7 @@ class Command(BaseCommand):
             message = f"Period {period_n} doesn't exist, " "stopping without touching database."
             raise CommandError(message)
 
-        for i, row in enumerate(t[:3]):
+        for i, row in enumerate(t):
             print(f"Adding entry at index {i}, {row['name']}...")
             # Find database workshopperiod with same workshop, period and teacher
 

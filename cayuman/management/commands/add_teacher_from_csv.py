@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-"""Helper script for initial members load from ods file."""
+"""Helper script for initial teachers load from csv file."""
 import csv
 
 from django.conf import settings
