@@ -3,7 +3,6 @@ from django.contrib.auth.admin import UserAdmin
 from django.db.models import Q
 from django.urls import path
 from django.urls import reverse_lazy as reverse
-from django.utils.functional import lazy
 from django.utils.html import format_html
 from django.utils.translation import gettext_lazy as _
 
@@ -126,7 +125,7 @@ class CycleAdmin(admin.ModelAdmin):
     list_display = ("id", "name", "this_period_timetable", "other_periods_timetable", "description")
     list_per_page = 20
 
-    @admin.display(description=_("Timetable %s") % (lazy(Period.objects.current_or_last, Period)()))
+    @admin.display(description=_("Timetable"))
     def this_period_timetable(self, obj):
         period = Period.objects.current_or_last()
         return format_html('<a href="{}">{}</a>'.format(reverse("admin:cayuman_cycle_timetable", args=[obj.id, period.id]), _("Timetable")))
@@ -456,7 +455,7 @@ class StudentCycleAdmin(admin.ModelAdmin):
         url = reverse("admin:cayuman_cycle_timetable", args=(obj.cycle.id, period.id))
         return format_html(f'<a href="{url}">{obj.cycle}</a>')
 
-    @admin.display(description=_("Workshops %s") % (lazy(Period.objects.current_or_last, Period)()))
+    @admin.display(description=_("Workshops"))
     def this_period_workshops_html(self, obj):
         """Display function to use in Django admin list for this model"""
         period = Period.objects.current_or_last()
@@ -471,7 +470,7 @@ class StudentCycleAdmin(admin.ModelAdmin):
         else:
             return _("No workshops yet")
 
-    @admin.display(description=_("Workshops %s") % (lazy(Period.objects.current_or_last, Period)()))
+    @admin.display(description=_("Workshops"))
     def this_period_workshops_list(self, obj):
         """Display function to use when exporting these entries to CSV"""
         period = Period.objects.current_or_last()
