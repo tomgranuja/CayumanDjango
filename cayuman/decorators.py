@@ -9,7 +9,7 @@ def student_required(view_func):
 
     @wraps(view_func)
     def _wrapped_view(request, *args, **kwargs):
-        if not request.member.is_student:
+        if not hasattr(request.member, "is_student") or not request.member.is_student:
             return HttpResponseRedirect(reverse("admin:login"))
         return view_func(request, *args, **kwargs)
 

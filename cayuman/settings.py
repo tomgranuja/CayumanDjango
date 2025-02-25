@@ -70,7 +70,7 @@ MIDDLEWARE = [
     "maintenance_mode.middleware.MaintenanceModeMiddleware",
     "impersonate.middleware.ImpersonateMiddleware",
     "cayuman.middleware.ThreadLocalMiddleware",
-    "cayuman.middleware.CayumanMiddleware",
+    "cayuman.middleware.CayumanMiddleware",  # must be last
 ]
 
 ROOT_URLCONF = "cayuman.urls"
@@ -274,9 +274,11 @@ LOGGING = {
 }
 
 # Impersonate
-IMPERSONATE_REQUIRE_SUPERUSER = True
-IMPERSONATE_LOGOUT_REDIRECT_URL = "/admin/"
-IMPERSONATE_USE_HTTP_REFERER = True
+IMPERSONATE = {
+    "REQUIRE_SUPERUSER": True,
+    "CUSTOM_ALLOW": "cayuman.permissions.can_impersonate",
+    "USE_HTTP_REFERER": True,
+}
 
 # Cayuman specific settings
 STUDENTS_GROUP = _("Students")

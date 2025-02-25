@@ -42,6 +42,14 @@ class Member(User):
     def current_student_cycle(self):
         return StudentCycle.objects.filter(student=self).order_by("-date_joined").first()
 
+    def has_perm(self, perm, obj=None):
+        from cayuman.permissions import custom_permissions
+
+        if perm in custom_permissions:
+            return custom_permissions[perm](self, obj)
+
+        return super().has_perm(perm, obj)
+
     def is_enabled_to_enroll(self, period) -> bool:
         # Returns true or false depending on whether the user is enabled to enroll or not.
         if self.is_student:
