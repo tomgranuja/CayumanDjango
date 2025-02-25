@@ -20,6 +20,7 @@ lib64/
 parts/
 sdist/
 var/
+wheels/
 *.egg-info/
 .installed.cfg
 *.egg
@@ -52,6 +53,8 @@ coverage.xml
 # Django stuff:
 *.log
 local_settings.py
+db.sqlite3
+media/
 
 # Flask stuff:
 instance/
@@ -73,7 +76,7 @@ celerybeat-schedule
 .env
 
 # virtualenv
-.venv/
+.venv
 venv/
 ENV/
 
@@ -107,3 +110,9 @@ maintenance_mode_state.txt
 .cursor/*
 
 PLAN.md
+
+# Poetry
+poetry.lock
+
+# Misc
+.DS_Store

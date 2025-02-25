@@ -87,6 +87,16 @@ poetry run python manage.py runserver
 
 ## Development
 
+### Keeping dependencies up to date
+
+After pulling latest changes from the repository, always run:
+
+```bash
+poetry install --with test
+```
+
+This ensures your development environment has all the required dependencies, including testing tools.
+
 ### Generating new migrations
 
 ```bash
@@ -155,9 +165,11 @@ This command will:
 - Only run in PythonAnywhere environment (requires PYTHONANYWHERE_DOMAIN and PYTHONANYWHERE_SITE env vars)
 - Automatically execute all deployment steps in the correct order:
   1. Pull latest changes from git
-  2. Install/update dependencies
+  2. Generate a fresh poetry.lock file to ensure up-to-date dependencies
   3. Run database migrations
   4. Compile translation messages
+
+Note: The project intentionally does not track poetry.lock in git to ensure each deployment gets the latest compatible package versions. The lock file is generated fresh during deployment.
 
 ### Manual Deployment
 
@@ -165,7 +177,8 @@ If you need to run the deployment steps manually, execute these commands in orde
 
 ```bash
 git pull
-poetry install
+rm -f poetry.lock  # Remove existing lock file
+poetry install     # Generate fresh lock file
 poetry run python manage.py migrate
 poetry run python manage.py compilemessages
 ```

@@ -91,7 +91,11 @@ def deploy(ctx):
         print("\n1. Pulling latest changes from git...")
         ctx.run("git pull")
 
-        print("\n2. Installing/updating dependencies...")
+        print("\n2. Ensuring fresh dependencies resolution...")
+        # Remove existing poetry.lock if it exists
+        if os.path.exists("poetry.lock"):
+            os.remove("poetry.lock")
+        # Install dependencies (this will generate a fresh lock file)
         ctx.run("poetry install")
 
         print("\n3. Running database migrations...")
