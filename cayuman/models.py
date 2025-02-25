@@ -748,6 +748,21 @@ def student_cycle_pre_delete(sender, instance, **kwargs):
     StudentCycle.objects.get_studentcycle_by_date.cache_clear()
 
 
+@receiver([models.signals.post_save, models.signals.pre_delete], sender=User)
+def user_changed(sender, instance, **kwargs):
+    """Clear StudentCycleManager caches when a User is modified or deleted"""
+    StudentCycle.objects.get_studentcycle_by_period.cache_clear()
+    StudentCycle.objects.get_studentcycle_by_date.cache_clear()
+
+
+@receiver(m2m_changed, sender=User.groups.through)
+def user_groups_changed(sender, instance, action, **kwargs):
+    """Clear StudentCycleManager caches when a User's groups are modified"""
+    if action.startswith("post_"):  # post_add, post_remove, post_clear
+        StudentCycle.objects.get_studentcycle_by_period.cache_clear()
+        StudentCycle.objects.get_studentcycle_by_date.cache_clear()
+
+
 @receiver(m2m_changed, sender=StudentCycle.workshop_periods.through)
 def student_cycle_workshop_period_changed(sender, instance, action, *args, **kwargs):
     """Validation procedure for the StudentCycle.workshop_periods m2m relation"""
