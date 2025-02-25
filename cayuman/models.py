@@ -763,6 +763,25 @@ def user_groups_changed(sender, instance, action, **kwargs):
         StudentCycle.objects.get_studentcycle_by_date.cache_clear()
 
 
+@receiver([models.signals.post_save, models.signals.post_delete], sender=Schedule)
+def schedule_changed(sender, instance, **kwargs):
+    """Clear caches for all StudentCycles when a Schedule is modified or deleted"""
+    # Clear caches for all StudentCycles since schedule changes affect all of them
+    for studentcycle in StudentCycle.objects.all():
+        studentcycle.is_schedule_full.cache_clear()
+        studentcycle.workshop_periods_by_schedule.cache_clear()
+
+
+@receiver(m2m_changed, sender=WorkshopPeriod.schedules.through)
+def workshop_period_schedules_changed(sender, instance, action, **kwargs):
+    """Clear caches when a WorkshopPeriod's schedules are modified"""
+    if action.startswith("post_"):  # post_add, post_remove, post_clear
+        # Clear caches for all StudentCycles that have this WorkshopPeriod
+        for studentcycle in instance.studentcycle_set.all():
+            studentcycle.is_schedule_full.cache_clear()
+            studentcycle.workshop_periods_by_schedule.cache_clear()
+
+
 @receiver(m2m_changed, sender=StudentCycle.workshop_periods.through)
 def student_cycle_workshop_period_changed(sender, instance, action, *args, **kwargs):
     """Validation procedure for the StudentCycle.workshop_periods m2m relation"""
