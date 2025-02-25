@@ -18,6 +18,20 @@ from cayuman.models import WorkshopPeriod
 pytestmark = pytest.mark.django_db
 
 
+@pytest.fixture
+def create_period():
+    """Fixture to create a sample Period"""
+    # Period
+    Period.objects.create(
+        name="Period 1",
+        date_start=timezone.make_aware(datetime(2023, 1, 1)).date(),
+        date_end=timezone.make_aware(datetime(2023, 12, 31)).date(),
+        enrollment_start=timezone.make_aware(datetime(2022, 12, 23)),
+        enrollment_end=timezone.make_aware(datetime(2022, 12, 27)).date(),
+    )
+    return Period.objects.all()[0]
+
+
 def test_student_cycle_ok(create_student, create_teacher, create_workshops, create_cycles, create_period):
     """Test StudentCycle creation"""
     # Create a StudentCycle
@@ -126,17 +140,16 @@ def test_student_cycle_fail_schedule_collision(create_student, create_teacher, c
         sc.workshop_periods.add(wp1, wp2)
 
 
-def test_student_cycle_fail_students_quota(create_student, create_teacher, create_workshops, create_cycles):
+def test_student_cycle_fail_students_quota(create_teacher, create_workshops, create_cycles, create_period):
     """
     Tests `StudentCycle.max_students`, `WorkshopPeriod.count_students()` and `WorkshopPeriod.remaining_quota()`
     work correctly as students enroll if max_students > 0
     """
-    # Get the test period that was auto-created
-    period = Period.objects.get(name="Test Period")
-    student = create_student
+    # Create a StudentCycle
     teacher = create_teacher
     workshops = create_workshops
     cycles = create_cycles
+    period = create_period
 
     MAX_STUDENTS = 5
 
@@ -153,35 +166,22 @@ def test_student_cycle_fail_students_quota(create_student, create_teacher, creat
     schedule_2 = Schedule.objects.create(day="tuesday", time_start=time_start, time_end=time_end)
     wp1.schedules.add(schedule_1, schedule_2)
 
-    # Mock current time to be within enrollment period and request context
-    with patch("cayuman.models.timezone") as mock_datetime, patch("cayuman.models.get_current_request") as mock_request:
-        mock_datetime.now.return_value = timezone.make_aware(datetime(2025, 7, 22))
-        mock_datetime.now.date.return_value = timezone.make_aware(datetime(2025, 7, 22)).date()
+    for i in range(1, MAX_STUDENTS + 2):
+        user = Member.objects.create_user(username=f"{i}" * 8, password="12345")
+        group, _ = Group.objects.get_or_create(name=settings.STUDENTS_GROUP)
+        user.groups.add(group)
 
-        # Mock request to have a non-superuser
-        mock_request.return_value = type("Request", (), {"user": student})()
+        sc = StudentCycle.objects.create(student=user, cycle=cycles[0], date_joined=time(10, 15))  # no cycle coincidence
 
-        # Start from 0 since we already have one student cycle from the autouse fixture
-        for i in range(0, MAX_STUDENTS + 1):
-            if i == 0:
-                # Use the existing student from create_student fixture
-                sc = StudentCycle.objects.create(student=student, cycle=cycles[0])
-            else:
-                # Create new student cycles
-                user = Member.objects.create_user(username=f"{i}" * 8, password="12345")
-                group, _ = Group.objects.get_or_create(name=settings.STUDENTS_GROUP)
-                user.groups.add(group)
-                sc = StudentCycle.objects.create(student=user, cycle=cycles[0])
-
-            if i >= MAX_STUDENTS:
-                # assign workshop periods to student cycle
-                with pytest.raises(ValidationError, match=r"has reached its quota of students"):
-                    sc.workshop_periods.add(wp1)
-            else:
-                # assign workshop periods to student cycle
+        if i > MAX_STUDENTS:
+            # assign workshop periods to student cycle
+            with pytest.raises(ValidationError, match=r"has reached its quota of students"):
                 sc.workshop_periods.add(wp1)
-                assert wp1.count_students() == i + 1
-                assert wp1.remaining_quota() == MAX_STUDENTS - (i + 1)
+        else:
+            sc.workshop_periods.add(wp1)
+
+            assert wp1.count_students() == i
+            assert wp1.remaining_quota() == MAX_STUDENTS - i
 
 
 def test_student_cycle_fail_students_no_quota(create_teacher, create_workshops, create_cycles, create_period):
@@ -270,28 +270,28 @@ def test_is_enabled_to_enroll(create_student, create_period, create_cycles):
         # Assuming the schedule is full and the current date is within the enrollment period
         with patch("cayuman.models.timezone") as mock_datetime:
             # Mock current date before enrollment_start
-            mock_datetime.now.return_value = timezone.make_aware(datetime(2025, 7, 17))
-            mock_datetime.now.date.return_value = timezone.make_aware(datetime(2025, 7, 17)).date()
+            mock_datetime.now.return_value = timezone.make_aware(datetime(2022, 12, 21))
+            mock_datetime.now.date.return_value = timezone.make_aware(datetime(2022, 12, 21)).date()
             assert sc.is_enabled_to_enroll(period=period) is False
 
             # Mock current date within enrollment_start and enrollment_end
-            mock_datetime.now.return_value = timezone.make_aware(datetime(2025, 7, 22))
-            mock_datetime.now.date.return_value = timezone.make_aware(datetime(2025, 7, 22)).date()
+            mock_datetime.now.return_value = timezone.make_aware(datetime(2022, 12, 25))
+            mock_datetime.now.date.return_value = timezone.make_aware(datetime(2022, 12, 25)).date()
             assert sc.is_enabled_to_enroll(period=period) is True
 
             # Mock current date within enrollment_end and date_start
-            mock_datetime.now.return_value = timezone.make_aware(datetime(2025, 7, 30))
-            mock_datetime.now.date.return_value = timezone.make_aware(datetime(2025, 7, 30)).date()
+            mock_datetime.now.return_value = timezone.make_aware(datetime(2022, 12, 31))
+            mock_datetime.now.date.return_value = timezone.make_aware(datetime(2022, 12, 31)).date()
             assert sc.is_enabled_to_enroll(period=period) is False
 
             # Mock current date after date_start and before date_end
-            mock_datetime.now.return_value = timezone.make_aware(datetime(2025, 8, 10))
-            mock_datetime.now.date.return_value = timezone.make_aware(datetime(2025, 8, 10)).date()
+            mock_datetime.now.return_value = timezone.make_aware(datetime(2023, 1, 1))
+            mock_datetime.now.date.return_value = timezone.make_aware(datetime(2023, 1, 1)).date()
             assert sc.is_enabled_to_enroll(period=period) is False
 
             # Mock current date after date_end
-            mock_datetime.now.return_value = timezone.make_aware(datetime(2025, 9, 20))
-            mock_datetime.now.date.return_value = timezone.make_aware(datetime(2025, 9, 20)).date()
+            mock_datetime.now.return_value = timezone.make_aware(datetime(2024, 1, 1))
+            mock_datetime.now.date.return_value = timezone.make_aware(datetime(2024, 1, 1)).date()
             assert sc.is_enabled_to_enroll(period=period) is False
 
     # Mock is_schedule_full to return False
@@ -299,26 +299,26 @@ def test_is_enabled_to_enroll(create_student, create_period, create_cycles):
         # Assuming the schedule is not full and the current date is within the enrollment period but after date_start
         with patch("cayuman.models.timezone") as mock_datetime:
             # Mock current date before enrollment_start
-            mock_datetime.now.return_value = timezone.make_aware(datetime(2025, 7, 17))
-            mock_datetime.now.date.return_value = timezone.make_aware(datetime(2025, 7, 17)).date()
+            mock_datetime.now.return_value = timezone.make_aware(datetime(2022, 12, 21))
+            mock_datetime.now.date.return_value = timezone.make_aware(datetime(2022, 12, 21)).date()
             assert sc.is_enabled_to_enroll(period=period) is False
 
             # Mock current date within enrollment_start and enrollment_end
-            mock_datetime.now.return_value = timezone.make_aware(datetime(2025, 7, 22))
-            mock_datetime.now.date.return_value = timezone.make_aware(datetime(2025, 7, 22)).date()
+            mock_datetime.now.return_value = timezone.make_aware(datetime(2022, 12, 25))
+            mock_datetime.now.date.return_value = timezone.make_aware(datetime(2022, 12, 25)).date()
             assert sc.is_enabled_to_enroll(period=period) is True
 
             # Mock current date after date_start and before date_end
-            mock_datetime.now.return_value = timezone.make_aware(datetime(2025, 8, 10))
-            mock_datetime.now.date.return_value = timezone.make_aware(datetime(2025, 8, 10)).date()
+            mock_datetime.now.return_value = timezone.make_aware(datetime(2023, 1, 1))
+            mock_datetime.now.date.return_value = timezone.make_aware(datetime(2023, 1, 1)).date()
             assert sc.is_enabled_to_enroll(period=period) is True
 
-            # Mock current date after date_start and before date_end (different date)
-            mock_datetime.now.return_value = timezone.make_aware(datetime(2025, 9, 1))
-            mock_datetime.now.date.return_value = timezone.make_aware(datetime(2025, 9, 1)).date()
+            # Mock current date after date_start and before date_end
+            mock_datetime.now.return_value = timezone.make_aware(datetime(2023, 1, 1))
+            mock_datetime.now.date.return_value = timezone.make_aware(datetime(2023, 1, 1)).date()
             assert sc.is_enabled_to_enroll(period=period) is True
 
             # Mock current date after date_end
-            mock_datetime.now.return_value = timezone.make_aware(datetime(2025, 9, 20))
-            mock_datetime.now.date.return_value = timezone.make_aware(datetime(2025, 9, 20)).date()
+            mock_datetime.now.return_value = timezone.make_aware(datetime(2024, 1, 1))
+            mock_datetime.now.date.return_value = timezone.make_aware(datetime(2024, 1, 1)).date()
             assert sc.is_enabled_to_enroll(period=period) is False

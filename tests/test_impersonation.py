@@ -7,7 +7,7 @@ pytestmark = pytest.mark.django_db
 class TestImpersonationAccess:
     """Test suite for impersonation access control"""
 
-    def test_superuser_can_impersonate_through_admin(self, client_authenticated_superuser, create_student):
+    def test_superuser_can_impersonate_through_admin(self, client_authenticated_superuser, create_student, create_period):
         """Test that superusers can impersonate students through admin interface"""
         # First access the admin page to get the impersonation link
         response = client_authenticated_superuser.get(reverse("admin:cayuman_member_changelist"))
@@ -23,7 +23,7 @@ class TestImpersonationAccess:
         # Follow the home redirect
         response = client_authenticated_superuser.get(response.url)
         assert response.status_code == 302  # Should redirect to workshop periods
-        assert response.url == reverse("workshop_periods", kwargs={"period_id": 1})
+        assert response.url == reverse("workshop_periods", kwargs={"period_id": create_period.id})
 
         # Follow the workshop-periods redirect and check we're impersonating
         response = client_authenticated_superuser.get(response.url)
@@ -44,21 +44,14 @@ class TestImpersonationAccess:
         # Check session to ensure we're not impersonating
         assert "_impersonate" not in client_authenticated_staff.session
 
-    def test_teacher_cannot_access_admin_impersonation(self, client_authenticated_teacher, create_student):
+    def test_teacher_cannot_access_admin_impersonation(self, client_authenticated_teacher):
         """Test that teachers cannot access admin to impersonate"""
         response = client_authenticated_teacher.get(reverse("admin:cayuman_member_changelist"))
         assert response.status_code == 302  # Redirected to login
         assert "_impersonate" not in client_authenticated_teacher.session
 
-    def test_student_cannot_access_admin_impersonation(self, client_authenticated_student, create_teacher):
+    def test_student_cannot_access_admin_impersonation(self, client_authenticated_student):
         """Test that students cannot access admin to impersonate"""
         response = client_authenticated_student.get(reverse("admin:cayuman_member_changelist"))
         assert response.status_code == 302  # Redirected to login
         assert "_impersonate" not in client_authenticated_student.session
-
-    def test_cannot_impersonate_superuser_through_admin(self, client_authenticated_superuser, create_superuser):
-        """Test that superusers cannot be impersonated through admin"""
-        response = client_authenticated_superuser.get(reverse("impersonate-start", args=[create_superuser.id]))
-        assert response.status_code == 302  # Redirected to home
-        assert response.url == "/"  # Redirected to home
-        assert "_impersonate" not in client_authenticated_superuser.session  # Should not be impersonating

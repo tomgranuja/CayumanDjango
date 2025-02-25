@@ -46,14 +46,14 @@ def test_something(create_teacher):
     assert teacher.is_teacher  # Via group membership
 ```
 
-### `create_inactive_user`
+### `create_user`
 
-Creates an inactive user for testing access restrictions.
+Creates a basic user without any special permissions.
 
 ```python
-def test_something(create_inactive_user):
-    user = create_inactive_user
-    assert not user.is_active
+def test_something(create_user):
+    user = create_user
+    assert user.username == "11111111"
 ```
 
 ### `create_groups`
@@ -66,55 +66,107 @@ def test_something(create_groups):
     assert students_group.name == settings.STUDENTS_GROUP
 ```
 
-## Period Fixtures
+## Authenticated Client Fixtures
+
+### `client_authenticated_superuser`
+
+Returns a client logged in as a superuser.
+
+```python
+def test_something(client_authenticated_superuser):
+    response = client_authenticated_superuser.get('/admin/')
+    assert response.status_code == 200
+```
+
+### `client_authenticated_staff`
+
+Returns a client logged in as a staff user.
+
+```python
+def test_something(client_authenticated_staff):
+    response = client_authenticated_staff.get('/admin/')
+    assert response.status_code == 403  # Staff without permissions
+```
+
+### `client_authenticated_teacher`
+
+Returns a client logged in as a teacher.
+
+```python
+def test_something(client_authenticated_teacher):
+    response = client_authenticated_teacher.get('/some/teacher/view/')
+    assert response.status_code == 200
+```
+
+### `client_authenticated_student`
+
+Returns a client logged in as a student.
+
+```python
+def test_something(client_authenticated_student):
+    response = client_authenticated_student.get('/some/student/view/')
+    assert response.status_code == 200
+```
+
+## Period and Schedule Fixtures
 
 ### `create_period`
 
-Creates a test period with configurable dates. Can be used in two ways:
+Creates a test period with fixed dates:
 
-1. Default usage - uses predefined dates in 2025:
+- date_start: 2023-01-01
+- date_end: 2023-12-31
+- enrollment_start: 2022-12-23
+- enrollment_end: 2022-12-27
 
 ```python
 def test_something(create_period):
     period = create_period
-    assert period.name == "Test Period"
+    assert period.name == "Period 1"
 ```
 
-2. With custom dates via parametrization:
+### `create_schedule`
+
+Creates a schedule for Monday from 10:15 to 11:15.
 
 ```python
-@pytest.mark.parametrize('create_period', [{
-    'preview_date': '2024-01-01',
-    'enrollment_start': '2024-01-03',
-    'enrollment_end': '2024-01-10',
-    'date_start': '2024-01-15',
-    'date_end': '2024-02-15'
-}], indirect=True)
-def test_something(create_period):
-    assert period.date_start == date(2024, 1, 15)
+def test_something(create_schedule):
+    schedule = create_schedule
+    assert schedule.day == "Monday"
 ```
 
-The fixture automatically:
+## Workshop Fixtures
 
-- Creates the period in the database
-- Mocks `Period.objects.current_or_last()` to return this period
-- Mocks `period.is_in_the_past()` to return `True` by default
+### `create_workshops`
+
+Creates three sample workshops: Fractangulos, Comics, and Ingles.
+
+```python
+def test_something(create_workshops):
+    workshops = create_workshops
+    assert len(workshops) == 3
+```
+
+### `create_cycles`
+
+Creates three sample cycles: Avellanos, Ulmos, and Canelos.
+
+```python
+def test_something(create_cycles):
+    cycles = create_cycles
+    assert len(cycles) == 3
+```
 
 ## Request Mocking Fixtures
 
 ### `mock_request`
 
-Creates a mock request object for testing middleware and views. Includes:
-
-- Basic request attributes
-- Message framework support
-- Period handling support
+Creates a request object with session and message support for testing middleware.
 
 ```python
 def test_something(mock_request):
-    mock_request.path_info = "/some/path"
     mock_request.user = some_user
-    # Test your view/middleware
+    # Test your view/middleware with full session and message support
 ```
 
 ### `middleware`
