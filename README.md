@@ -105,7 +105,32 @@ poetry run python manage.py compilemessages
 
 ## Deployment
 
-When deploying cayuman, you must run the following commands:
+The recommended way to deploy Cayuman is using the provided Fabric commands:
+
+```bash
+# Deploy the latest changes
+poetry run fab deploy
+```
+
+This will automatically execute all deployment steps in the correct order:
+
+1. Pull latest changes from git
+2. Install/update dependencies
+3. Run database migrations
+4. Compile translation messages
+
+For version tagging and publishing:
+
+```bash
+# Create and push a version tag based on pyproject.toml version
+poetry run fab publish
+```
+
+This will create a git tag (e.g., v0.2.2) based on the current version in pyproject.toml and push it to the remote repository.
+
+### Manual Deployment
+
+If you need to run the deployment steps manually, execute these commands in order:
 
 ```bash
 git pull
@@ -119,7 +144,7 @@ poetry run python manage.py compilemessages
 If there's a need to set cayuman as maintenance mode, you must run this command
 
 ```bash
-python manage.py maintenance_mode <on|off>
+poetry run python manage.py maintenance_mode <on|off>
 ```
 
 ## Custom Permissions
