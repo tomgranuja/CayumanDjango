@@ -19,10 +19,21 @@ def set_version(version):
     with open("pyproject.toml", "r") as f:
         content = f.read()
 
-    # Replace the version line
+    # Replace the version line, only under [tool.poetry] section
     import re
 
-    new_content = re.sub(r'version = "[^"]+"', f'version = "{version}"', content)
+    # Split content into sections
+    sections = re.split(r"(\[\w+(?:\.\w+)*\])", content)
+
+    # Find and modify the [tool.poetry] section
+    for i in range(len(sections)):
+        if sections[i] == "[tool.poetry]":
+            # Replace version in the following section content
+            sections[i + 1] = re.sub(r'^version = "[^"]+"', f'version = "{version}"', sections[i + 1], flags=re.MULTILINE)
+            break
+
+    # Join sections back together
+    new_content = "".join(sections)
 
     # Write back
     with open("pyproject.toml", "w") as f:
