@@ -1,3 +1,6 @@
+from __future__ import annotations
+
+from datetime import date
 from datetime import datetime
 from functools import cached_property
 from functools import lru_cache
@@ -13,6 +16,7 @@ from django.core.exceptions import ValidationError
 from django.db import models
 from django.db.models import Case
 from django.db.models import IntegerField
+from django.db.models import QuerySet
 from django.db.models import Value
 from django.db.models import When
 from django.db.models.signals import m2m_changed
@@ -209,7 +213,15 @@ class Schedule(models.Model):
 
 
 class PeriodManager(models.Manager):
-    def current(self):
+    """
+    Model manager for the Period model. Besides inheriting from the default manager, it adds some custom methods
+    to make it easier to get periods according to some date
+
+    Args:
+        models (models.Manager): Default Django model manager
+    """
+
+    def current(self) -> Period | None:
         """
         Current period is defined as this:
         - That period where current_date is between date_start and date_end
@@ -219,11 +231,19 @@ class PeriodManager(models.Manager):
         now = timezone.now()
         return self.period_by_date(now.date())
 
-    def current_or_last(self):
+    def current_or_last(self) -> Period:
+        """
+        Returns the current period or the last one if no current period.
+        This method is guaranteed to return a period and is used in middleware to set request.period
+        This method might even return a period that is in the future, as long as it's the last one
+
+        Returns:
+            Period: last or current period
+        """
         return self.current() or self.get_queryset().order_by("-date_end").first()
 
     @lru_cache
-    def period_by_date(self, date):
+    def period_by_date(self, date: date) -> Period | None:
         """
         Returns the period that contains the given date.
         - given_date must be a date object
@@ -235,7 +255,10 @@ class PeriodManager(models.Manager):
         return val
 
     @lru_cache
-    def other_periods(self, period, order: Optional[str] = "id"):
+    def other_periods(self, period: Period, order: str | None = "id") -> QuerySet:
+        """
+        Returns all periods except the given one, ordered by the given order
+        """
         return self.get_queryset().exclude(id=period.id).order_by(order)
 
 

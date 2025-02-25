@@ -4,10 +4,8 @@ from django.conf import settings
 from django.contrib import messages
 from django.core.exceptions import ObjectDoesNotExist
 from django.http import Http404
-from django.shortcuts import redirect
 from django.urls import resolve
 from django.urls import Resolver404
-from django.urls import reverse
 from django.utils.translation import gettext as _
 
 # Crear un objeto local para hilos
@@ -59,9 +57,6 @@ class CayumanMiddleware:
                 request.impersonator = Member.objects.get(id=request.impersonator.id)
                 request.member.is_impersonate = True
                 request.member.impersonator = request.impersonator
-                # If we're impersonating, ensure we're redirected to workshop-periods
-                if request.path_info == "/":
-                    return redirect(reverse("workshop_periods", kwargs={"period_id": 1}))
             except (Member.DoesNotExist, AttributeError):
                 # If anything fails, ensure we're not impersonating
                 request.member.is_impersonate = False
