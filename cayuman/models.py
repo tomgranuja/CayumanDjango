@@ -782,6 +782,19 @@ def workshop_period_schedules_changed(sender, instance, action, **kwargs):
             studentcycle.workshop_periods_by_schedule.cache_clear()
 
 
+@receiver([models.signals.post_save, models.signals.post_delete], sender=Period)
+def period_changed(sender, instance, **kwargs):
+    """Clear caches when a Period is modified or deleted"""
+    # Find all StudentCycles that have workshop periods in this period
+    affected_studentcycles = set()
+    for wp in instance.workshopperiod_set.all():
+        affected_studentcycles.update(wp.studentcycle_set.all())
+
+    # Clear is_schedule_full cache for affected StudentCycles
+    for studentcycle in affected_studentcycles:
+        studentcycle.is_schedule_full.cache_clear()
+
+
 @receiver(m2m_changed, sender=StudentCycle.workshop_periods.through)
 def student_cycle_workshop_period_changed(sender, instance, action, *args, **kwargs):
     """Validation procedure for the StudentCycle.workshop_periods m2m relation"""
