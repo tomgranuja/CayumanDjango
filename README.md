@@ -85,13 +85,15 @@ poetry run python manage.py createsuperuser
 poetry run python manage.py runserver
 ```
 
-## Generating new migrations
+## Development
+
+### Generating new migrations
 
 ```bash
 poetry run python manage.py makemigrations
 ```
 
-## Manage translation
+### Managing translations
 
 ```bash
 # Update translation file
@@ -103,30 +105,57 @@ poetry run python manage.py compilemessages
 # restart django server or webserver for changes to take effect
 ```
 
-## Deployment
+### Publishing Changes
 
-The recommended way to deploy Cayuman is using the provided Fabric commands:
+When you want to push changes to production:
 
-```bash
-# Deploy the latest changes
-poetry run fab deploy
-```
-
-This will automatically execute all deployment steps in the correct order:
-
-1. Pull latest changes from git
-2. Install/update dependencies
-3. Run database migrations
-4. Compile translation messages
-
-For version tagging and publishing:
+1. Make sure your changes are committed and pushed to the main branch
+2. Switch to main branch if you're not already on it
+3. Update the version in pyproject.toml if needed
+4. Run the publish command:
 
 ```bash
-# Create and push a version tag based on pyproject.toml version
 poetry run fab publish
 ```
 
-This will create a git tag (e.g., v0.2.2) based on the current version in pyproject.toml and push it to the remote repository.
+To see all available commands:
+
+```bash
+poetry run fab --list
+```
+
+The publish command handles version management automatically:
+
+- If you're not on the main branch, it will stop and ask you to switch to it
+- If you have uncommitted changes, it will stop and ask you to commit or stash them
+- If the current version tag already exists but points to a different commit:
+  - It will attempt to automatically bump the patch version (z in x.y.z)
+  - If the bumped version tag already exists, it will stop and ask for manual version setting
+  - Otherwise, it will commit the change with message "chore: bump version to x.y.z"
+  - Ask you to run publish again
+- If the current version tag exists and points to the current commit:
+  - It will stop as no action is needed
+- If the version tag doesn't exist:
+  - It will create and push the tag to the remote repository
+
+This ensures that each set of changes gets a unique version number and proper git tag.
+
+## Deployment
+
+The recommended way to deploy Cayuman is using the provided Fabric command:
+
+```bash
+poetry run fab deploy
+```
+
+This command will:
+- Only work on the main branch
+- Only run in PythonAnywhere environment (requires PYTHONANYWHERE_DOMAIN and PYTHONANYWHERE_SITE env vars)
+- Automatically execute all deployment steps in the correct order:
+  1. Pull latest changes from git
+  2. Install/update dependencies
+  3. Run database migrations
+  4. Compile translation messages
 
 ### Manual Deployment
 
