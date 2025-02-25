@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-"""Helper script for initial members load from ods file."""
+"""Helper script for workshopperiods load from csv file."""
 import csv
 import datetime
 
@@ -38,6 +38,8 @@ teacher_username = {
     "Javiera": "17788558-4",
     "Paulina": "15696924-9",
     "Salvador": "15971521-3",
+    "Carolina Arias": "14386684-k",
+    "Patricia Tamargo": "7412303-1",
 }
 
 cycle_pairs = {"ulmos": ["Ulmos"], "canelos y manios": ["Canelos", "Mañíos"], "coihues y avellanos": ["Coigües", "Avellanos"]}
@@ -119,7 +121,7 @@ class Command(BaseCommand):
             message = f"Period {period_n} doesn't exist, " "stopping without touching database."
             raise CommandError(message)
 
-        for i, row in enumerate(t[:3]):
+        for i, row in enumerate(t):
             print(f"Adding entry at index {i}, {row['name']}...")
             # Find database workshopperiod with same workshop, period and teacher
 
