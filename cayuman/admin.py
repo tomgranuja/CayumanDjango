@@ -409,11 +409,46 @@ class WorkshopPeriodAdmin(admin.ModelAdmin):
 admin.site.register(WorkshopPeriod, WorkshopPeriodAdmin)
 
 
+class StudentCycleStatusFilter(admin.SimpleListFilter):
+    """Filter student cycles by their current status"""
+
+    title = _("Status")  # display title
+    parameter_name = "status"  # parameter in the URL
+
+    def lookups(self, request, model_admin):
+        return [
+            ("current", _("Current")),
+            ("not_current", _("Not Current")),
+        ]
+
+    def queryset(self, request, queryset):
+        if not self.value():  # If no value is selected, default to current
+            return queryset.filter(id__in=[sc.id for sc in queryset if sc.is_current()])
+        elif self.value() == "current":
+            return queryset.filter(id__in=[sc.id for sc in queryset if sc.is_current()])
+        elif self.value() == "not_current":
+            return queryset.filter(id__in=[sc.id for sc in queryset if not sc.is_current()])
+        return queryset
+
+    def choices(self, changelist):
+        for lookup, title in self.lookup_choices:
+            yield {
+                "selected": self.value() == lookup or (lookup == "current" and self.value() is None),
+                "query_string": changelist.get_query_string(
+                    {
+                        self.parameter_name: lookup,
+                    },
+                    [],
+                ),
+                "display": title,
+            }
+
+
 class StudentCycleAdmin(admin.ModelAdmin):
     ordering = ("-date_joined",)
     list_display = ("id", "student", "cycle_html", "date_joined", "this_period_workshops_html", "other_periods_workshops", "active", "impersonate")
     list_per_page = 20
-    list_filter = ["cycle"]
+    list_filter = [StudentCycleStatusFilter, "cycle"]
     search_fields = ["student__first_name", "student__last_name", "cycle__name"]
     filter_horizontal = ("workshop_periods",)
     readonly_fields = ["student", "cycle"]

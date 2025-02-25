@@ -215,17 +215,6 @@ def can_enroll(user: Member, obj: Period = None):
     return obj.is_current() and user.is_student and user.is_enabled_to_enroll(obj)
 ```
 
-### Configuration
-
-The custom permission backend is enabled in settings.py:
-
-```python
-AUTHENTICATION_BACKENDS = [
-    'django.contrib.auth.backends.ModelBackend',  # default Django auth backend
-    'cayuman.backends.CayumanPermissionBackend',  # custom permission backend
-]
-```
-
 ### Existing Custom Permissions
 
 Currently, the system has the following custom permissions:
