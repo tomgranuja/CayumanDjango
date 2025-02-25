@@ -1,6 +1,8 @@
 {% extends "base.html" %}
 {% block navbar %}
 {% if request.member %}
+{% set member_studentcycle = request.member.get_studentcycle_for_period_or_none(request.period) or request.member.current_student_cycle %}
+{% set member_cycle = member_studentcycle.cycle %}
 <nav class="navbar navbar-expand-lg bg-body-tertiary mb-2 d-flex">
   <div class="container-fluid">
     <a class="navbar-brand" href="/">
@@ -29,7 +31,7 @@
           <!-- list -->
           <ul class="dropdown-menu text-end">
             {% for op in other_periods() %}
-              <li><a class="dropdown-item {% if op.is_current() %}fw-bolder{% endif %}" href="{{ url_switch_period(period_id=op.id) }}">{{op}}</a></li>
+              <li><a class="dropdown-item {% if op.is_current() %}fw-bolder{% elif op.is_in_the_past() %}text-muted{% endif %}" href="{{ url_switch_period(period_id=op.id) }}">{{op}}</a></li>
             {% endfor %}
           </ul>
           <!-- /list -->
@@ -37,7 +39,7 @@
         <!-- /periods list -->
 
         <!-- cycle pill -->
-        <li class="nav-item pt-2"><span class="badge rounded-pill text-bg-success">{{request.member.current_student_cycle.cycle}}</span></li>
+        <li class="nav-item pt-2"><span class="badge rounded-pill text-bg-success">{{member_cycle}}</span></li>
         <!-- /cycle pill -->
 
         {% if request.member.has_perm('cayuman.can_enroll', request.period) %}

@@ -305,7 +305,7 @@ def other_periods(context):
 
     request = context.get("request")
     if hasattr(request, "period"):
-        return Period.objects.other_periods(request.period)
+        return Period.objects.other_periods(request.period, order="-id")
 
 
 @dataclass

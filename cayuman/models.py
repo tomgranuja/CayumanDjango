@@ -73,6 +73,45 @@ class Member(User):
             return self.current_student_cycle.is_schedule_full(*args, **kwargs)
         return False
 
+    def get_studentcycle_for_period(self, period: Period) -> StudentCycle:
+        """
+        Get StudentCycle entry for a student in a given period.
+        If no match found then it raises ValueError if period is in the past,
+        otherwise it returns the latest studentcycle entry associated with the student
+
+        Args:
+            period (Period): period to get the studentcycle entry for
+
+        Raises:
+            ValueError: if no studentcycle entry found for the given student and period
+
+        Returns:
+            StudentCycle: StudentCycle entry associated with the student and period
+        """
+        return StudentCycle.objects.get_studentcycle_by_period(self, period)
+
+    def get_studentcycle_for_period_or_none(self, period: Period) -> StudentCycle | None:
+        """
+        Get StudentCycle entry for a student in a given period.
+        If no match found then it returns None if period is in the past,
+        otherwise it returns the latest studentcycle entry associated with the student
+        """
+        return StudentCycle.objects.get_studentcycle_by_period_or_none(self, period)
+
+    def get_studentcycle_for_date(self, date_or_datetime: date | datetime) -> StudentCycle:
+        """
+        Get StudentCycle entry for a student in a given date.
+        This is just a wrapper around get_studentcycle_for_period, getting the period from the given date_or_datetime
+        """
+        return StudentCycle.objects.get_studentcycle_by_date(self, date_or_datetime)
+
+    def get_studentcycle_for_date_or_none(self, date_or_datetime: date | datetime) -> StudentCycle | None:
+        """
+        Get StudentCycle entry for a student in a given date.
+        This is just a wrapper around get_studentcycle_for_date, getting the period from the given date_or_datetime
+        """
+        return StudentCycle.objects.get_studentcycle_by_date_or_none(self, date_or_datetime)
+
     def __str__(self):
         return self.get_full_name()
 
@@ -243,11 +282,16 @@ class PeriodManager(models.Manager):
         return self.current() or self.get_queryset().order_by("-date_end").first()
 
     @lru_cache
-    def period_by_date(self, date: date) -> Period | None:
+    def period_by_date(self, date_or_datetime: date | datetime) -> Period | None:
         """
         Returns the period that contains the given date.
         - given_date must be a date object
         """
+        if isinstance(date_or_datetime, datetime):
+            date = date_or_datetime.date()
+        else:
+            date = date_or_datetime
+
         try:
             val = self.get_queryset().get(date_start__lte=date, date_end__gte=date)
         except (self.model.MultipleObjectsReturned, self.model.DoesNotExist):
@@ -509,6 +553,100 @@ class WorkshopPeriod(models.Model):
         verbose_name_plural = _("Workshops' Periods")
 
 
+class StudentCycleManager(models.Manager):
+    """
+    Manager for the StudentCycle model
+    """
+
+    @lru_cache(maxsize=None)
+    def get_studentcycle_by_period(self, student: Member, period: Period) -> StudentCycle:
+        """
+        Get StudentCycle entry for a student in a given period.
+        If no match found then it raises ValueError if period is in the past,
+        otherwise it returns the latest studentcycle entry associated with the student
+
+        Args:
+            student (Member): student whose studentcycle entry we are looking for
+            period (Period): the period we are searching in
+
+        Raises:
+            ValueError: if no studentcycle entry found and period is in the past
+
+        Returns:
+            StudentCycle: StudentCycle entry associated with the student and period
+        """
+        studentcycles = self.filter(student=student)
+        for sc in studentcycles:
+            # search over workshop_periods associated with the studentcycle
+            for wp in sc.workshop_periods.all():
+                if wp.period == period:
+                    return sc
+        # if no match, check if period is Period.objects.current_or_last() or is in the future
+        if period == Period.objects.current_or_last() or period.is_in_the_future():
+            # return the latest studentcycle entry associated with the student
+            return studentcycles.order_by("-date_joined").first()
+        raise ValueError(_("No studentcycle entry found for student `%(st)s` and period `%(p)s`") % {"st": student.get_full_name(), "p": period})
+
+    def get_studentcycle_by_period_or_none(self, student: Member, period: Period) -> StudentCycle | None:
+        """
+        Get StudentCycle entry for a student in a given period.
+        If no match found then it returns None if period is in the past,
+        otherwise it returns the latest studentcycle entry associated with the student
+        """
+        try:
+            return self.get_studentcycle_by_period(student, period)
+        except ValueError:
+            return None
+
+    @lru_cache(maxsize=None)
+    def get_studentcycle_by_date(self, student: Member, date_or_datetime: date | datetime) -> StudentCycle:
+        """
+        Get StudentCycle entry for a student in a given date.
+        This is just a wrapper around get_studentcycle_by_period, getting the period from the given date_or_datetime
+        If no match found then it raises ValueError if period is in the past,
+        otherwise it returns the latest studentcycle entry associated with the student
+
+        Args:
+            student (Member): student whose studentcycle entry we are looking for
+            date_or_datetime (date | datetime): date or datetime object
+
+        Raises:
+            ValueError: if no period found for the given date_or_datetime
+            ValueError: if no studentcycle entry found for the given student and period
+
+        Returns:
+            StudentCycle: StudentCycle entry associated with the student and period
+        """
+        period = Period.objects.period_by_date(date_or_datetime)
+        if not period:
+            raise ValueError(_("No period found for date `%(d)s`") % {"d": date_or_datetime})
+
+        try:
+            return self.get_studentcycle_by_period(student, period)
+        except ValueError:
+            raise ValueError(_("No studentcycle entry found for student `%(st)s` and period `%(p)s`") % {"st": student.get_full_name(), "p": period})
+
+    def get_studentcycle_by_date_or_none(self, student: Member, date_or_datetime: date | datetime) -> StudentCycle | None:
+        """
+        Get StudentCycle entry for a student in a given date.
+        This is just a wrapper around get_studentcycle_by_date, getting the period from the given date_or_datetime
+        If no match found then it returns None if period is in the past,
+        otherwise it returns the latest studentcycle entry associated with the student
+
+        Args:
+            student (Member): student whose studentcycle entry we are looking for
+            date_or_datetime (date | datetime): date or datetime object
+
+        Returns:
+            StudentCycle: StudentCycle entry associated with the student and period
+            None: if no studentcycle entry found for the given student and period
+        """
+        try:
+            return self.get_studentcycle_by_date(student, date_or_datetime)
+        except ValueError:
+            return None
+
+
 class StudentCycle(models.Model):
     """Represents the relationship between students and their cycles and chosen workshop_periods"""
 
@@ -516,6 +654,8 @@ class StudentCycle(models.Model):
     cycle = models.ForeignKey(Cycle, on_delete=models.CASCADE, verbose_name=_("Cycle"))
     date_joined = models.DateField(auto_now_add=True, verbose_name=_("Date joined"))
     workshop_periods = models.ManyToManyField(WorkshopPeriod, blank=True, verbose_name=_("Workshop Periods"))
+
+    objects = StudentCycleManager()
 
     def __str__(self):
         return f"{self.student} @ {self.cycle}"
@@ -589,7 +729,9 @@ class StudentCycle(models.Model):
         self.workshop_periods_by_schedule.cache_clear()
         self.is_schedule_full.cache_clear()
         self.workshop_periods_by_period.cache_clear()
-        # self.is_enabled_to_enroll.cache_clear()
+        # Clear the manager's caches since this StudentCycle changed
+        StudentCycle.objects.get_studentcycle_by_period.cache_clear()
+        StudentCycle.objects.get_studentcycle_by_date.cache_clear()
         super().save(*args, **kwargs)
 
     class Meta:
@@ -597,6 +739,13 @@ class StudentCycle(models.Model):
         get_latest_by = "date_joined"  # Get the latest cycle for each student
         verbose_name = _("Students Cycle")
         verbose_name_plural = _("Students Cycles")
+
+
+@receiver(models.signals.pre_delete, sender=StudentCycle)
+def student_cycle_pre_delete(sender, instance, **kwargs):
+    """Clear caches when a StudentCycle is deleted"""
+    StudentCycle.objects.get_studentcycle_by_period.cache_clear()
+    StudentCycle.objects.get_studentcycle_by_date.cache_clear()
 
 
 @receiver(m2m_changed, sender=StudentCycle.workshop_periods.through)
@@ -608,7 +757,9 @@ def student_cycle_workshop_period_changed(sender, instance, action, *args, **kwa
     instance.workshop_periods_by_schedule.cache_clear()
     instance.is_schedule_full.cache_clear()
     instance.workshop_periods_by_period.cache_clear()
-    # instance.is_enabled_to_enroll.cache_clear()
+    # Clear manager caches since workshop periods changed
+    StudentCycle.objects.get_studentcycle_by_period.cache_clear()
+    StudentCycle.objects.get_studentcycle_by_date.cache_clear()
 
     if action == "pre_add":
         # Get all workshop periods for this student's cycle, including incoming ones

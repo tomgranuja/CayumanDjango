@@ -161,6 +161,7 @@ poetry run fab deploy
 ```
 
 This command will:
+
 - Only work on the main branch
 - Only run in PythonAnywhere environment (requires PYTHONANYWHERE_DOMAIN and PYTHONANYWHERE_SITE env vars)
 - Automatically execute all deployment steps in the correct order:
@@ -244,7 +245,7 @@ The permission is particularly important because it handles various enrollment s
 
 These are some conventions or design decisions made by this project, which are not currently enforced by code or may not be so clear just from using it:
 
-* A new entry on `StudentCycle`, meaning a relationship between a student and a cycle, is only added when the student is assigned to a different cycle. There's no need to create new `StudentCycle` entries for each student when periods change.
-* `Period` entries are supposed to not collide in terms of `date_start` and `date_end` dates. Code force them not to. Collisions by `preview_date` or `enrollment_start` with another period's `date_end` are not prevented by code.
-* There exists the method `PeriodManager.current` which returns the `Period` entry corresponding to the current date according to logic mainly based on `date_start` and `date_end`. If no period follows this then the method returns None.
-* `StudentCycle` entries are considered to be "fully scheduled" during a period (`StudentCycle.is_schedule_full == True`) depending if a student cycle entries is associated with a `WorkshopPeriod` entry for each of the existing class blocks, and those `WorkshopPeriods` are associated with the given period.
+- A new entry on `StudentCycle`, meaning a relationship between a student and a cycle, is only added when the student is assigned to a different cycle. There's no need to create new `StudentCycle` entries for each student when periods change.
+- `Period` entries are supposed to not collide in terms of `date_start` and `date_end` dates. Code force them not to. Collisions by `preview_date` or `enrollment_start` with another period's `date_end` are not prevented by code.
+- There exists the method `PeriodManager.current` which returns the `Period` entry corresponding to the current date according to logic mainly based on `date_start` and `date_end`. If no period follows this then the method returns None.
+- `StudentCycle` entries are considered to be "fully scheduled" during a period (`StudentCycle.is_schedule_full == True`) depending if a student cycle entries is associated with a `WorkshopPeriod` entry for each of the existing class blocks, and those `WorkshopPeriods` are associated with the given period.
