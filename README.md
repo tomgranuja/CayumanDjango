@@ -129,10 +129,12 @@ The publish command handles version management automatically:
 - If you're not on the main branch, it will stop and ask you to switch to it
 - If you have uncommitted changes, it will stop and ask you to commit or stash them
 - If the current version tag already exists but points to a different commit:
-  - It will attempt to automatically bump the patch version (z in x.y.z)
+  - It will automatically bump the patch version (z in x.y.z)
   - If the bumped version tag already exists, it will stop and ask for manual version setting
-  - Otherwise, it will commit the change with message "chore: bump version to x.y.z"
-  - Ask you to run publish again
+  - Otherwise, it will:
+    1. Commit the version bump with message "chore: bump version to x.y.z"
+    2. Push the commit to the remote main branch
+    3. Create and push the new version tag
 - If the current version tag exists and points to the current commit:
   - It will stop as no action is needed
 - If the version tag doesn't exist:

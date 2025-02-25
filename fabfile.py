@@ -169,14 +169,27 @@ def publish(ctx):
             ctx.run("git add pyproject.toml")
             ctx.run(f'git commit -m "chore: bump version to {new_version}"')
             print("✓ Committed version change")
-            print("\nPlease run publish again to create the tag")
+
+            # Push the commit
+            print("\n1. Pushing version bump to remote...")
+            ctx.run("git push origin main")
+            print("✓ Pushed version bump")
+
+            # Create and push the tag
+            print(f"\n2. Creating tag {new_tag}...")
+            ctx.run(f"git tag {new_tag}")
+            print(f"✓ Created tag {new_tag}")
+
+            print("\n3. Pushing tag to remote repository...")
+            ctx.run(f"git push origin {new_tag}")
+            print(f"✨ Successfully pushed tag {new_tag} to origin")
             sys.exit(0)
         else:
             print(f"\n⚠️  Tag {tag} already exists and points to current commit")
             print("No action needed")
             sys.exit(0)
 
-    # Create and push the tag
+    # Create and push the tag for existing version
     print(f"\n1. Creating tag {tag}...")
     ctx.run(f"git tag {tag}")
     print(f"✓ Created tag {tag}")
