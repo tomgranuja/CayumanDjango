@@ -102,3 +102,8 @@ cayuman.db
 
 *.ods
 maintenance_mode_state.txt
+.cursorrules
+.cursorignore
+.cursor/*
+
+PLAN.md

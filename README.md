@@ -10,13 +10,13 @@ If you don't have the required python version installed then you can do so by fo
 
 Start by installing `pyenv`, a python module that makes it easy to manage several different python versions.
 
-```console
-$ curl https://pyenv.run | bash
+```bash
+curl https://pyenv.run | bash
 ```
 
 Then add `pyenv` to `.bash_profile` or your shell's profile file
 
-```console
+```bash
 # pyenv
 export PYENV_ROOT="$HOME/.pyenv"
 command -v pyenv >/dev/null || export PATH="$PYENV_ROOT/bin:$PATH"
@@ -28,90 +28,161 @@ eval "$(pyenv virtualenv-init -)"
 
 Now install python3.10 by doing
 
-```console
-$ pyenv install 3.8
+```bash
+pyenv install 3.8
 ```
 
 ## Instaling poetry and getting your dev instance ready
 
 Now it's time to install poetry
 
-```console
-$ pip install poetry
+```bash
+pip install poetry
 ```
 
 Then clone the repo
 
-```console
-$ git clone git@github.com:tomgranuja/CayumanDjango.git
+```bash
+git clone git@github.com:tomgranuja/CayumanDjango.git
 ```
 
 and install the dev environment
 
-```console
-$ cd CayumanDjango
-$ poetry install --with test
+```bash
+cd CayumanDjango
+poetry install --with test
 ```
 
 Install pre-commit hooks (to enforce coding standards)
 
-```console
-$ poetry run pre-commit install
+```bash
+poetry run pre-commit install
 ```
 
 ## Running Tests
 
 In order to run our tests you just have to do
 
-```console
-$ poetry run pytest
+```bash
+poetry run pytest
 ```
 
 ## Applying migrations
 
-```console
-$ poetry run python manage.py migrate
+```bash
+poetry run python manage.py migrate
 ```
 
 ## Creating First Super User
 
-```console
-$ poetry run python manage.py createsuperuser
+```bash
+poetry run python manage.py createsuperuser
 ```
 
 ## Running dev server
 
-```console
-$ poetry run python manage.py runserver
+```bash
+poetry run python manage.py runserver
 ```
 
 ## Generating new migrations
 
-```console
-$ poetry run python manage.py makemigrations
+```bash
+poetry run python manage.py makemigrations
 ```
 
 ## Manage translation
 
-```console
+```bash
 # Update translation file
-$ poetry run python manage.py makemessages -l es
+poetry run python manage.py makemessages -l es
 
 # Compile translation file
-$ poetry run python manage.py compilemessages
+poetry run python manage.py compilemessages
 
 # restart django server or webserver for changes to take effect
+```
+
+## Deployment
+
+When deploying cayuman, you must run the following commands:
+
+```bash
+git pull
+poetry install
+poetry run python manage.py migrate
+poetry run python manage.py compilemessages
 ```
 
 ## Maintenance mode
 
 If there's a need to set cayuman as maintenance mode, you must run this command
 
-```console
-$ python manage.py maintenance_mode <on|off>
+```bash
+python manage.py maintenance_mode <on|off>
 ```
 
-# Conventions
+## Custom Permissions
+
+Cayuman implements a custom permission system that extends Django's default permission system. This is done through:
+
+1. A custom permission backend (`CayumanPermissionBackend`) that checks permissions before falling back to Django's default behavior
+2. A permission registry system that allows registering custom permission checks using decorators
+
+### How it works
+
+1. Custom permissions are registered using the `@register_permission` decorator in `permissions.py`
+2. Each permission is a function that takes a user and optional object parameter
+3. The custom backend checks these permissions before falling back to Django's default system
+
+### Example
+
+```python
+@register_permission("cayuman.can_enroll")
+def can_enroll(user: Member, obj: Period = None):
+    # Check if the user is a student, the period is current, and enrollment is enabled
+    if obj is None:
+        return False
+    return obj.is_current() and user.is_student and user.is_enabled_to_enroll(obj)
+```
+
+### Configuration
+
+The custom permission backend is enabled in settings.py:
+
+```python
+AUTHENTICATION_BACKENDS = [
+    'django.contrib.auth.backends.ModelBackend',  # default Django auth backend
+    'cayuman.backends.CayumanPermissionBackend',  # custom permission backend
+]
+```
+
+### Existing Custom Permissions
+
+Currently, the system has the following custom permissions:
+
+#### `cayuman.can_enroll`
+
+This permission controls whether a user can enroll in workshops for a given period. The permission check:
+
+1. Requires the user to be a student
+2. Requires the period to be current
+3. Checks if enrollment is enabled for the user in that period through `user.is_enabled_to_enroll(period)`
+
+This permission is used in:
+
+- Enrollment views to control access to workshop registration
+- View decorators like `@enrollment_access_required`
+- Template conditions to show/hide enrollment-related UI elements
+
+The permission is particularly important because it handles various enrollment scenarios:
+
+- Regular student enrollment during the enrollment period
+- Late enrollment for students without a full schedule
+- Administrative enrollment by superusers
+- Preventing enrollment in past or future periods
+
+## Conventions
 
 These are some conventions or design decisions made by this project, which are not currently enforced by code or may not be so clear just from using it:
 

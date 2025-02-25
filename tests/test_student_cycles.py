@@ -8,34 +8,14 @@ from django.contrib.auth.models import Group
 from django.core.exceptions import ValidationError
 from django.utils import timezone
 
-from cayuman.models import Cycle
 from cayuman.models import Member
 from cayuman.models import Period
 from cayuman.models import Schedule
 from cayuman.models import StudentCycle
-from cayuman.models import Workshop
 from cayuman.models import WorkshopPeriod
 
 
 pytestmark = pytest.mark.django_db
-
-
-@pytest.fixture()
-def create_student():
-    """Fixture to create a student"""
-    user = Member.objects.create_user(username="99999999", password="12345", first_name="Test", last_name="Student")
-    group, _ = Group.objects.get_or_create(name=settings.STUDENTS_GROUP)
-    user.groups.add(group)
-    return user
-
-
-@pytest.fixture
-def create_teacher():
-    """Fixture to create a teacher"""
-    user = Member.objects.create_user(username="8888888", password="12345", first_name="Test", last_name="Teacher")
-    group, _ = Group.objects.get_or_create(name=settings.TEACHERS_GROUP)
-    user.groups.add(group)
-    return user
 
 
 @pytest.fixture
@@ -50,22 +30,6 @@ def create_period():
         enrollment_end=timezone.make_aware(datetime(2022, 12, 27)).date(),
     )
     return Period.objects.all()[0]
-
-
-@pytest.fixture
-def create_workshops():
-    """Fixture to create sample Workshops"""
-    # Workshops
-    for name in ("Fractangulos", "Comics", "Ingles"):
-        Workshop.objects.create(name=name)
-    return Workshop.objects.all()
-
-
-@pytest.fixture
-def create_cycles():
-    for name in ("Avellanos", "Ulmos", "Canelos"):
-        Cycle.objects.create(name=name)
-    return Cycle.objects.all()
 
 
 def test_student_cycle_ok(create_student, create_teacher, create_workshops, create_cycles, create_period):

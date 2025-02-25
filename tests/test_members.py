@@ -1,27 +1,7 @@
 import pytest
-from django.conf import settings
-from django.contrib.auth.models import Group
 from django.core.exceptions import ValidationError
 
-from cayuman.models import Member
-
-
 pytestmark = pytest.mark.django_db
-
-
-@pytest.fixture
-def create_user():
-    # Create a basic user
-    user = Member.objects.create_user(username="11111111", password="12345", first_name="test", last_name="user")
-    return user
-
-
-@pytest.fixture
-def create_groups():
-    # Create student and teacher groups
-    students_group, _ = Group.objects.get_or_create(name=settings.STUDENTS_GROUP)
-    teachers_group, _ = Group.objects.get_or_create(name=settings.TEACHERS_GROUP)
-    return students_group, teachers_group  # Groups are available to the test function
 
 
 def test_member_can_be_student(create_user, create_groups):

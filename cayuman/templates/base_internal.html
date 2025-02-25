@@ -40,7 +40,7 @@
         <li class="nav-item pt-2"><span class="badge rounded-pill text-bg-success">{{request.member.current_student_cycle.cycle}}</span></li>
         <!-- /cycle pill -->
 
-        {% if request.member.is_enabled_to_enroll(request.period) or (request.impersonator and request.impersonator.is_enabled_to_enroll(request.period)) %}
+        {% if request.member.has_perm('cayuman.can_enroll', request.period) %}
           <!-- enroll -->
           <li class="nav-item">
             <a class="nav-link fw-bolder" href="{{ url('enrollment', period_id=request.period.id) }}">
@@ -59,7 +59,7 @@
         </li>
         {% endif %}
         <li class="nav-item">
-          <a class="nav-link" href="javascript: document.getElementById('logout-frm').submit()">{% trans %}Log Out{% endtrans %}</a>
+          <a class="nav-link {% if request.impersonator %}disabled{% endif %}" href="javascript: document.getElementById('logout-frm').submit()">{% trans %}Log Out{% endtrans %}</a>
         </li>
       </ul>
     </div>
