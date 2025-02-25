@@ -794,6 +794,7 @@ def period_changed(sender, instance, **kwargs):
     for studentcycle in affected_studentcycles:
         studentcycle.is_schedule_full.cache_clear()
         studentcycle.workshop_periods_by_schedule.cache_clear()
+        studentcycle.workshop_periods_by_period.cache_clear()
 
 
 @receiver(m2m_changed, sender=StudentCycle.workshop_periods.through)
