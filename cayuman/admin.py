@@ -111,12 +111,15 @@ class MemberAdmin(UserAdmin):
 
     @admin.display(description=_("Cycle"))
     def cycle(self, obj):
-        return format_html(obj.current_student_cycle.cycle.name if obj.is_student and obj.current_student_cycle else "-")
+        if obj.is_student and obj.current_student_cycle:
+            return format_html("{}", obj.current_student_cycle.cycle.name)
+        else:
+            return format_html("{}", "-")
 
     @admin.display(description=_("Impersonate"))
     def impersonate(self, obj):
         if obj.is_student:
-            return format_html('<a href="{}">{}</a>'.format(reverse("impersonate-start", args=[obj.pk]), _("Impersonate")))
+            return format_html('<a href="{}">{}</a>', reverse("impersonate-start", args=[obj.pk]), _("Impersonate"))
 
 
 admin.site.register(Member, MemberAdmin)
@@ -609,7 +612,7 @@ class StudentCycleAdmin(admin.ModelAdmin):
     @admin.display(description=_("Impersonate"))
     def impersonate(self, obj):
         if obj.student.is_student:
-            return format_html('<a href="{}">{}</a>'.format(reverse("impersonate-start", args=[obj.student.pk]), _("Impersonate")))
+            return format_html('<a href="{}">{}</a>', reverse("impersonate-start", args=[obj.student.pk]), _("Impersonate"))
 
 
 admin.site.register(StudentCycle, StudentCycleAdmin)
