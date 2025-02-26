@@ -322,3 +322,180 @@ def test_is_enabled_to_enroll(create_student, create_period, create_cycles):
             mock_datetime.now.return_value = timezone.make_aware(datetime(2024, 1, 1))
             mock_datetime.now.date.return_value = timezone.make_aware(datetime(2024, 1, 1)).date()
             assert sc.is_enabled_to_enroll(period=period) is False
+
+
+def test_studentcycle_manager_get_by_period(create_student, create_period, create_cycles, create_teacher, create_workshops):
+    """Test StudentCycleManager.get_studentcycle_by_period method"""
+    student = create_student
+    period = create_period
+    cycle = create_cycles[0]
+    teacher = create_teacher
+    workshop = create_workshops[0]
+
+    # Create a workshop period
+    workshop_period = WorkshopPeriod.objects.create(workshop=workshop, period=period, teacher=teacher)
+    workshop_period.cycles.add(cycle)
+
+    # Create a schedule
+    schedule = Schedule.objects.create(day="monday", time_start=time(10, 15), time_end=time(11, 15))
+    workshop_period.schedules.add(schedule)
+
+    # Create a StudentCycle for the student
+    student_cycle = StudentCycle.objects.create(student=student, cycle=cycle)
+    student_cycle.workshop_periods.add(workshop_period)
+
+    # Test getting studentcycle for period with workshop period
+    assert StudentCycle.objects.get_studentcycle_by_period(student, period) == student_cycle
+
+    # Test getting studentcycle for future period - should return latest studentcycle
+    future_period = Period.objects.create(
+        name="Future Period",
+        enrollment_start=timezone.now() + timezone.timedelta(days=1),
+        date_start=timezone.now().date() + timezone.timedelta(days=2),
+        date_end=timezone.now().date() + timezone.timedelta(days=30),
+    )
+
+    assert StudentCycle.objects.get_studentcycle_by_period(student, future_period) == student_cycle
+
+    # Test getting studentcycle for past period - should raise ValueError
+    past_period = Period.objects.create(
+        name="Past Period",
+        enrollment_start=timezone.now() - timezone.timedelta(days=31),
+        date_start=timezone.now().date() - timezone.timedelta(days=30),
+        date_end=timezone.now().date() - timezone.timedelta(days=1),
+    )
+
+    with pytest.raises(ValueError):
+        StudentCycle.objects.get_studentcycle_by_period(student, past_period)
+
+
+def test_studentcycle_manager_get_by_period_or_none(create_student, create_period, create_cycles, create_teacher, create_workshops):
+    """Test StudentCycleManager.get_studentcycle_by_period_or_none method"""
+    student = create_student
+    period = create_period
+    cycle = create_cycles[0]
+    teacher = create_teacher
+    workshop = create_workshops[0]
+
+    # Create a workshop period
+    workshop_period = WorkshopPeriod.objects.create(workshop=workshop, period=period, teacher=teacher)
+    workshop_period.cycles.add(cycle)
+
+    # Create a schedule
+    schedule = Schedule.objects.create(day="monday", time_start=time(10, 15), time_end=time(11, 15))
+    workshop_period.schedules.add(schedule)
+
+    # Create a StudentCycle for the student
+    student_cycle = StudentCycle.objects.create(student=student, cycle=cycle)
+    student_cycle.workshop_periods.add(workshop_period)
+
+    # Test getting studentcycle for period with workshop period
+    assert StudentCycle.objects.get_studentcycle_by_period_or_none(student, period) == student_cycle
+
+    # Test getting studentcycle for future period - should return latest studentcycle
+    future_period = Period.objects.create(
+        name="Future Period",
+        enrollment_start=timezone.now() + timezone.timedelta(days=1),
+        date_start=timezone.now().date() + timezone.timedelta(days=2),
+        date_end=timezone.now().date() + timezone.timedelta(days=30),
+    )
+
+    assert StudentCycle.objects.get_studentcycle_by_period_or_none(student, future_period) == student_cycle
+
+    # Test getting studentcycle for past period - should return None
+    past_period = Period.objects.create(
+        name="Past Period",
+        enrollment_start=timezone.now() - timezone.timedelta(days=31),
+        date_start=timezone.now().date() - timezone.timedelta(days=30),
+        date_end=timezone.now().date() - timezone.timedelta(days=1),
+    )
+
+    assert StudentCycle.objects.get_studentcycle_by_period_or_none(student, past_period) is None
+
+
+def test_studentcycle_manager_get_by_date(create_student, create_period, create_cycles, create_teacher, create_workshops):
+    """Test StudentCycleManager.get_studentcycle_by_date method"""
+    student = create_student
+    period = create_period
+    cycle = create_cycles[0]
+    teacher = create_teacher
+    workshop = create_workshops[0]
+
+    # Create a workshop period
+    workshop_period = WorkshopPeriod.objects.create(workshop=workshop, period=period, teacher=teacher)
+    workshop_period.cycles.add(cycle)
+
+    # Create a schedule
+    schedule = Schedule.objects.create(day="monday", time_start=time(10, 15), time_end=time(11, 15))
+    workshop_period.schedules.add(schedule)
+
+    # Create a StudentCycle for the student
+    student_cycle = StudentCycle.objects.create(student=student, cycle=cycle)
+    student_cycle.workshop_periods.add(workshop_period)
+
+    # Test getting studentcycle for date within period
+    date_in_period = period.date_start + timezone.timedelta(days=1)
+    assert StudentCycle.objects.get_studentcycle_by_date(student, date_in_period) == student_cycle
+
+    # Test getting studentcycle for datetime within period
+    datetime_in_period = timezone.make_aware(datetime.combine(date_in_period, time(12, 0)))
+    assert StudentCycle.objects.get_studentcycle_by_date(student, datetime_in_period) == student_cycle
+
+    # Test getting studentcycle for date not in any period
+    future_date = period.date_end + timezone.timedelta(days=1)
+    with pytest.raises(ValueError):
+        StudentCycle.objects.get_studentcycle_by_date(student, future_date)
+
+    # Test getting studentcycle for date in past period
+    past_period = Period.objects.create(
+        name="Past Period",
+        enrollment_start=timezone.make_aware(datetime(2022, 1, 1)),
+        date_start=timezone.make_aware(datetime(2022, 1, 2)).date(),
+        date_end=timezone.make_aware(datetime(2022, 1, 31)).date(),
+    )
+
+    with pytest.raises(ValueError):
+        StudentCycle.objects.get_studentcycle_by_date(student, past_period.date_start)
+
+
+def test_studentcycle_manager_get_by_date_or_none(create_student, create_period, create_cycles, create_teacher, create_workshops):
+    """Test StudentCycleManager.get_studentcycle_by_date_or_none method"""
+    student = create_student
+    period = create_period
+    cycle = create_cycles[0]
+    teacher = create_teacher
+    workshop = create_workshops[0]
+
+    # Create a workshop period
+    workshop_period = WorkshopPeriod.objects.create(workshop=workshop, period=period, teacher=teacher)
+    workshop_period.cycles.add(cycle)
+
+    # Create a schedule
+    schedule = Schedule.objects.create(day="monday", time_start=time(10, 15), time_end=time(11, 15))
+    workshop_period.schedules.add(schedule)
+
+    # Create a StudentCycle for the student
+    student_cycle = StudentCycle.objects.create(student=student, cycle=cycle)
+    student_cycle.workshop_periods.add(workshop_period)
+
+    # Test getting studentcycle for date within period
+    date_in_period = period.date_start + timezone.timedelta(days=1)
+    assert StudentCycle.objects.get_studentcycle_by_date_or_none(student, date_in_period) == student_cycle
+
+    # Test getting studentcycle for datetime within period
+    datetime_in_period = timezone.make_aware(datetime.combine(date_in_period, time(12, 0)))
+    assert StudentCycle.objects.get_studentcycle_by_date_or_none(student, datetime_in_period) == student_cycle
+
+    # Test getting studentcycle for date not in any period
+    future_date = period.date_end + timezone.timedelta(days=1)
+    assert StudentCycle.objects.get_studentcycle_by_date_or_none(student, future_date) is None
+
+    # Test getting studentcycle for date in past period
+    past_period = Period.objects.create(
+        name="Past Period",
+        enrollment_start=timezone.make_aware(datetime(2022, 1, 1)),
+        date_start=timezone.make_aware(datetime(2022, 1, 2)).date(),
+        date_end=timezone.make_aware(datetime(2022, 1, 31)).date(),
+    )
+
+    assert StudentCycle.objects.get_studentcycle_by_date_or_none(student, past_period.date_start) is None

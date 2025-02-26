@@ -1,4 +1,5 @@
 from datetime import datetime
+from datetime import time
 from typing import Optional
 from unittest.mock import patch
 
@@ -236,3 +237,24 @@ def test_current_period():
         mock_datetime.now.return_value = timezone.make_aware(datetime(2024, 12, 17))
         mock_datetime.now.date.return_value = timezone.make_aware(datetime(2024, 12, 17))
         assert Period.objects.current() is None
+
+
+def test_period_by_date_with_datetime(create_period):
+    """Test period_by_date method with datetime objects"""
+    period = create_period
+
+    # Test with datetime object within period
+    datetime_in_period = timezone.make_aware(datetime.combine(period.date_start + timezone.timedelta(days=1), time(12, 0)))
+    assert Period.objects.period_by_date(datetime_in_period) == period
+
+    # Test with datetime object before period
+    datetime_before_period = timezone.make_aware(datetime.combine(period.date_start - timezone.timedelta(days=1), time(12, 0)))
+    assert Period.objects.period_by_date(datetime_before_period) is None
+
+    # Test with datetime object after period
+    datetime_after_period = timezone.make_aware(datetime.combine(period.date_end + timezone.timedelta(days=1), time(12, 0)))
+    assert Period.objects.period_by_date(datetime_after_period) is None
+
+    # Test with date object (existing functionality)
+    date_in_period = period.date_start + timezone.timedelta(days=1)
+    assert Period.objects.period_by_date(date_in_period) == period
