@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "cayuman"
-version = "0.2.7"
+version = "0.2.8"
 description = "School workshops inscription web form for students enrollment."
 authors = ["Salvador Carvajal <scarvajal@comunidadeducativacayuman.cl>"]
 readme = "README.md"
