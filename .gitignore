@@ -116,3 +116,5 @@ poetry.lock
 
 # Misc
 .DS_Store
+
+*.sql
