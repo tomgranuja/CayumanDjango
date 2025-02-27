@@ -29,7 +29,7 @@ eval "$(pyenv virtualenv-init -)"
 Now install python3.10 by doing
 
 ```bash
-pyenv install 3.8
+pyenv install 3.10
 ```
 
 ## Instaling poetry and getting your dev instance ready
@@ -86,6 +86,18 @@ poetry run python manage.py runserver
 ```
 
 ## Development
+
+### Docker Development Environment
+
+The project includes a Docker setup that closely emulates the production environment, consisting of a Linux-based application container and a MySQL database container. This allows you to develop locally while ensuring compatibility with the production setup.
+
+To use the Docker environment:
+
+```bash
+docker compose up -d
+```
+
+Your local codebase will be mounted into the container, allowing for live code reloading while running in a Linux environment with MySQL. For detailed instructions on Docker setup, configuration, and usage, see [DOCKER.md](DOCKER.md).
 
 ### Keeping dependencies up to date
 
