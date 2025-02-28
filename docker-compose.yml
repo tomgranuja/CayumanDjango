@@ -38,7 +38,8 @@ services:
           echo 'Waiting for database to be ready...'
           sleep 2
         done &&
-        poetry run python manage.py migrate &&
+        # Migration temporarily disabled to use migrate.sh script instead
+        # poetry run python manage.py migrate &&
         poetry run python manage.py runserver 0.0.0.0:9000
       "
 

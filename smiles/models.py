@@ -1,9 +1,24 @@
 import datetime
+from functools import lru_cache
+from typing import Dict
+from typing import ForwardRef
+from typing import Set
+from typing import TYPE_CHECKING
 
-from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
 from django.db import models
 from django.utils.translation import gettext_lazy as _
+
+from cayuman.models import Member
+
+# Import Member from cayuman instead of defining a new one
+
+# Use forward references to prevent circular imports
+if TYPE_CHECKING:
+    from .models import TimeSlot, SubjectOffering
+else:
+    TimeSlot = ForwardRef("TimeSlot")
+    SubjectOffering = ForwardRef("SubjectOffering")
 
 
 class BaseModel(models.Model):
@@ -20,29 +35,6 @@ class BaseModel(models.Model):
 
     class Meta:
         abstract = True
-
-
-class Member(BaseModel):
-    """
-    Extension of the User model for the school management system.
-
-    This model extends Django's User model to add school-specific information.
-    It represents any individual in the system (students, teachers, staff, etc.).
-
-    Attributes:
-        user: The Django User this Member extends
-        metadata: Flexible JSON field for storing additional member data such as:
-            - special_conditions (ASD, ADHD, etc.)
-            - educational_accommodations
-            - emotional_support_plan
-            - other custom attributes
-    """
-
-    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name="member_profile")
-    metadata = models.JSONField(default=dict, blank=True, help_text=_("Flexible attributes for this member"))
-
-    def __str__(self):
-        return self.user.get_full_name() or self.user.username
 
 
 class Group(BaseModel):
@@ -128,13 +120,237 @@ class Term(BaseModel):
     def __str__(self):
         return f"{self.name} ({self.term_type}: {self.date_start} to {self.date_end})"
 
+    @property
+    def human_name(self):
+        """
+        Returns a more human-readable name for the term.
+
+        Returns:
+            str: A formatted name including month and year information
+        """
+        from django.utils.formats import date_format
+        from django.utils import timezone
+
+        now = timezone.now()
+
+        month_1 = date_format(self.date_start, format="F")
+        month_2 = date_format(self.date_end, format="F")
+
+        if month_1 != month_2:
+            name = f"{self.name} ({month_1}-{month_2})"
+        else:
+            name = f"{self.name} ({month_1} {self.date_start.year})"
+
+        if now.year != self.date_start.year:
+            name = f"{name} {self.date_start.year}"
+
+        return name
+
+    @property
+    def count_weeks(self):
+        """
+        Count the total number of weeks this term lasts.
+
+        Returns:
+            int: The number of weeks in the term
+        """
+        from datetime import timedelta
+
+        # Count the number of Mondays in the term
+        days_until_monday = (7 - self.date_start.weekday() + 0) % 7  # 0 is Monday
+        first_monday = self.date_start + timedelta(days=days_until_monday)
+
+        # Count the Mondays
+        monday_count = 0
+        current_date = first_monday
+        while current_date <= self.date_end:
+            monday_count += 1
+            current_date += timedelta(days=7)  # Move to the next Monday
+
+        return monday_count
+
+    def is_current(self):
+        """
+        Check if this is the current term.
+
+        Returns:
+            bool: True if this is the current term
+        """
+        from django.utils import timezone
+
+        now = timezone.now().date()
+        return self.date_start <= now <= self.date_end
+
+    def is_in_the_past(self):
+        """
+        Check if this term is in the past.
+
+        Returns:
+            bool: True if this term is in the past
+        """
+        from django.utils import timezone
+
+        now = timezone.now().date()
+        return self.date_end < now
+
+    def is_in_the_future(self):
+        """
+        Check if this term is in the future.
+
+        Returns:
+            bool: True if this term is in the future
+        """
+        from django.utils import timezone
+
+        now = timezone.now().date()
+        preview_date = self.get_preview_date()
+        return now < preview_date if preview_date else False
+
+    def get_preview_date(self):
+        """
+        Get the preview date for this term.
+
+        Returns:
+            date: The preview date, or None if not set
+        """
+        import dateutil.parser
+
+        # First try to find enrollment events
+        enrollment_events = self.events.filter(type__name="Enrollment", is_active=True).order_by("preview_date")
+
+        # Use the earliest preview date from enrollment events
+        if enrollment_events.exists():
+            earliest_event = enrollment_events.first()
+            if earliest_event.preview_date:
+                return earliest_event.preview_date.date()
+
+        # Fall back to metadata if no events found
+        preview_date = self.metadata.get("preview_date")
+        if preview_date:
+            if isinstance(preview_date, str):
+                return dateutil.parser.parse(preview_date).date()
+            return preview_date
+
+        # If no preview date is set, use the start date of the first enrollment period
+        enrollment_periods = self.get_enrollment_periods()
+        if enrollment_periods:
+            first_period = enrollment_periods[0]
+            start_date = first_period.get("start_date")
+            if start_date:
+                if isinstance(start_date, str):
+                    return dateutil.parser.parse(start_date).date()
+                return start_date
+
+        return None
+
+    def is_enabled_to_preview(self):
+        """
+        Check if this term is enabled for preview.
+
+        Returns:
+            bool: True if this term is enabled for preview
+        """
+        from django.utils import timezone
+
+        now = timezone.now().date()
+
+        # First check for enrollment events
+        enrollment_events = self.events.filter(type__name="Enrollment", is_active=True)
+
+        for event in enrollment_events:
+            if event.is_preview_enabled():
+                return True
+
+        # Fall back to direct fields if no events
+        preview_date = self.get_preview_date()
+
+        if preview_date:
+            return preview_date <= now <= self.date_end
+
+        # If no preview date, check if enrollment has started
+        enrollment_periods = self.get_enrollment_periods()
+        if enrollment_periods:
+            first_period = enrollment_periods[0]
+            start_date = first_period.get("start_date")
+            if start_date:
+                if isinstance(start_date, str):
+                    import dateutil.parser
+
+                    start_date = dateutil.parser.parse(start_date)
+                return start_date <= timezone.now() and self.date_end >= now
+
+        return False
+
+    def is_enabled_to_enroll(self):
+        """
+        Check if this term is enabled for enrollment.
+
+        Returns:
+            bool: True if this term is enabled for enrollment
+        """
+        from django.utils import timezone
+
+        now = timezone.now()
+        now_date = now.date()
+
+        # It's never possible to enroll after the term ends
+        if now_date > self.date_end:
+            return False
+
+        # First check for enrollment events
+        enrollment_events = self.events.filter(type__name="Enrollment", is_active=True)
+
+        for event in enrollment_events:
+            if event.is_enrollment_open():
+                return True
+
+        # Check if any enrollment period is active
+        enrollment_periods = self.get_enrollment_periods()
+        for period in enrollment_periods:
+            start_date = period.get("start_date")
+            end_date = period.get("end_date")
+
+            if not start_date or not end_date:
+                continue
+
+            if isinstance(start_date, str):
+                import dateutil.parser
+
+                start_date = dateutil.parser.parse(start_date)
+
+            if isinstance(end_date, str):
+                import dateutil.parser
+
+                end_date = dateutil.parser.parse(end_date).date()
+
+            if start_date <= now and now_date <= end_date:
+                return True
+
+        return False
+
+    def get_enrollment_period(self, name):
+        """
+        Get a specific enrollment period by name.
+
+        Args:
+            name: The name of the enrollment period to get
+
+        Returns:
+            dict: The enrollment period, or None if not found
+        """
+        enrollment_periods = self.get_enrollment_periods()
+        for period in enrollment_periods:
+            if period.get("name") == name:
+                return period
+        return None
+
     def get_enrollment_periods(self):
         """
         Returns a list of enrollment periods defined for this term.
         Enrollment periods can be defined in the metadata JSON field.
 
         Returns:
-            List of dicts with enrollment period info (name, start, end, groups)
+            List of dicts with enrollment period info
         """
         return self.metadata.get("enrollment_periods", [])
 
@@ -163,7 +379,6 @@ class Term(BaseModel):
             }
         )
 
-        self.save()
         return self
 
 
@@ -234,11 +449,8 @@ class SubjectOffering(BaseModel):
         teacher: Who is teaching this subject (optional)
         max_students: Maximum enrollment (0 = unlimited)
         eligible_groups: Which groups can take this subject
-        preview_date: When this offering becomes visible to students (default: term start)
-        enrollment_start: When enrollment begins for this offering
-        enrollment_end: When enrollment ends for this offering
+        enrollment_event: Event that controls enrollment for this offering
         metadata: Flexible storage for offering-specific attributes
-        enrollment_event: Evento de inscripción asociado
     """
 
     subject = models.ForeignKey(Subject, on_delete=models.CASCADE, related_name="offerings")
@@ -247,88 +459,87 @@ class SubjectOffering(BaseModel):
     max_students = models.PositiveIntegerField(default=0, help_text=_("0 means unlimited"))
     eligible_groups = models.ManyToManyField(Group, related_name="eligible_offerings")
 
-    # Enrollment period fields
-    preview_date = models.DateField(null=True, blank=True, help_text=_("When this offering becomes visible to members"))
-    enrollment_start = models.DateTimeField(null=True, blank=True, help_text=_("When enrollment begins for this offering"))
-    enrollment_end = models.DateField(null=True, blank=True, help_text=_("When enrollment ends for this offering"))
+    # The enrollment event manages all enrollment periods
+    enrollment_event = models.ForeignKey(
+        "Event",
+        null=True,
+        blank=True,
+        related_name="subject_offerings",
+        help_text=_("Enrollment event associated with this offering"),
+        on_delete=models.SET_NULL,
+    )
 
     metadata = models.JSONField(default=dict, blank=True, help_text=_("Offering-specific attributes"))
-
-    enrollment_event = models.ForeignKey(
-        "Event", null=True, blank=True, related_name="subject_offerings", help_text=_("Evento de inscripción asociado")
-    )
 
     def __str__(self):
         return f"{self.subject.name} ({self.term.name})"
 
-    def clean(self):
-        # Only apply enrollment validations if the subject is selectable
-        if self.subject.is_selectable:
-            # Default preview_date to term start if not provided
-            if not self.preview_date:
-                self.preview_date = self.term.date_start
+    def count_classes(self):
+        """
+        Count the total number of class sessions for this offering.
 
-            # Default enrollment_start to preview_date if not provided
-            if not self.enrollment_start:
-                self.enrollment_start = datetime.datetime.combine(self.preview_date, datetime.time(0, 0))
+        Returns:
+            int: The number of class sessions
+        """
+        num_weeks = self.term.count_weeks
+        return num_weeks * self.activities.aggregate(total_slots=models.Count("schedule_assignments__time_slot", distinct=True))["total_slots"] or 0
 
-            # Default enrollment_end to term start if not provided
-            if not self.enrollment_end:
-                self.enrollment_end = self.term.date_start
+    def count_students(self, exclude_member=None):
+        """
+        Count the number of students enrolled in this offering.
 
-            # Validate date sequence
-            if self.preview_date and self.enrollment_start and self.preview_date > self.enrollment_start.date():
-                raise ValidationError(_("Preview date must be before enrollment start date"))
+        Args:
+            exclude_member: Optional member to exclude from count
 
-            if self.enrollment_start and self.enrollment_end and self.enrollment_start.date() > self.enrollment_end:
-                raise ValidationError(_("Enrollment start date must be before enrollment end date"))
+        Returns:
+            int: The number of enrolled students
+        """
+        assignments = MemberGroupAssignment.objects.filter(subject_offerings=self)
+        if exclude_member:
+            assignments = assignments.exclude(member=exclude_member)
+        return assignments.count()
 
-            if self.enrollment_end and self.term.date_start and self.enrollment_end > self.term.date_start:
-                raise ValidationError(_("Enrollment end date must be before or on term start date"))
-        else:
-            # If not selectable, clear enrollment fields to avoid confusion
-            self.preview_date = None
-            self.enrollment_start = None
-            self.enrollment_end = None
+    def remaining_quota(self, include_member=None):
+        """
+        Calculate remaining enrollment quota for this offering.
 
-    def save(self, *args, **kwargs):
-        self.clean()
-        super().save(*args, **kwargs)
+        Args:
+            include_member: Optional member to include in available quota
+                           (e.g., if they're already enrolled and we're checking
+                            if they could be re-enrolled)
 
-    def count_students(self):
-        """Returns the number of students enrolled in this offering"""
-        return self.enrolled_members.count()
+        Returns:
+            int: Number of spots left, or -1 if unlimited
+        """
+        if self.max_students == 0:  # Unlimited
+            return -1
 
-    def remaining_quota(self):
-        """Returns the remaining available slots, or None if unlimited"""
-        if self.max_students == 0:
-            return None
-        return self.max_students - self.count_students()
-
-    def is_visible_for_preview(self):
-        """Returns True if the offering is visible for preview"""
-        if not self.subject.is_selectable:
-            return True
-
-        today = datetime.date.today()
-        return self.preview_date is not None and self.preview_date <= today
+        current = self.count_students(exclude_member=include_member)
+        return self.max_students - current
 
     def is_open_for_enrollment(self):
-        """Returns True if enrollment is currently open for this offering"""
-        if not self.subject.is_selectable:
+        """
+        Check if this offering is currently open for enrollment.
+
+        Returns:
+            bool: True if enrollment is open
+        """
+        if not self.enrollment_event:
             return False
 
-        if self.enrollment_event:
-            return self.enrollment_event.is_current()
-        else:
-            now = datetime.datetime.now()
-            today = now.date()
+        return self.enrollment_event.is_enrollment_open()
 
-            enrollment_started = self.enrollment_start is not None and self.enrollment_start <= now
-            enrollment_not_ended = self.enrollment_end is None or self.enrollment_end >= today
-            term_not_ended = self.term.date_end >= today
+    def is_preview_enabled(self):
+        """
+        Check if preview is enabled for this offering.
 
-            return enrollment_started and enrollment_not_ended and term_not_ended
+        Returns:
+            bool: True if preview is enabled
+        """
+        if not self.enrollment_event:
+            return False
+
+        return self.enrollment_event.is_preview_enabled()
 
 
 class MemberGroupAssignment(BaseModel):
@@ -359,6 +570,132 @@ class MemberGroupAssignment(BaseModel):
 
     def __str__(self):
         return f"{self.member} in {self.group}"
+
+    @lru_cache(maxsize=None)
+    def subject_offerings_by_time_slot(self, time_slot=None, term=None) -> Dict[TimeSlot, "SubjectOffering"]:
+        """
+        Return this member's subject offerings given a time slot, or all of them if no time slot given.
+
+        Args:
+            time_slot: Optional TimeSlot to filter by
+            term: Optional Term to filter by
+
+        Returns:
+            Dict[TimeSlot, SubjectOffering]: Dictionary mapping time slots to subject offerings
+        """
+        output = {}
+        for offering in self.subject_offerings.all():
+            if term and offering.term != term:
+                continue
+            for activity in offering.activities.all():
+                for assignment in activity.schedule_assignments.all():
+                    if time_slot is None or assignment.time_slot == time_slot:
+                        output[assignment.time_slot] = offering
+        return output
+
+    @lru_cache(maxsize=None)
+    def subject_offerings_by_term(self, term) -> Set:
+        """
+        Return this member's subject offerings for a given term.
+
+        Args:
+            term: The Term to filter by
+
+        Returns:
+            Set[SubjectOffering]: Set of subject offerings for the term
+        """
+        offerings_by_time_slot = self.subject_offerings_by_time_slot(term=term)
+        return {offering for offering in offerings_by_time_slot.values()}
+
+    def is_current(self):
+        """
+        Check if this is the current active group assignment for the member.
+
+        Returns:
+            bool: True if this is the current active assignment
+        """
+        if self.member.current_student_cycle:
+            return self.id == self.member.current_student_cycle.id
+        return False
+
+    @lru_cache(maxsize=None)
+    def is_schedule_full(self, term) -> bool:
+        """
+        Check if the member's schedule is full for the given term.
+
+        Args:
+            term: The Term to check
+
+        Returns:
+            bool: True if all available time slots are filled
+        """
+        # Count all available time slots for this term
+        time_slot_count = (
+            TimeSlot.objects.filter(
+                schedule_assignments__activity__subject_offering__term=term,
+                schedule_assignments__activity__subject_offering__eligible_groups=self.group,
+            )
+            .distinct()
+            .count()
+        )
+
+        # Count how many time slots this member has filled
+        filled_slots = len(self.subject_offerings_by_time_slot(term=term))
+
+        return time_slot_count == filled_slots
+
+    def is_enabled_to_enroll(self, term) -> bool:
+        """
+        Check if the member is enabled to enroll in the given term.
+
+        Args:
+            term: The Term to check
+
+        Returns:
+            bool: True if the member can enroll in the term
+        """
+        from django.utils import timezone
+
+        now = timezone.now()
+        now_date = now.date()
+
+        # It's never possible to enroll before enrollment_start and after date_end
+        if not term.is_enabled_to_enroll():
+            return False
+
+        # Get the enrollment period
+        enrollment_period = term.get_enrollment_period("Regular")
+        if not enrollment_period:
+            return False
+
+        enrollment_start = enrollment_period.get("start_date")
+        enrollment_end = enrollment_period.get("end_date")
+
+        if not enrollment_start or not enrollment_end:
+            return False
+
+        # Students with full schedule can only re-enroll between enrollment_start and enrollment_end
+        if self.is_schedule_full(term):
+            if enrollment_start <= now and now_date <= enrollment_end:
+                return True
+        else:
+            # Students without full schedule can enroll anytime until date_end
+            if now_date <= term.date_end:
+                return True
+
+        return False
+
+    def save(self, *args, **kwargs):
+        """Override save to clear caches"""
+        # Clear caches before saving
+        if hasattr(self, "subject_offerings_by_time_slot"):
+            self.subject_offerings_by_time_slot.cache_clear()
+        if hasattr(self, "is_schedule_full"):
+            self.is_schedule_full.cache_clear()
+        if hasattr(self, "subject_offerings_by_term"):
+            self.subject_offerings_by_term.cache_clear()
+
+        super().save(*args, **kwargs)
 
 
 class ActivityType(BaseModel):
@@ -669,20 +1006,16 @@ class EnrollmentService:
             if not term:
                 return SubjectOffering.objects.none()
 
-        # Get offerings that:
-        # 1. Are for selectable subjects
-        # 2. Are in the specified term
-        # 3. Are eligible for the member's groups
-        # 4. Are within enrollment period
-        # 5. Have available space (or unlimited)
         now = datetime.datetime.now()
 
+        # Get offerings with active enrollment events
         offerings = SubjectOffering.objects.filter(
-            subject__is_selectable=True,
+            subject__type__is_selectable=True,
             term=term,
             eligible_groups__in=member_groups,
-            enrollment_start__lte=now,
-            enrollment_end__gte=now.date(),
+            enrollment_event__is_active=True,
+            enrollment_event__date_start__lte=now,
+            enrollment_event__date_end__gte=now,
         ).distinct()
 
         # Filter by available space - have to do this in Python since it depends on a calculated field
@@ -701,7 +1034,7 @@ class EnrollmentService:
             (bool, str): (Can enroll, reason if can't)
         """
         # Check if subject is selectable
-        if not offering.subject.is_selectable:
+        if not offering.subject.type.is_selectable:
             return False, "This subject is not selectable"
 
         # Check if enrollment is open
@@ -747,14 +1080,18 @@ class EventType(BaseModel):
 
 class Event(BaseModel):
     """
-    Representa un evento calendarizado en la institución.
+    Represents a scheduled event in the institution.
 
-    Los eventos pueden ser de diferentes tipos: inscripciones, evaluaciones,
-    ceremonias, reuniones, etc.
+    Events can be of different types: enrollments, evaluations,
+    ceremonies, meetings, etc.
     """
 
     name = models.CharField(max_length=100)
     type = models.ForeignKey(EventType, on_delete=models.PROTECT, related_name="events")
+    term = models.ForeignKey(
+        Term, on_delete=models.CASCADE, related_name="events", null=True, blank=True, help_text=_("Term this event is associated with")
+    )
+    preview_date = models.DateTimeField(null=True, blank=True, help_text=_("When information about this event becomes visible"))
     date_start = models.DateTimeField()
     date_end = models.DateTimeField()
     affects_groups = models.ManyToManyField(Group, blank=True, related_name="events")
@@ -763,9 +1100,27 @@ class Event(BaseModel):
     metadata = models.JSONField(default=dict, blank=True)
 
     def __str__(self):
-        return f"{self.name} ({self.date_start} a {self.date_end})"
+        return f"{self.name} ({self.date_start} to {self.date_end})"
 
     def is_current(self):
-        """Verifica si el evento está actualmente en curso"""
-        now = datetime.datetime.now()
+        """Check if the event is currently in progress"""
+        from django.utils import timezone
+
+        now = timezone.now()
+        return self.date_start <= now <= self.date_end
+
+    def is_preview_enabled(self):
+        """Check if preview is currently enabled for this event"""
+        from django.utils import timezone
+
+        now = timezone.now()
+        if self.preview_date:
+            return self.preview_date <= now <= self.date_end
+        return self.date_start <= now <= self.date_end
+
+    def is_enrollment_open(self):
+        """Check if enrollment is currently open for this event"""
+        from django.utils import timezone
+
+        now = timezone.now()
         return self.date_start <= now <= self.date_end

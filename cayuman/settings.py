@@ -56,7 +56,9 @@ INSTALLED_APPS = [
     "tests",
     "anymail",
     "impersonate",
+    "django_json_widget",
     "cayuman",
+    "smiles",
 ]
 
 MIDDLEWARE = [

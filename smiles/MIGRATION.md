@@ -17,6 +17,76 @@ Before implementing views and templates, we need to map the Cayuman models to th
 | Cycle | Map to Group model (group_type="Cycle") |
 | WorkshopPeriod | Map to SubjectOffering model |
 | StudentCycle | Create new MemberGroupAssignment with enrollment data |
+| Period.enrollment_start/end | Map to Event model (type="Enrollment") |
+
+### Model Descriptions
+
+#### Core Models
+1. **BaseModel**: Abstract base model providing common fields (created_at, updated_at) for all models.
+
+2. **Member**: Extends Django's User model with additional properties for student/teacher roles and current cycle information.
+
+3. **Group**: Represents any type of grouping in the school (grades, cycles, teams, etc.). Replaces Cayuman's Cycle model, using group_type="Cycle" for workshop cycles.
+   - Key fields: name, group_type, description, is_primary, properties (JSON), metadata (JSON), parent (self-reference)
+
+4. **Term**: Replaces Period model, representing specific time periods in the school calendar (semesters, quarters, workshop periods).
+   - Key fields: name, term_type, description, has_enrollment_period, date_start, date_end, metadata (JSON with enrollment_periods)
+   - Methods for checking if term is current, in past/future, enabled for preview/enrollment
+
+5. **SubjectType**: Defines types of subjects offered (Workshop, Academic, etc.) with properties specific to each type.
+   - Key fields: name, description, is_selectable, properties (JSON)
+
+6. **Subject**: Replaces Workshop model, representing specific subjects taught at school.
+   - Key fields: name, type (FK to SubjectType), description, metadata (JSON)
+
+7. **SubjectOffering**: Replaces WorkshopPeriod, representing a specific offering of a subject during a term.
+   - Key fields: subject, term, teacher, max_students, eligible_groups (M2M), enrollment_event (FK to Event)
+   - Methods for counting students, calculating remaining quota, checking enrollment status
+
+#### Schedule Models
+8. **TimeSlot**: Replaces Schedule model, representing recurring time slots in the weekly schedule.
+   - Key fields: name, day_of_week, time_start, time_end, metadata (JSON)
+   - Includes validation to prevent overlapping time slots on the same day
+
+9. **ActivityType**: Defines types of activities that can be scheduled (Class Session, Lunch, etc.).
+   - Key fields: name, description, is_selectable, requires_attendance, metadata (JSON)
+
+10. **Activity**: Represents a specific activity that can be scheduled, linked to a subject offering.
+    - Key fields: name, type (FK to ActivityType), description, subject_offering (FK), applicable_groups (M2M)
+
+11. **ScheduleTemplate**: Defines templates for schedules that can be applied to groups.
+    - Key fields: name, description, applicable_groups (M2M), applicable_terms (M2M)
+
+12. **ScheduleAssignment**: Maps time slots to activities within a schedule template.
+    - Key fields: template (FK), time_slot (FK), activity (FK)
+
+13. **MemberSchedule**: Represents an individual member's schedule for a term.
+    - Key fields: member (FK), term (FK), template (FK), is_custom
+
+14. **MemberScheduleOverride**: Represents an override to a member's schedule.
+    - Key fields: member_schedule (FK), date, time_slot (FK), activity (FK), reason
+
+15. **SpecialDay**: Represents a special day in the school calendar that may override regular schedules.
+    - Key fields: name, date, affects_groups (M2M), is_school_closed, alternate_schedule (FK)
+
+#### Enrollment Models
+16. **MemberGroupAssignment**: Replaces StudentCycle, associating a member with a group and tracking enrollment.
+    - Key fields: member (FK), group (FK), date_assigned, subject_offerings (M2M), is_active
+    - Methods for getting subject offerings by time slot/term, checking if schedule is full
+
+17. **Attendance**: Tracks attendance for scheduled activities.
+    - Key fields: member (FK), date, time_slot (FK), activity (FK), attended, early_dismissal_time, late_arrival_time
+
+#### Event Models
+18. **EventType**: Defines types of events in the academic calendar (Enrollment, Evaluation, etc.).
+    - Key fields: name, description, metadata (JSON)
+
+19. **Event**: New model replacing Period's enrollment functionality, representing scheduled events.
+    - Key fields: name, type (FK), term (FK), preview_date, date_start, date_end, affects_groups (M2M), affects_subjects (M2M), is_active
+    - Methods for checking if event is current, if preview/enrollment is enabled
+
+20. **EnrollmentService**: Service class for handling enrollment-related operations.
+    - Methods for getting available offerings, checking if a member can enroll
 
 ### Additional Model Work
 

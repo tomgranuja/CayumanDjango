@@ -129,8 +129,40 @@ mysql -h 127.0.0.1 -P 3306 -u cayuman -pcayuman_password cayuman < your_backup.s
 
 ### Running Migrations
 
+To apply all pending migrations:
+
 ```bash
 docker compose exec web poetry run python manage.py migrate
+```
+
+To create new migrations after modifying models:
+
+```bash
+docker compose exec web poetry run python manage.py makemigrations
+```
+
+To create migrations for a specific app:
+
+```bash
+docker compose exec web poetry run python manage.py makemigrations [app_name]
+```
+
+To apply migrations for a specific app:
+
+```bash
+docker compose exec web poetry run python manage.py migrate [app_name]
+```
+
+To apply a specific migration:
+
+```bash
+docker compose exec web poetry run python manage.py migrate [app_name] [migration_name]
+```
+
+To show migration status:
+
+```bash
+docker compose exec web poetry run python manage.py showmigrations
 ```
 
 ### Creating a Superuser
