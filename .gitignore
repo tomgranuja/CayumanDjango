@@ -109,7 +109,8 @@ maintenance_mode_state.txt
 .cursorignore
 .cursor/*
 
-PLAN.md
+PLAN*md
+TASK*md
 
 # Poetry
 poetry.lock
