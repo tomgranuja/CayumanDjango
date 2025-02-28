@@ -1,0 +1,141 @@
+{% extends "base_internal.html" %}
+{% load i18n %}
+{% load static %}
+
+{% block title %}{% trans "Weekly Schedule" %} - {{ term.name }}{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row">
+        <div class="col-12">
+            <h1>{% trans "Weekly Schedule" %} - {{ term.name }}</h1>
+            <p class="lead">{% trans "Your weekly schedule for this term" %}</p>
+
+            {% if messages %}
+            <div class="messages">
+                {% for message in messages %}
+                <div class="alert alert-{{ message.tags }}">
+                    {{ message }}
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+
+            <div class="card mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="card-title mb-0">{% trans "Your Schedule" %}</h5>
+                </div>
+                <div class="card-body">
+                    {% if subject_offerings %}
+                    <div class="table-responsive">
+                        <table class="table table-bordered">
+                            <thead class="thead-dark">
+                                <tr>
+                                    <th>{% trans "Time" %}</th>
+                                    <th>{% trans "Monday" %}</th>
+                                    <th>{% trans "Tuesday" %}</th>
+                                    <th>{% trans "Wednesday" %}</th>
+                                    <th>{% trans "Thursday" %}</th>
+                                    <th>{% trans "Friday" %}</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for hour in "89101112131415161718"|make_list|slice:":10" %}
+                                <tr>
+                                    <td class="font-weight-bold">{{ hour }}:00</td>
+                                    {% for day in "12345"|make_list %}
+                                    <td>
+                                        {% for offering in subject_offerings %}
+                                            {% for time_slot in offering.time_slots.all %}
+                                                {% if time_slot.day_of_week == day and time_slot.time_start.hour|stringformat:"i" == hour %}
+                                                <div class="subject-block">
+                                                    <a href="{% url 'subject_offering' offering.id %}" class="text-decoration-none">
+                                                        <div class="card bg-light">
+                                                            <div class="card-body p-2">
+                                                                <h6 class="card-title mb-1">{{ offering.subject.name }}</h6>
+                                                                <p class="card-text small mb-0">
+                                                                    {% if offering.teacher %}
+                                                                    {{ offering.teacher.get_full_name }}
+                                                                    {% endif %}
+                                                                </p>
+                                                                <p class="card-text small mb-0">
+                                                                    {{ time_slot.time_start|time:"H:i" }} - {{ time_slot.time_end|time:"H:i" }}
+                                                                </p>
+                                                            </div>
+                                                        </div>
+                                                    </a>
+                                                </div>
+                                                {% endif %}
+                                            {% endfor %}
+                                        {% endfor %}
+                                    </td>
+                                    {% endfor %}
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="alert alert-warning">
+                        <p>{% trans "You don't have any subjects scheduled for this term." %}</p>
+                        {% if term.is_enabled_to_enroll %}
+                        <p>{% trans "You can enroll in subjects by clicking the button below." %}</p>
+                        <a href="{% url 'enrollment' term.id %}" class="btn btn-primary">{% trans "Enroll in Subjects" %}</a>
+                        {% endif %}
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            {% if subject_offerings %}
+            <div class="card">
+                <div class="card-header bg-info text-white">
+                    <h5 class="card-title mb-0">{% trans "Your Subjects" %}</h5>
+                </div>
+                <div class="card-body">
+                    <div class="list-group">
+                        {% for offering in subject_offerings %}
+                        <a href="{% url 'subject_offering' offering.id %}" class="list-group-item list-group-item-action">
+                            <div class="d-flex w-100 justify-content-between">
+                                <h5 class="mb-1">{{ offering.subject.name }}</h5>
+                                <small>
+                                    {% for time_slot in offering.time_slots.all %}
+                                    {{ time_slot.get_day_of_week_display }} {{ time_slot.time_start|time:"H:i" }} - {{ time_slot.time_end|time:"H:i" }}{% if not forloop.last %}, {% endif %}
+                                    {% endfor %}
+                                </small>
+                            </div>
+                            <p class="mb-1">{{ offering.subject.description|truncatewords:20 }}</p>
+                            <small>{% trans "Teacher" %}: {{ offering.teacher.get_full_name|default:"No teacher assigned" }}</small>
+                        </a>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+
+            {% if term.is_enabled_to_enroll %}
+            <div class="mt-4">
+                <a href="{% url 'enrollment' term.id %}" class="btn btn-primary">{% trans "Change Enrollment" %}</a>
+            </div>
+            {% endif %}
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .subject-block {
+        margin-bottom: 5px;
+    }
+
+    .subject-block .card {
+        transition: all 0.3s ease;
+    }
+
+    .subject-block .card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    }
+</style>
+{% endblock %}

@@ -1,0 +1,182 @@
+{% extends "base_internal.html" %}
+{% load i18n %}
+{% load static %}
+
+{% block title %}{% trans "Available Subjects" %} - {{ term.name }}{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row">
+        <div class="col-12">
+            <h1>{% trans "Available Subjects" %} - {{ term.name }}</h1>
+            <p class="lead">{% trans "Browse available subjects for this term" %}</p>
+
+            {% if messages %}
+            <div class="messages">
+                {% for message in messages %}
+                <div class="alert alert-{{ message.tags }}">
+                    {{ message }}
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+
+            {% if show_offerings %}
+                {% if term.is_enabled_to_enroll %}
+                <div class="alert alert-info">
+                    <p>{% trans "Enrollment is currently open for this term." %}</p>
+                    <a href="{% url 'enrollment' term.id %}" class="btn btn-primary">{% trans "Enroll Now" %}</a>
+                </div>
+                {% elif term.is_enabled_to_preview %}
+                <div class="alert alert-warning">
+                    <p>{% trans "Enrollment is not yet open for this term, but you can preview the available subjects." %}</p>
+                    <p>{% trans "Enrollment will open on" %} {{ term.get_enrollment_start_date|date:"F j, Y" }}.</p>
+                </div>
+                {% endif %}
+
+                <div class="card mb-4">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="card-title mb-0">{% trans "Filter Subjects" %}</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-4 mb-3">
+                                <label for="dayFilter">{% trans "Day" %}</label>
+                                <select id="dayFilter" class="form-control">
+                                    <option value="all">{% trans "All Days" %}</option>
+                                    <option value="1">{% trans "Monday" %}</option>
+                                    <option value="2">{% trans "Tuesday" %}</option>
+                                    <option value="3">{% trans "Wednesday" %}</option>
+                                    <option value="4">{% trans "Thursday" %}</option>
+                                    <option value="5">{% trans "Friday" %}</option>
+                                </select>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label for="timeFilter">{% trans "Time" %}</label>
+                                <select id="timeFilter" class="form-control">
+                                    <option value="all">{% trans "All Times" %}</option>
+                                    <option value="morning">{% trans "Morning (8:00 - 12:00)" %}</option>
+                                    <option value="afternoon">{% trans "Afternoon (12:00 - 18:00)" %}</option>
+                                </select>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label for="availabilityFilter">{% trans "Availability" %}</label>
+                                <select id="availabilityFilter" class="form-control">
+                                    <option value="all">{% trans "All" %}</option>
+                                    <option value="available">{% trans "Available" %}</option>
+                                    <option value="full">{% trans "Full" %}</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row" id="offeringsContainer">
+                    {% for offering in subject_offerings %}
+                    <div class="col-md-6 col-lg-4 mb-4 offering-card"
+                         data-days="{% for time_slot in offering.time_slots.all %}{{ time_slot.day_of_week }}{% if not forloop.last %},{% endif %}{% endfor %}"
+                         data-times="{% for time_slot in offering.time_slots.all %}{{ time_slot.time_start.hour }}{% if not forloop.last %},{% endif %}{% endfor %}"
+                         data-availability="{% if offering.remaining_quota > 0 %}available{% else %}full{% endif %}">
+                        <div class="card h-100">
+                            <div class="card-header {% if offering.remaining_quota <= 0 %}bg-secondary{% else %}bg-primary{% endif %} text-white">
+                                <h5 class="card-title mb-0">{{ offering.subject.name }}</h5>
+                            </div>
+                            <div class="card-body">
+                                <p class="card-text">{{ offering.subject.description|truncatewords:20 }}</p>
+                                <h6>{% trans "Teacher" %}</h6>
+                                <p>{{ offering.teacher.get_full_name|default:"No teacher assigned" }}</p>
+                                <h6>{% trans "Time Slots" %}</h6>
+                                <ul>
+                                    {% for time_slot in offering.time_slots.all %}
+                                    <li>{{ time_slot.get_day_of_week_display }} {{ time_slot.time_start|time:"H:i" }} - {{ time_slot.time_end|time:"H:i" }}</li>
+                                    {% endfor %}
+                                </ul>
+                                <h6>{% trans "Enrollment" %}</h6>
+                                <p>
+                                    {{ offering.count_students }} / {{ offering.max_students }} {% trans "students enrolled" %}
+                                    {% if offering.remaining_quota <= 3 and offering.remaining_quota > 0 %}
+                                    <span class="badge badge-warning">{% trans "Only" %} {{ offering.remaining_quota }} {% trans "spots left!" %}</span>
+                                    {% elif offering.remaining_quota <= 0 %}
+                                    <span class="badge badge-danger">{% trans "FULL" %}</span>
+                                    {% endif %}
+                                </p>
+                            </div>
+                            <div class="card-footer">
+                                <a href="{% url 'subject_offering' offering.id %}" class="btn btn-info btn-sm">{% trans "View Details" %}</a>
+                                {% if term.is_enabled_to_enroll and offering.remaining_quota > 0 %}
+                                <a href="{% url 'enrollment' term.id %}" class="btn btn-primary btn-sm">{% trans "Enroll" %}</a>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    {% empty %}
+                    <div class="col-12">
+                        <div class="alert alert-warning">
+                            {% trans "No subjects available for this term." %}
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="alert alert-warning">
+                    {% if term.is_in_the_future %}
+                        {% trans "Information about subjects for this term is not yet available." %}
+                    {% else %}
+                        {% trans "You are not eligible to view subjects for this term." %}
+                    {% endif %}
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    $(document).ready(function() {
+        // Filter functionality
+        function filterOfferings() {
+            var dayFilter = $('#dayFilter').val();
+            var timeFilter = $('#timeFilter').val();
+            var availabilityFilter = $('#availabilityFilter').val();
+
+            $('.offering-card').each(function() {
+                var days = $(this).data('days').toString().split(',');
+                var times = $(this).data('times').toString().split(',');
+                var availability = $(this).data('availability');
+
+                var showDay = dayFilter === 'all' || days.includes(dayFilter);
+
+                var showTime = timeFilter === 'all';
+                if (timeFilter === 'morning') {
+                    showTime = times.some(function(time) { return time >= 8 && time < 12; });
+                } else if (timeFilter === 'afternoon') {
+                    showTime = times.some(function(time) { return time >= 12 && time <= 18; });
+                }
+
+                var showAvailability = availabilityFilter === 'all' ||
+                                      (availabilityFilter === 'available' && availability === 'available') ||
+                                      (availabilityFilter === 'full' && availability === 'full');
+
+                if (showDay && showTime && showAvailability) {
+                    $(this).show();
+                } else {
+                    $(this).hide();
+                }
+            });
+
+            // Show message if no results
+            if ($('.offering-card:visible').length === 0) {
+                if ($('#noResultsMessage').length === 0) {
+                    $('#offeringsContainer').append('<div id="noResultsMessage" class="col-12"><div class="alert alert-info">{% trans "No subjects match your filter criteria." %}</div></div>');
+                }
+            } else {
+                $('#noResultsMessage').remove();
+            }
+        }
+
+        // Attach event listeners
+        $('#dayFilter, #timeFilter, #availabilityFilter').on('change', filterOfferings);
+    });
+</script>
+{% endblock %}

@@ -112,7 +112,8 @@ class MemberAdmin(UserAdmin):
     @admin.display(description=_("Cycle"))
     def cycle(self, obj):
         if obj.is_student and obj.current_student_cycle:
-            return format_html("{}", obj.current_student_cycle.cycle.name)
+            # MemberGroupAssignment has 'group' instead of 'cycle'
+            return format_html("{}", obj.current_student_cycle.group.name)
         else:
             return format_html("{}", "-")
 

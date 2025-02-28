@@ -1,0 +1,175 @@
+{% extends "base_internal.html" %}
+{% load i18n %}
+{% load static %}
+
+{% block title %}{% trans "Enrollment" %} - {{ term.name }}{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row">
+        <div class="col-12">
+            <h1>{% trans "Enrollment" %} - {{ term.name }}</h1>
+            <p class="lead">{% trans "Select your subjects for this term" %}</p>
+
+            {% if messages %}
+            <div class="messages">
+                {% for message in messages %}
+                <div class="alert alert-{{ message.tags }}">
+                    {{ message }}
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+
+            {% if form.non_field_errors %}
+            <div class="alert alert-danger">
+                {% for error in form.non_field_errors %}
+                {{ error }}
+                {% endfor %}
+            </div>
+            {% endif %}
+
+            <div class="card mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="card-title mb-0">{% trans "Instructions" %}</h5>
+                </div>
+                <div class="card-body">
+                    <p>{% trans "Please select one subject for each time slot. You can leave a time slot empty if you don't want to take a subject during that time." %}</p>
+                    <p>{% trans "Once you have made your selections, click the 'Save' button at the bottom of the page." %}</p>
+                    <p>{% trans "You can change your selections at any time during the enrollment period." %}</p>
+                </div>
+            </div>
+
+            <form method="post" action="{% url 'enrollment' term.id %}">
+                {% csrf_token %}
+
+                <div class="table-responsive">
+                    <table class="table table-bordered table-hover">
+                        <thead class="thead-dark">
+                            <tr>
+                                <th>{% trans "Time Slot" %}</th>
+                                <th>{% trans "Subject" %}</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for time_slot, offerings in offerings_by_timeslot.items %}
+                            <tr>
+                                <td>
+                                    <strong>{{ time_slot.get_day_of_week_display }}</strong><br>
+                                    {{ time_slot.time_start|time:"H:i" }} - {{ time_slot.time_end|time:"H:i" }}
+                                </td>
+                                <td>
+                                    {% if form %}
+                                        {{ form.timeslot_{{ time_slot.id }} }}
+                                        {% if form.timeslot_{{ time_slot.id }}.errors %}
+                                        <div class="invalid-feedback d-block">
+                                            {% for error in form.timeslot_{{ time_slot.id }}.errors %}
+                                            {{ error }}
+                                            {% endfor %}
+                                        </div>
+                                        {% endif %}
+                                    {% else %}
+                                        <select name="timeslot_{{ time_slot.id }}" class="form-control">
+                                            <option value="">-- {% trans "No selection" %} --</option>
+                                            {% for offering in offerings %}
+                                            <option value="{{ offering.id }}">
+                                                {{ offering.subject.name }}
+                                                {% if offering.teacher %}
+                                                ({{ offering.teacher.get_full_name }})
+                                                {% endif %}
+                                                [{{ offering.count_students }}/{{ offering.max_students }}]
+                                                {% if offering.remaining_quota <= 3 and offering.remaining_quota > 0 %}
+                                                ({% trans "Only" %} {{ offering.remaining_quota }} {% trans "spots left!" %})
+                                                {% elif offering.remaining_quota <= 0 %}
+                                                ({% trans "FULL" %})
+                                                {% endif %}
+                                            </option>
+                                            {% endfor %}
+                                        </select>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="2" class="text-center">
+                                    {% trans "No time slots available for this term" %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="form-group mt-4">
+                    <button type="submit" class="btn btn-primary">{% trans "Save" %}</button>
+                    <a href="{% url 'weekly_schedule' term.id %}" class="btn btn-secondary">{% trans "Cancel" %}</a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header bg-info text-white">
+                    <h5 class="card-title mb-0">{% trans "Subject Details" %}</h5>
+                </div>
+                <div class="card-body">
+                    <div class="accordion" id="subjectAccordion">
+                        {% for time_slot, offerings in offerings_by_timeslot.items %}
+                            {% for offering in offerings %}
+                            <div class="card">
+                                <div class="card-header" id="heading{{ offering.id }}">
+                                    <h2 class="mb-0">
+                                        <button class="btn btn-link btn-block text-left" type="button" data-toggle="collapse" data-target="#collapse{{ offering.id }}" aria-expanded="false" aria-controls="collapse{{ offering.id }}">
+                                            {{ offering.subject.name }}
+                                            {% if offering.teacher %}
+                                            ({{ offering.teacher.get_full_name }})
+                                            {% endif %}
+                                        </button>
+                                    </h2>
+                                </div>
+                                <div id="collapse{{ offering.id }}" class="collapse" aria-labelledby="heading{{ offering.id }}" data-parent="#subjectAccordion">
+                                    <div class="card-body">
+                                        <h5>{% trans "Description" %}</h5>
+                                        <p>{{ offering.subject.description|default:"No description available" }}</p>
+
+                                        <h5>{% trans "Teacher" %}</h5>
+                                        <p>{{ offering.teacher.get_full_name|default:"No teacher assigned" }}</p>
+
+                                        <h5>{% trans "Time Slots" %}</h5>
+                                        <ul>
+                                            {% for ts in offering.time_slots.all %}
+                                            <li>{{ ts.get_day_of_week_display }} {{ ts.time_start|time:"H:i" }} - {{ ts.time_end|time:"H:i" }}</li>
+                                            {% empty %}
+                                            <li>{% trans "No time slots assigned" %}</li>
+                                            {% endfor %}
+                                        </ul>
+
+                                        <h5>{% trans "Enrollment" %}</h5>
+                                        <p>{{ offering.count_students }} / {{ offering.max_students }} {% trans "students enrolled" %}</p>
+
+                                        {% if offering.metadata %}
+                                        <h5>{% trans "Additional Information" %}</h5>
+                                        <p>{{ offering.metadata }}</p>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    $(document).ready(function() {
+        // Add any JavaScript needed for the enrollment page
+    });
+</script>
+{% endblock %}

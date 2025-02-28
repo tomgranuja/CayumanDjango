@@ -1,0 +1,104 @@
+{% extends "base_internal.html" %}
+{% load i18n %}
+{% load static %}
+
+{% block title %}{{ offering.subject.name }} - {{ offering.term.name }}{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row">
+        <div class="col-12">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{% url 'home' %}">{% trans "Home" %}</a></li>
+                    <li class="breadcrumb-item"><a href="{% url 'weekly_schedule' offering.term.id %}">{% trans "Schedule" %}</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">{{ offering.subject.name }}</li>
+                </ol>
+            </nav>
+
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h1 class="card-title h3 mb-0">{{ offering.subject.name }}</h1>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-8">
+                            <h5>{% trans "Description" %}</h5>
+                            <p>{{ offering.subject.description|default:"No description available" }}</p>
+
+                            <h5>{% trans "Teacher" %}</h5>
+                            <p>{{ offering.teacher.get_full_name|default:"No teacher assigned" }}</p>
+
+                            <h5>{% trans "Time Slots" %}</h5>
+                            <ul>
+                                {% for time_slot in offering.time_slots.all %}
+                                <li>{{ time_slot.get_day_of_week_display }} {{ time_slot.time_start|time:"H:i" }} - {{ time_slot.time_end|time:"H:i" }}</li>
+                                {% empty %}
+                                <li>{% trans "No time slots assigned" %}</li>
+                                {% endfor %}
+                            </ul>
+
+                            <h5>{% trans "Term" %}</h5>
+                            <p>{{ offering.term.name }}</p>
+
+                            <h5>{% trans "Enrollment" %}</h5>
+                            <p>{{ offering.count_students }} / {{ offering.max_students }} {% trans "students enrolled" %}</p>
+
+                            {% if offering.metadata %}
+                            <h5>{% trans "Additional Information" %}</h5>
+                            <p>{{ offering.metadata }}</p>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-4">
+                            <div class="card mb-3">
+                                <div class="card-header bg-info text-white">
+                                    <h5 class="card-title mb-0">{% trans "Quick Info" %}</h5>
+                                </div>
+                                <ul class="list-group list-group-flush">
+                                    <li class="list-group-item">
+                                        <strong>{% trans "Subject Type" %}:</strong> {{ offering.subject.type.name }}
+                                    </li>
+                                    <li class="list-group-item">
+                                        <strong>{% trans "Eligible Groups" %}:</strong>
+                                        {% for group in offering.eligible_groups.all %}
+                                        {{ group.name }}{% if not forloop.last %}, {% endif %}
+                                        {% empty %}
+                                        {% trans "All groups" %}
+                                        {% endfor %}
+                                    </li>
+                                    <li class="list-group-item">
+                                        <strong>{% trans "Enrollment Status" %}:</strong>
+                                        {% if offering.is_open_for_enrollment %}
+                                        <span class="badge badge-success">{% trans "Open" %}</span>
+                                        {% else %}
+                                        <span class="badge badge-secondary">{% trans "Closed" %}</span>
+                                        {% endif %}
+                                    </li>
+                                    <li class="list-group-item">
+                                        <strong>{% trans "Remaining Spots" %}:</strong>
+                                        {% if offering.remaining_quota > 0 %}
+                                        <span class="badge badge-primary">{{ offering.remaining_quota }}</span>
+                                        {% else %}
+                                        <span class="badge badge-danger">{% trans "Full" %}</span>
+                                        {% endif %}
+                                    </li>
+                                </ul>
+                            </div>
+
+                            {% if offering.term.is_enabled_to_enroll %}
+                            <div class="text-center">
+                                <a href="{% url 'enrollment' offering.term.id %}" class="btn btn-primary btn-block">{% trans "Enroll in this Subject" %}</a>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mt-4">
+                <a href="{% url 'weekly_schedule' offering.term.id %}" class="btn btn-secondary">{% trans "Back to Schedule" %}</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

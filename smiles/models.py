@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING
 
 from django.core.exceptions import ValidationError
 from django.db import models
+from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 
 from cayuman.models import Member
@@ -90,14 +91,14 @@ class Term(BaseModel):
             - preview_date: When information becomes visible
     """
 
-    name = models.CharField(max_length=100)
-    term_type = models.CharField(max_length=50, help_text=_("The type of term (e.g., Semester, Quarter)"))
-    description = models.TextField(blank=True)
+    name = models.CharField(max_length=100, verbose_name=_("Name"))
+    term_type = models.CharField(max_length=50, verbose_name=_("Term type"), help_text=_("The type of term (e.g., Semester, Quarter)"))
+    description = models.TextField(blank=True, verbose_name=_("Description"))
     has_enrollment_period = models.BooleanField(default=False, help_text=_("Whether this term type has enrollment periods"))
     properties = models.JSONField(default=dict, blank=True, help_text=_("Properties specific to this type of term"))
-    date_start = models.DateField()
-    date_end = models.DateField()
-    metadata = models.JSONField(default=dict, blank=True, help_text=_("Attributes specific to this term instance"))
+    date_start = models.DateField(verbose_name=_("Start date"))
+    date_end = models.DateField(verbose_name=_("End date"))
+    metadata = models.JSONField(default=dict, blank=True, help_text=_("Attributes specific to this term instance"), verbose_name=_("Metadata"))
 
     def clean(self):
         if self.date_start >= self.date_end:
@@ -115,10 +116,15 @@ class Term(BaseModel):
         super().save(*args, **kwargs)
 
     class Meta:
+        verbose_name = _("Term")
+        verbose_name_plural = _("Terms")
         ordering = ["-date_start"]
 
     def __str__(self):
-        return f"{self.name} ({self.term_type}: {self.date_start} to {self.date_end})"
+        return self.human_name
+
+    def __repr__(self):
+        return f"{self.__class__.__name__}(name='{self.name}', date_start='{self.date_start}', date_end='{self.date_end}')"
 
     @property
     def human_name(self):
@@ -129,7 +135,6 @@ class Term(BaseModel):
             str: A formatted name including month and year information
         """
         from django.utils.formats import date_format
-        from django.utils import timezone
 
         now = timezone.now()
 
@@ -176,7 +181,6 @@ class Term(BaseModel):
         Returns:
             bool: True if this is the current term
         """
-        from django.utils import timezone
 
         now = timezone.now().date()
         return self.date_start <= now <= self.date_end
@@ -188,7 +192,6 @@ class Term(BaseModel):
         Returns:
             bool: True if this term is in the past
         """
-        from django.utils import timezone
 
         now = timezone.now().date()
         return self.date_end < now
@@ -200,7 +203,6 @@ class Term(BaseModel):
         Returns:
             bool: True if this term is in the future
         """
-        from django.utils import timezone
 
         now = timezone.now().date()
         preview_date = self.get_preview_date()
@@ -250,7 +252,6 @@ class Term(BaseModel):
         Returns:
             bool: True if this term is enabled for preview
         """
-        from django.utils import timezone
 
         now = timezone.now().date()
 
@@ -288,7 +289,6 @@ class Term(BaseModel):
         Returns:
             bool: True if this term is enabled for enrollment
         """
-        from django.utils import timezone
 
         now = timezone.now()
         now_date = now.date()
@@ -654,7 +654,6 @@ class MemberGroupAssignment(BaseModel):
         Returns:
             bool: True if the member can enroll in the term
         """
-        from django.utils import timezone
 
         now = timezone.now()
         now_date = now.date()
@@ -1104,14 +1103,12 @@ class Event(BaseModel):
 
     def is_current(self):
         """Check if the event is currently in progress"""
-        from django.utils import timezone
 
         now = timezone.now()
         return self.date_start <= now <= self.date_end
 
     def is_preview_enabled(self):
         """Check if preview is currently enabled for this event"""
-        from django.utils import timezone
 
         now = timezone.now()
         if self.preview_date:
@@ -1120,7 +1117,6 @@ class Event(BaseModel):
 
     def is_enrollment_open(self):
         """Check if enrollment is currently open for this event"""
-        from django.utils import timezone
 
         now = timezone.now()
         return self.date_start <= now <= self.date_end

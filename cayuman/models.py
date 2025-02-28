@@ -35,88 +35,189 @@ class Member(User):
     objects = UserManager()
 
     @property
-    def is_student(self) -> Group:
+    def is_student(self) -> bool:
+        """
+        Check if this member is a student.
+
+        Returns:
+            bool: True if the member belongs to the students group
+        """
         return self.groups.filter(name=settings.STUDENTS_GROUP).exists()
 
     @property
-    def is_teacher(self) -> Group:
+    def is_teacher(self) -> bool:
+        """
+        Check if this member is a teacher.
+
+        Returns:
+            bool: True if the member belongs to the teachers group
+        """
         return self.groups.filter(name=settings.TEACHERS_GROUP).exists()
 
     @property
     def current_student_cycle(self):
-        return StudentCycle.objects.filter(student=self).order_by("-date_joined").first()
-
-    def has_perm(self, perm, obj=None):
-        from cayuman.permissions import custom_permissions
-
-        if perm in custom_permissions:
-            return custom_permissions[perm](self, obj)
-
-        return super().has_perm(perm, obj)
-
-    def is_enabled_to_enroll(self, period) -> bool:
-        # Returns true or false depending on whether the user is enabled to enroll or not.
-        if self.is_student:
-            # If student and student_cycle is enabled to enroll
-            if self.current_student_cycle:
-                return self.current_student_cycle.is_enabled_to_enroll(period)
-        elif self.is_superuser:
-            # if superuser then allow if period is not over
-            if not period.is_in_the_past():
-                return True
-        return False
-
-    def is_schedule_full(self, *args, **kwargs) -> bool:
-        # Returns true or false depending on whether the user is schedule full or not.
-        # If no student_cycle then it returns False
-        if self.current_student_cycle:
-            return self.current_student_cycle.is_schedule_full(*args, **kwargs)
-        return False
-
-    def get_studentcycle_for_period(self, period: Period) -> StudentCycle:
         """
-        Get StudentCycle entry for a student in a given period.
-        If no match found then it raises ValueError if period is in the past,
-        otherwise it returns the latest studentcycle entry associated with the student
-
-        Args:
-            period (Period): period to get the studentcycle entry for
-
-        Raises:
-            ValueError: if no studentcycle entry found for the given student and period
+        Get the current student cycle (MemberGroupAssignment) for this member.
 
         Returns:
-            StudentCycle: StudentCycle entry associated with the student and period
+            MemberGroupAssignment: The latest active group assignment for this member,
+            or None if the member has no active group assignments
         """
-        return StudentCycle.objects.get_studentcycle_by_period(self, period)
+        from smiles.models import MemberGroupAssignment
 
-    def get_studentcycle_for_period_or_none(self, period: Period) -> StudentCycle | None:
-        """
-        Get StudentCycle entry for a student in a given period.
-        If no match found then it returns None if period is in the past,
-        otherwise it returns the latest studentcycle entry associated with the student
-        """
-        return StudentCycle.objects.get_studentcycle_by_period_or_none(self, period)
+        # Get the latest active group assignment for this member with group_type="Cycle"
+        try:
+            return MemberGroupAssignment.objects.filter(member=self, group__group_type="Cycle", is_active=True).latest("date_assigned")
+        except MemberGroupAssignment.DoesNotExist:
+            return None
 
-    def get_studentcycle_for_date(self, date_or_datetime: date | datetime) -> StudentCycle:
+    def is_enabled_to_enroll(self, term) -> bool:
         """
-        Get StudentCycle entry for a student in a given date.
-        This is just a wrapper around get_studentcycle_for_period, getting the period from the given date_or_datetime
-        """
-        return StudentCycle.objects.get_studentcycle_by_date(self, date_or_datetime)
+        Check if this member is enabled to enroll in the given term.
 
-    def get_studentcycle_for_date_or_none(self, date_or_datetime: date | datetime) -> StudentCycle | None:
+        Args:
+            term: The term to check enrollment eligibility for
+
+        Returns:
+            bool: True if the member is enabled to enroll in the term
         """
-        Get StudentCycle entry for a student in a given date.
-        This is just a wrapper around get_studentcycle_for_date, getting the period from the given date_or_datetime
+
+        # Only students can enroll
+        if not self.is_student:
+            return False
+
+        # Get the current student cycle
+        current_assignment = self.current_student_cycle
+        if not current_assignment:
+            return False
+
+        # Check if the term is enabled for enrollment
+        if not term.is_enabled_to_enroll():
+            return False
+
+        # Check if the student cycle is enabled to enroll
+        return current_assignment.is_enabled_to_enroll(term)
+
+    def is_schedule_full(self, term=None) -> bool:
         """
-        return StudentCycle.objects.get_studentcycle_by_date_or_none(self, date_or_datetime)
+        Check if this member's schedule is full for the given term.
+
+        Args:
+            term: The term to check the schedule for. If None, uses the current term.
+
+        Returns:
+            bool: True if the member's schedule is full for the term
+        """
+        from smiles.services import TermService
+
+        # Only students can have schedules
+        if not self.is_student:
+            return False
+
+        # Get the current student cycle
+        current_assignment = self.current_student_cycle
+        if not current_assignment:
+            return False
+
+        # If no term is provided, use the current term
+        if term is None:
+            term = TermService.current()
+            if term is None:
+                return False
+
+        # Check if the schedule is full
+        return current_assignment.is_schedule_full(term)
+
+    def get_studentcycle_for_period(self, term):
+        """
+        Get the MemberGroupAssignment for this member for the given term.
+
+        Args:
+            term: The term to get the assignment for
+
+        Returns:
+            MemberGroupAssignment: The group assignment for this member for the term
+
+        Raises:
+            MemberGroupAssignment.DoesNotExist: If no assignment exists for the term
+        """
+        from smiles.models import MemberGroupAssignment
+
+        # Get the assignment for this member with group_type="Cycle" that was active during the term
+        assignments = MemberGroupAssignment.objects.filter(
+            member=self, group__group_type="Cycle", is_active=True, date_assigned__lte=term.date_end
+        ).order_by("-date_assigned")
+
+        if not assignments.exists():
+            from django.core.exceptions import ObjectDoesNotExist
+
+            raise ObjectDoesNotExist(f"No MemberGroupAssignment found for member {self} in term {term}")
+
+        return assignments.first()
+
+    def get_studentcycle_for_period_or_none(self, term):
+        """
+        Get the MemberGroupAssignment for this member for the given term, or None if it doesn't exist.
+
+        Args:
+            term: The term to get the assignment for
+
+        Returns:
+            MemberGroupAssignment: The group assignment for this member for the term, or None
+        """
+        try:
+            return self.get_studentcycle_for_period(term)
+        except Exception:
+            return None
+
+    def get_studentcycle_for_date(self, date_or_datetime):
+        """
+        Get the MemberGroupAssignment for this member for the given date.
+
+        Args:
+            date_or_datetime: The date to get the assignment for
+
+        Returns:
+            MemberGroupAssignment: The group assignment for this member for the date
+
+        Raises:
+            Exception: If no assignment exists for the date
+        """
+        from smiles.services import TermService
+
+        # Convert datetime to date if needed
+        if hasattr(date_or_datetime, "date"):
+            date = date_or_datetime.date()
+        else:
+            date = date_or_datetime
+
+        # Get the term for the date
+        term = TermService.get_term_by_date(date)
+        if not term:
+            raise Exception(f"No term found for date {date}")
+
+        return self.get_studentcycle_for_period(term)
+
+    def get_studentcycle_for_date_or_none(self, date_or_datetime):
+        """
+        Get the MemberGroupAssignment for this member for the given date, or None if it doesn't exist.
+
+        Args:
+            date_or_datetime: The date to get the assignment for
+
+        Returns:
+            MemberGroupAssignment: The group assignment for this member for the date, or None
+        """
+        try:
+            return self.get_studentcycle_for_date(date_or_datetime)
+        except Exception:
+            return None
 
     def __str__(self):
-        return self.get_full_name()
+        return self.get_full_name() or self.username
 
     def __repr__(self):
-        return f"{self.__class__.__name__}(username='{self.username}', first_name='{self.first_name}', last_name='{self.last_name}')"
+        return f"<Member: {self.username}>"
 
     class Meta:
         proxy = True

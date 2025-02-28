@@ -1,0 +1,87 @@
+{% extends "base_internal.html" %}
+{% load i18n %}
+{% load static %}
+
+{% block title %}{% trans "Home" %}{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row">
+        <div class="col-12">
+            <h1>{% trans "Welcome to Smiles" %}</h1>
+            <p class="lead">{% trans "Your educational platform" %}</p>
+
+            {% if messages %}
+            <div class="messages">
+                {% for message in messages %}
+                <div class="alert alert-{{ message.tags }}">
+                    {{ message }}
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+
+            <div class="card mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="card-title mb-0">{% trans "Dashboard" %}</h5>
+                </div>
+                <div class="card-body">
+                    {% if request.member.current_group_assignment %}
+                        <h5>{% trans "Your Group" %}</h5>
+                        <p>{{ request.member.current_group_assignment.group.name }}</p>
+
+                        {% if request.term %}
+                            <h5>{% trans "Current Term" %}</h5>
+                            <p>{{ request.term.name }}</p>
+
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="card mb-3">
+                                        <div class="card-body">
+                                            <h5 class="card-title">{% trans "Your Schedule" %}</h5>
+                                            <p class="card-text">{% trans "View your weekly schedule for the current term." %}</p>
+                                            <a href="{% url 'weekly_schedule' request.term.id %}" class="btn btn-primary">{% trans "View Schedule" %}</a>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="col-md-6">
+                                    <div class="card mb-3">
+                                        <div class="card-body">
+                                            <h5 class="card-title">{% trans "Available Subjects" %}</h5>
+                                            <p class="card-text">{% trans "Browse available subjects for the current term." %}</p>
+                                            <a href="{% url 'subject_offerings' request.term.id %}" class="btn btn-info">{% trans "Browse Subjects" %}</a>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {% if request.term.is_enabled_to_enroll %}
+                            <div class="alert alert-info">
+                                <h5>{% trans "Enrollment Open" %}</h5>
+                                <p>{% trans "Enrollment is currently open for this term. You can enroll in subjects now." %}</p>
+                                <a href="{% url 'enrollment' request.term.id %}" class="btn btn-success">{% trans "Enroll Now" %}</a>
+                            </div>
+                            {% elif request.term.is_enabled_to_preview %}
+                            <div class="alert alert-warning">
+                                <h5>{% trans "Enrollment Coming Soon" %}</h5>
+                                <p>{% trans "Enrollment is not yet open for this term, but you can preview the available subjects." %}</p>
+                                <p>{% trans "Enrollment will open on" %} {{ request.term.get_enrollment_start_date|date:"F j, Y" }}.</p>
+                            </div>
+                            {% endif %}
+                        {% else %}
+                            <div class="alert alert-warning">
+                                <p>{% trans "No active term found." %}</p>
+                            </div>
+                        {% endif %}
+                    {% else %}
+                        <div class="alert alert-warning">
+                            <p>{% trans "Your student account is not associated with any Group. Please ask your teachers to fix this." %}</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
