@@ -2,6 +2,7 @@
 import django.db.models.deletion
 from django.db import migrations
 from django.db import models
+from django.utils.translation import gettext_lazy as _
 
 
 class Migration(migrations.Migration):
@@ -26,30 +27,34 @@ class Migration(migrations.Migration):
                 ),
                 ("created_at", models.DateTimeField(auto_now_add=True)),
                 ("updated_at", models.DateTimeField(auto_now=True)),
-                ("name", models.CharField(max_length=50, unique=True)),
-                ("description", models.TextField(blank=True)),
+                ("name", models.CharField(max_length=50, unique=True, verbose_name=_("Name"))),
+                ("description", models.TextField(blank=True, verbose_name=_("Description"))),
                 (
                     "is_selectable",
                     models.BooleanField(
                         default=False,
-                        help_text="Whether students can choose activities of this type",
+                        help_text=_("Whether students can choose activities of this type"),
+                        verbose_name=_("Is selectable"),
                     ),
                 ),
                 (
                     "requires_attendance",
-                    models.BooleanField(default=True, help_text="Whether attendance should be tracked"),
+                    models.BooleanField(default=True, help_text=_("Whether attendance should be tracked"), verbose_name=_("Requires attendance")),
                 ),
                 (
                     "metadata",
                     models.JSONField(
                         blank=True,
                         default=dict,
-                        help_text="Activity type-specific attributes",
+                        help_text=_("Activity type-specific attributes"),
+                        verbose_name=_("Metadata"),
                     ),
                 ),
             ],
             options={
                 "abstract": False,
+                "verbose_name": _("Activity type"),
+                "verbose_name_plural": _("Activity types"),
             },
         ),
         migrations.CreateModel(
@@ -66,12 +71,14 @@ class Migration(migrations.Migration):
                 ),
                 ("created_at", models.DateTimeField(auto_now_add=True)),
                 ("updated_at", models.DateTimeField(auto_now=True)),
-                ("name", models.CharField(max_length=100, unique=True)),
-                ("description", models.TextField(blank=True)),
-                ("metadata", models.JSONField(blank=True, default=dict)),
+                ("name", models.CharField(max_length=100, unique=True, verbose_name=_("Name"))),
+                ("description", models.TextField(blank=True, verbose_name=_("Description"))),
+                ("metadata", models.JSONField(blank=True, default=dict, verbose_name=_("Metadata"))),
             ],
             options={
                 "abstract": False,
+                "verbose_name": _("Event type"),
+                "verbose_name_plural": _("Event types"),
             },
         ),
         migrations.CreateModel(
@@ -88,17 +95,22 @@ class Migration(migrations.Migration):
                 ),
                 ("created_at", models.DateTimeField(auto_now_add=True)),
                 ("updated_at", models.DateTimeField(auto_now=True)),
-                ("name", models.CharField(max_length=100)),
-                ("description", models.TextField(blank=True)),
+                ("name", models.CharField(max_length=100, verbose_name=_("Name"))),
+                ("description", models.TextField(blank=True, verbose_name=_("Description"))),
                 (
                     "metadata",
                     models.JSONField(
                         blank=True,
                         default=dict,
-                        help_text="Subject-specific attributes like curriculum links",
+                        help_text=_("Subject-specific attributes like curriculum links"),
+                        verbose_name=_("Metadata"),
                     ),
                 ),
             ],
+            options={
+                "verbose_name": _("Subject"),
+                "verbose_name_plural": _("Subjects"),
+            },
         ),
         migrations.CreateModel(
             name="SubjectType",
@@ -114,13 +126,14 @@ class Migration(migrations.Migration):
                 ),
                 ("created_at", models.DateTimeField(auto_now_add=True)),
                 ("updated_at", models.DateTimeField(auto_now=True)),
-                ("name", models.CharField(max_length=50, unique=True)),
-                ("description", models.TextField(blank=True)),
+                ("name", models.CharField(max_length=50, unique=True, verbose_name=_("Name"))),
+                ("description", models.TextField(blank=True, verbose_name=_("Description"))),
                 (
                     "is_selectable",
                     models.BooleanField(
                         default=False,
-                        help_text="Whether students can choose subjects of this type",
+                        help_text=_("Whether students can choose subjects of this type"),
+                        verbose_name=_("Is selectable"),
                     ),
                 ),
                 (
@@ -128,12 +141,15 @@ class Migration(migrations.Migration):
                     models.JSONField(
                         blank=True,
                         default=dict,
-                        help_text="Type-specific attributes",
+                        help_text=_("Type-specific attributes"),
+                        verbose_name=_("Metadata"),
                     ),
                 ),
             ],
             options={
                 "abstract": False,
+                "verbose_name": _("Subject type"),
+                "verbose_name_plural": _("Subject types"),
             },
         ),
         migrations.CreateModel(
@@ -150,21 +166,24 @@ class Migration(migrations.Migration):
                 ),
                 ("created_at", models.DateTimeField(auto_now_add=True)),
                 ("updated_at", models.DateTimeField(auto_now=True)),
-                ("name", models.CharField(max_length=100)),
-                ("description", models.TextField(blank=True)),
-                ("date_start", models.DateField()),
-                ("date_end", models.DateField()),
+                ("name", models.CharField(max_length=100, verbose_name=_("Name"))),
+                ("description", models.TextField(blank=True, verbose_name=_("Description"))),
+                ("date_start", models.DateField(verbose_name=_("Start date"))),
+                ("date_end", models.DateField(verbose_name=_("End date"))),
                 (
                     "metadata",
                     models.JSONField(
                         blank=True,
                         default=dict,
-                        help_text="Attributes specific to this term instance",
+                        help_text=_("Attributes specific to this term instance"),
+                        verbose_name=_("Metadata"),
                     ),
                 ),
             ],
             options={
                 "ordering": ["-date_start"],
+                "verbose_name": _("Term"),
+                "verbose_name_plural": _("Terms"),
             },
         ),
         migrations.CreateModel(
@@ -181,35 +200,39 @@ class Migration(migrations.Migration):
                 ),
                 ("created_at", models.DateTimeField(auto_now_add=True)),
                 ("updated_at", models.DateTimeField(auto_now=True)),
-                ("name", models.CharField(max_length=100)),
+                ("name", models.CharField(max_length=100, verbose_name=_("Name"))),
                 (
                     "day_of_week",
                     models.CharField(
                         choices=[
-                            ("monday", "Monday"),
-                            ("tuesday", "Tuesday"),
-                            ("wednesday", "Wednesday"),
-                            ("thursday", "Thursday"),
-                            ("friday", "Friday"),
-                            ("saturday", "Saturday"),
-                            ("sunday", "Sunday"),
+                            ("monday", _("Monday")),
+                            ("tuesday", _("Tuesday")),
+                            ("wednesday", _("Wednesday")),
+                            ("thursday", _("Thursday")),
+                            ("friday", _("Friday")),
+                            ("saturday", _("Saturday")),
+                            ("sunday", _("Sunday")),
                         ],
                         max_length=10,
+                        verbose_name=_("Day of week"),
                     ),
                 ),
-                ("time_start", models.TimeField()),
-                ("time_end", models.TimeField()),
+                ("time_start", models.TimeField(verbose_name=_("Time start"))),
+                ("time_end", models.TimeField(verbose_name=_("Time end"))),
                 (
                     "metadata",
                     models.JSONField(
                         blank=True,
                         default=dict,
-                        help_text="Time slot-specific attributes",
+                        help_text=_("Time slot-specific attributes"),
+                        verbose_name=_("Metadata"),
                     ),
                 ),
             ],
             options={
                 "abstract": False,
+                "verbose_name": _("Time slot"),
+                "verbose_name_plural": _("Time slots"),
             },
         ),
         migrations.CreateModel(
@@ -226,20 +249,22 @@ class Migration(migrations.Migration):
                 ),
                 ("created_at", models.DateTimeField(auto_now_add=True)),
                 ("updated_at", models.DateTimeField(auto_now=True)),
-                ("name", models.CharField(max_length=100)),
+                ("name", models.CharField(max_length=100, verbose_name=_("Name"))),
                 (
                     "group_type",
                     models.CharField(
-                        help_text="The type of group (e.g., Grade, Cycle, Team)",
+                        help_text=_("The type of group (e.g., Grade, Cycle, Team)"),
                         max_length=50,
+                        verbose_name=_("Group type"),
                     ),
                 ),
-                ("description", models.TextField(blank=True)),
+                ("description", models.TextField(blank=True, verbose_name=_("Description"))),
                 (
                     "is_primary",
                     models.BooleanField(
                         default=False,
-                        help_text="Whether members must belong to exactly one group of this type",
+                        help_text=_("Whether members must belong to exactly one group of this type"),
+                        verbose_name=_("Is primary"),
                     ),
                 ),
                 (
@@ -247,7 +272,8 @@ class Migration(migrations.Migration):
                     models.JSONField(
                         blank=True,
                         default=dict,
-                        help_text="Attributes specific to this group instance",
+                        help_text=_("Attributes specific to this group instance"),
+                        verbose_name=_("Metadata"),
                     ),
                 ),
                 (
@@ -258,11 +284,14 @@ class Migration(migrations.Migration):
                         on_delete=django.db.models.deletion.SET_NULL,
                         related_name="child_groups",
                         to="smiles.group",
+                        verbose_name=_("Parent"),
                     ),
                 ),
             ],
             options={
                 "unique_together": {("name", "group_type")},
+                "verbose_name": _("Group"),
+                "verbose_name_plural": _("Groups"),
             },
         ),
         migrations.CreateModel(
@@ -279,27 +308,30 @@ class Migration(migrations.Migration):
                 ),
                 ("created_at", models.DateTimeField(auto_now_add=True)),
                 ("updated_at", models.DateTimeField(auto_now=True)),
-                ("name", models.CharField(max_length=100)),
-                ("description", models.TextField(blank=True)),
+                ("name", models.CharField(max_length=100, verbose_name=_("Name"))),
+                ("description", models.TextField(blank=True, verbose_name=_("Description"))),
                 (
                     "metadata",
                     models.JSONField(
                         blank=True,
                         default=dict,
-                        help_text="Template-specific attributes",
+                        help_text=_("Template-specific attributes"),
+                        verbose_name=_("Metadata"),
                     ),
                 ),
                 (
                     "applicable_groups",
-                    models.ManyToManyField(related_name="schedule_templates", to="smiles.group"),
+                    models.ManyToManyField(related_name="schedule_templates", to="smiles.group", verbose_name=_("Applicable groups")),
                 ),
                 (
                     "applicable_terms",
-                    models.ManyToManyField(related_name="schedule_templates", to="smiles.term"),
+                    models.ManyToManyField(related_name="schedule_templates", to="smiles.term", verbose_name=_("Applicable terms")),
                 ),
             ],
             options={
                 "abstract": False,
+                "verbose_name": _("Schedule template"),
+                "verbose_name_plural": _("Schedule templates"),
             },
         ),
         migrations.CreateModel(
@@ -316,49 +348,54 @@ class Migration(migrations.Migration):
                 ),
                 ("created_at", models.DateTimeField(auto_now_add=True)),
                 ("updated_at", models.DateTimeField(auto_now=True)),
-                ("name", models.CharField(max_length=100)),
+                ("name", models.CharField(max_length=100, verbose_name=_("Name"))),
                 (
                     "preview_date",
                     models.DateTimeField(
                         blank=True,
-                        help_text="When information about this event becomes visible",
+                        help_text=_("When information about this event becomes visible"),
                         null=True,
+                        verbose_name=_("Preview date"),
                     ),
                 ),
-                ("date_start", models.DateTimeField()),
-                ("date_end", models.DateTimeField()),
-                ("is_active", models.BooleanField(default=True)),
-                ("metadata", models.JSONField(blank=True, default=dict)),
+                ("date_start", models.DateTimeField(verbose_name=_("Start date"))),
+                ("date_end", models.DateTimeField(verbose_name=_("End date"))),
+                ("is_active", models.BooleanField(default=True, verbose_name=_("Is active"))),
+                ("metadata", models.JSONField(blank=True, default=dict, verbose_name=_("Metadata"))),
                 (
                     "type",
                     models.ForeignKey(
                         on_delete=django.db.models.deletion.PROTECT,
                         related_name="events",
                         to="smiles.eventtype",
+                        verbose_name=_("Type"),
                     ),
                 ),
                 (
                     "affects_groups",
-                    models.ManyToManyField(blank=True, related_name="events", to="smiles.group"),
+                    models.ManyToManyField(blank=True, related_name="events", to="smiles.group", verbose_name=_("Affects groups")),
                 ),
                 (
                     "affects_subjects",
-                    models.ManyToManyField(blank=True, related_name="events", to="smiles.subject"),
+                    models.ManyToManyField(blank=True, related_name="events", to="smiles.subject", verbose_name=_("Affects subjects")),
                 ),
                 (
                     "term",
                     models.ForeignKey(
                         blank=True,
-                        help_text="Term this event is associated with",
+                        help_text=_("Term this event is associated with"),
                         null=True,
                         on_delete=django.db.models.deletion.CASCADE,
                         related_name="events",
                         to="smiles.term",
+                        verbose_name=_("Term"),
                     ),
                 ),
             ],
             options={
                 "abstract": False,
+                "verbose_name": _("Event"),
+                "verbose_name_plural": _("Events"),
             },
         ),
         migrations.CreateModel(
@@ -377,29 +414,31 @@ class Migration(migrations.Migration):
                 ("updated_at", models.DateTimeField(auto_now=True)),
                 (
                     "max_students",
-                    models.PositiveIntegerField(default=0, help_text="0 means unlimited"),
+                    models.PositiveIntegerField(default=0, help_text=_("0 means unlimited"), verbose_name=_("Max students")),
                 ),
                 (
                     "metadata",
                     models.JSONField(
                         blank=True,
                         default=dict,
-                        help_text="Offering-specific attributes",
+                        help_text=_("Offering-specific attributes"),
+                        verbose_name=_("Metadata"),
                     ),
                 ),
                 (
                     "eligible_groups",
-                    models.ManyToManyField(related_name="eligible_offerings", to="smiles.group"),
+                    models.ManyToManyField(related_name="eligible_offerings", to="smiles.group", verbose_name=_("Eligible groups")),
                 ),
                 (
                     "enrollment_event",
                     models.ForeignKey(
                         blank=True,
-                        help_text="Enrollment event associated with this offering",
+                        help_text=_("Enrollment event associated with this offering"),
                         null=True,
                         on_delete=django.db.models.deletion.SET_NULL,
                         related_name="subject_offerings",
                         to="smiles.event",
+                        verbose_name=_("Enrollment event"),
                     ),
                 ),
                 (
@@ -408,6 +447,7 @@ class Migration(migrations.Migration):
                         on_delete=django.db.models.deletion.CASCADE,
                         related_name="offerings",
                         to="smiles.subject",
+                        verbose_name=_("Subject"),
                     ),
                 ),
                 (
@@ -418,6 +458,7 @@ class Migration(migrations.Migration):
                         on_delete=django.db.models.deletion.SET_NULL,
                         related_name="teaching_offerings",
                         to="cayuman.member",
+                        verbose_name=_("Teacher"),
                     ),
                 ),
                 (
@@ -426,11 +467,14 @@ class Migration(migrations.Migration):
                         on_delete=django.db.models.deletion.CASCADE,
                         related_name="subject_offerings",
                         to="smiles.term",
+                        verbose_name=_("Term"),
                     ),
                 ),
             ],
             options={
                 "abstract": False,
+                "verbose_name": _("Subject offering"),
+                "verbose_name_plural": _("Subject offerings"),
             },
         ),
         migrations.CreateModel(
@@ -447,14 +491,15 @@ class Migration(migrations.Migration):
                 ),
                 ("created_at", models.DateTimeField(auto_now_add=True)),
                 ("updated_at", models.DateTimeField(auto_now=True)),
-                ("name", models.CharField(max_length=100)),
-                ("description", models.TextField(blank=True)),
+                ("name", models.CharField(max_length=100, verbose_name=_("Name"))),
+                ("description", models.TextField(blank=True, verbose_name=_("Description"))),
                 (
                     "metadata",
                     models.JSONField(
                         blank=True,
                         default=dict,
-                        help_text="Activity-specific attributes",
+                        help_text=_("Activity-specific attributes"),
+                        verbose_name=_("Metadata"),
                     ),
                 ),
                 (
@@ -463,11 +508,12 @@ class Migration(migrations.Migration):
                         on_delete=django.db.models.deletion.PROTECT,
                         related_name="activities",
                         to="smiles.activitytype",
+                        verbose_name=_("Type"),
                     ),
                 ),
                 (
                     "applicable_groups",
-                    models.ManyToManyField(related_name="applicable_activities", to="smiles.group"),
+                    models.ManyToManyField(related_name="applicable_activities", to="smiles.group", verbose_name=_("Applicable groups")),
                 ),
                 (
                     "subject_offering",
@@ -477,11 +523,13 @@ class Migration(migrations.Migration):
                         on_delete=django.db.models.deletion.SET_NULL,
                         related_name="activities",
                         to="smiles.subjectoffering",
+                        verbose_name=_("Subject offering"),
                     ),
                 ),
             ],
             options={
-                "verbose_name_plural": "Activities",
+                "verbose_name_plural": _("Activities"),
+                "verbose_name": _("Activity"),
             },
         ),
         migrations.AddField(
@@ -491,6 +539,7 @@ class Migration(migrations.Migration):
                 on_delete=django.db.models.deletion.PROTECT,
                 related_name="subjects",
                 to="smiles.subjecttype",
+                verbose_name=_("Type"),
             ),
         ),
         migrations.CreateModel(
@@ -507,13 +556,14 @@ class Migration(migrations.Migration):
                 ),
                 ("created_at", models.DateTimeField(auto_now_add=True)),
                 ("updated_at", models.DateTimeField(auto_now=True)),
-                ("is_custom", models.BooleanField(default=False)),
+                ("is_custom", models.BooleanField(default=False, verbose_name=_("Is custom"))),
                 (
                     "metadata",
                     models.JSONField(
                         blank=True,
                         default=dict,
-                        help_text="Schedule-specific attributes",
+                        help_text=_("Schedule-specific attributes"),
+                        verbose_name=_("Metadata"),
                     ),
                 ),
                 (
@@ -522,6 +572,7 @@ class Migration(migrations.Migration):
                         on_delete=django.db.models.deletion.CASCADE,
                         related_name="schedules",
                         to="cayuman.member",
+                        verbose_name=_("Member"),
                     ),
                 ),
                 (
@@ -530,6 +581,7 @@ class Migration(migrations.Migration):
                         on_delete=django.db.models.deletion.PROTECT,
                         related_name="member_schedules",
                         to="smiles.scheduletemplate",
+                        verbose_name=_("Template"),
                     ),
                 ),
                 (
@@ -538,11 +590,14 @@ class Migration(migrations.Migration):
                         on_delete=django.db.models.deletion.CASCADE,
                         related_name="member_schedules",
                         to="smiles.term",
+                        verbose_name=_("Term"),
                     ),
                 ),
             ],
             options={
                 "unique_together": {("member", "term")},
+                "verbose_name": _("Member schedule"),
+                "verbose_name_plural": _("Member schedules"),
             },
         ),
         migrations.CreateModel(
@@ -559,24 +614,26 @@ class Migration(migrations.Migration):
                 ),
                 ("created_at", models.DateTimeField(auto_now_add=True)),
                 ("updated_at", models.DateTimeField(auto_now=True)),
-                ("name", models.CharField(max_length=100)),
-                ("date", models.DateField()),
-                ("is_school_closed", models.BooleanField(default=False)),
+                ("name", models.CharField(max_length=100, verbose_name=_("Name"))),
+                ("date", models.DateField(verbose_name=_("Date"))),
+                ("is_school_closed", models.BooleanField(default=False, verbose_name=_("Is school closed"))),
                 (
                     "metadata",
                     models.JSONField(
                         blank=True,
                         default=dict,
-                        help_text="Special day-specific attributes",
+                        help_text=_("Special day-specific attributes"),
+                        verbose_name=_("Metadata"),
                     ),
                 ),
                 (
                     "affects_groups",
                     models.ManyToManyField(
                         blank=True,
-                        help_text="Empty means all groups are affected",
+                        help_text=_("Empty means all groups are affected"),
                         related_name="special_days",
                         to="smiles.group",
+                        verbose_name=_("Affects groups"),
                     ),
                 ),
                 (
@@ -587,11 +644,14 @@ class Migration(migrations.Migration):
                         on_delete=django.db.models.deletion.SET_NULL,
                         related_name="special_days",
                         to="smiles.scheduletemplate",
+                        verbose_name=_("Alternate schedule"),
                     ),
                 ),
             ],
             options={
                 "unique_together": {("name", "date")},
+                "verbose_name": _("Special day"),
+                "verbose_name_plural": _("Special days"),
             },
         ),
         migrations.CreateModel(
@@ -608,14 +668,15 @@ class Migration(migrations.Migration):
                 ),
                 ("created_at", models.DateTimeField(auto_now_add=True)),
                 ("updated_at", models.DateTimeField(auto_now=True)),
-                ("date_assigned", models.DateField(auto_now_add=True)),
-                ("is_active", models.BooleanField(default=True)),
+                ("date_assigned", models.DateField(auto_now_add=True, verbose_name=_("Date assigned"))),
+                ("is_active", models.BooleanField(default=True, verbose_name=_("Is active"))),
                 (
                     "metadata",
                     models.JSONField(
                         blank=True,
                         default=dict,
-                        help_text="Assignment-specific attributes",
+                        help_text=_("Assignment-specific attributes"),
+                        verbose_name=_("Metadata"),
                     ),
                 ),
                 (
@@ -624,6 +685,7 @@ class Migration(migrations.Migration):
                         on_delete=django.db.models.deletion.CASCADE,
                         related_name="member_assignments",
                         to="smiles.group",
+                        verbose_name=_("Group"),
                     ),
                 ),
                 (
@@ -632,6 +694,7 @@ class Migration(migrations.Migration):
                         on_delete=django.db.models.deletion.CASCADE,
                         related_name="group_assignments",
                         to="cayuman.member",
+                        verbose_name=_("Member"),
                     ),
                 ),
                 (
@@ -640,11 +703,14 @@ class Migration(migrations.Migration):
                         blank=True,
                         related_name="enrolled_members",
                         to="smiles.subjectoffering",
+                        verbose_name=_("Subject offerings"),
                     ),
                 ),
             ],
             options={
                 "unique_together": {("member", "group", "is_active")},
+                "verbose_name": _("Member group assignment"),
+                "verbose_name_plural": _("Member group assignments"),
             },
         ),
         migrations.AlterUniqueTogether(
@@ -670,7 +736,8 @@ class Migration(migrations.Migration):
                     models.JSONField(
                         blank=True,
                         default=dict,
-                        help_text="Assignment-specific attributes",
+                        help_text=_("Assignment-specific attributes"),
+                        verbose_name=_("Metadata"),
                     ),
                 ),
                 (
@@ -679,6 +746,7 @@ class Migration(migrations.Migration):
                         on_delete=django.db.models.deletion.CASCADE,
                         related_name="schedule_assignments",
                         to="smiles.activity",
+                        verbose_name=_("Activity"),
                     ),
                 ),
                 (
@@ -687,6 +755,7 @@ class Migration(migrations.Migration):
                         on_delete=django.db.models.deletion.CASCADE,
                         related_name="assignments",
                         to="smiles.scheduletemplate",
+                        verbose_name=_("Template"),
                     ),
                 ),
                 (
@@ -695,11 +764,14 @@ class Migration(migrations.Migration):
                         on_delete=django.db.models.deletion.CASCADE,
                         related_name="template_assignments",
                         to="smiles.timeslot",
+                        verbose_name=_("Time slot"),
                     ),
                 ),
             ],
             options={
                 "unique_together": {("template", "time_slot")},
+                "verbose_name": _("Schedule assignment"),
+                "verbose_name_plural": _("Schedule assignments"),
             },
         ),
         migrations.CreateModel(
@@ -720,17 +792,19 @@ class Migration(migrations.Migration):
                     "date",
                     models.DateField(
                         blank=True,
-                        help_text="Specific date (blank means recurring every week)",
+                        help_text=_("Specific date (blank means recurring every week)"),
                         null=True,
+                        verbose_name=_("Date"),
                     ),
                 ),
-                ("reason", models.CharField(blank=True, max_length=255)),
+                ("reason", models.CharField(blank=True, max_length=255, verbose_name=_("Reason"))),
                 (
                     "metadata",
                     models.JSONField(
                         blank=True,
                         default=dict,
-                        help_text="Override-specific attributes",
+                        help_text=_("Override-specific attributes"),
+                        verbose_name=_("Metadata"),
                     ),
                 ),
                 (
@@ -739,6 +813,7 @@ class Migration(migrations.Migration):
                         on_delete=django.db.models.deletion.CASCADE,
                         related_name="schedule_overrides",
                         to="smiles.activity",
+                        verbose_name=_("Activity"),
                     ),
                 ),
                 (
@@ -747,6 +822,7 @@ class Migration(migrations.Migration):
                         on_delete=django.db.models.deletion.CASCADE,
                         related_name="overrides",
                         to="smiles.memberschedule",
+                        verbose_name=_("Member schedule"),
                     ),
                 ),
                 (
@@ -755,11 +831,14 @@ class Migration(migrations.Migration):
                         on_delete=django.db.models.deletion.CASCADE,
                         related_name="member_overrides",
                         to="smiles.timeslot",
+                        verbose_name=_("Time slot"),
                     ),
                 ),
             ],
             options={
                 "unique_together": {("member_schedule", "date", "time_slot")},
+                "verbose_name": _("Member schedule override"),
+                "verbose_name_plural": _("Member schedule overrides"),
             },
         ),
         migrations.CreateModel(
