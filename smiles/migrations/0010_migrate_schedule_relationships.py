@@ -17,7 +17,7 @@ def migrate_schedule_relationships(apps, schema_editor):
 
     # Create schedule templates for each term and group combination
     for term in Term.objects.all():
-        for group in Group.objects.filter(group_type="Cycle"):
+        for group in Group.objects.filter(group_type="Ciclo"):
             # Create a schedule template for this term and group
             template_name = f"{group.name} Schedule - {term.name}"
             template = ScheduleTemplate.objects.create(

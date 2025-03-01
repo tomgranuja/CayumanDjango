@@ -31,8 +31,8 @@ class BaseModel(models.Model):
         updated_at: DateTime when the record was last updated
     """
 
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name=_("Created at"))
+    updated_at = models.DateTimeField(auto_now=True, verbose_name=_("Updated at"))
 
     class Meta:
         abstract = True
@@ -50,21 +50,23 @@ class Group(BaseModel):
         group_type: The type of group (e.g., "Grade", "Cycle", "Team")
         description: Detailed description
         is_primary: Whether members must belong to one group of this type
-        properties: Flexible JSON field for type-specific properties
         metadata: Flexible storage for this specific group's attributes
         parent: Optional parent group (for hierarchical structures)
     """
 
-    name = models.CharField(max_length=100)
-    group_type = models.CharField(max_length=50, help_text=_("The type of group (e.g., Grade, Cycle, Team)"))
-    description = models.TextField(blank=True)
-    is_primary = models.BooleanField(default=False, help_text=_("Whether members must belong to exactly one group of this type"))
-    properties = models.JSONField(default=dict, blank=True, help_text=_("Properties specific to this type of group"))
-    metadata = models.JSONField(default=dict, blank=True, help_text=_("Attributes specific to this group instance"))
-    parent = models.ForeignKey("self", on_delete=models.SET_NULL, null=True, blank=True, related_name="child_groups")
+    name = models.CharField(max_length=100, verbose_name=_("Name"))
+    group_type = models.CharField(max_length=50, help_text=_("The type of group (e.g., Grade, Cycle, Team)"), verbose_name=_("Group type"))
+    description = models.TextField(blank=True, verbose_name=_("Description"))
+    is_primary = models.BooleanField(
+        default=False, help_text=_("Whether members must belong to exactly one group of this type"), verbose_name=_("Is primary")
+    )
+    metadata = models.JSONField(default=dict, blank=True, help_text=_("Attributes specific to this group instance"), verbose_name=_("Metadata"))
+    parent = models.ForeignKey("self", on_delete=models.SET_NULL, null=True, blank=True, related_name="child_groups", verbose_name=_("Parent"))
 
     class Meta:
         unique_together = [["name", "group_type"]]
+        verbose_name = _("Group")
+        verbose_name_plural = _("Groups")
 
     def __str__(self):
         return f"{self.name} ({self.group_type})"
@@ -79,23 +81,14 @@ class Term(BaseModel):
 
     Attributes:
         name: Name of this specific term
-        term_type: The type of term (e.g., "Semester", "Quarter", "Workshop Period")
         description: Detailed description
-        has_enrollment_period: Whether this term type has enrollment periods
-        properties: Flexible JSON field for type-specific properties
         date_start: When this term begins
         date_end: When this term ends
-        metadata: Flexible storage for term-specific attributes, which may include:
-            - enrollment_start: When enrollment begins
-            - enrollment_end: When enrollment ends
-            - preview_date: When information becomes visible
+        metadata: Flexible storage for term-specific attributes
     """
 
     name = models.CharField(max_length=100, verbose_name=_("Name"))
-    term_type = models.CharField(max_length=50, verbose_name=_("Term type"), help_text=_("The type of term (e.g., Semester, Quarter)"))
     description = models.TextField(blank=True, verbose_name=_("Description"))
-    has_enrollment_period = models.BooleanField(default=False, help_text=_("Whether this term type has enrollment periods"))
-    properties = models.JSONField(default=dict, blank=True, help_text=_("Properties specific to this type of term"))
     date_start = models.DateField(verbose_name=_("Start date"))
     date_end = models.DateField(verbose_name=_("End date"))
     metadata = models.JSONField(default=dict, blank=True, help_text=_("Attributes specific to this term instance"), verbose_name=_("Metadata"))
@@ -105,11 +98,11 @@ class Term(BaseModel):
             raise ValidationError(_("Start date must be before end date"))
 
         # Check for overlapping terms of the same type
-        overlapping = Term.objects.filter(term_type=self.term_type, date_start__lt=self.date_end, date_end__gt=self.date_start)
+        overlapping = Term.objects.filter(date_start__lt=self.date_end, date_end__gt=self.date_start)
         if self.pk:
             overlapping = overlapping.exclude(pk=self.pk)
         if overlapping.exists():
-            raise ValidationError(_("This term overlaps with another term of the same type"))
+            raise ValidationError(_("This term overlaps with another term"))
 
     def save(self, *args, **kwargs):
         self.clean()
@@ -395,13 +388,19 @@ class SubjectType(BaseModel):
         name: Name of this subject type
         description: Detailed description
         is_selectable: Whether students can choose subjects of this type
-        properties: Flexible JSON field for properties specific to this subject type
+        metadata: Flexible storage for type-specific attributes
     """
 
-    name = models.CharField(max_length=50, unique=True)
-    description = models.TextField(blank=True)
-    is_selectable = models.BooleanField(default=False, help_text=_("Whether students can choose subjects of this type"))
-    properties = models.JSONField(default=dict, blank=True, help_text=_("Define properties specific to this subject type"))
+    name = models.CharField(max_length=50, unique=True, verbose_name=_("Name"))
+    description = models.TextField(blank=True, verbose_name=_("Description"))
+    is_selectable = models.BooleanField(
+        default=False, help_text=_("Whether students can choose subjects of this type"), verbose_name=_("Is selectable")
+    )
+    metadata = models.JSONField(default=dict, blank=True, help_text=_("Type-specific attributes"), verbose_name=_("Metadata"))
+
+    class Meta:
+        verbose_name = _("Subject type")
+        verbose_name_plural = _("Subject types")
 
     def __str__(self):
         return self.name
@@ -424,13 +423,17 @@ class Subject(BaseModel):
             - required_materials: Materials needed
     """
 
-    name = models.CharField(max_length=100)
-    type = models.ForeignKey(SubjectType, on_delete=models.PROTECT, related_name="subjects")
-    description = models.TextField(blank=True)
-    metadata = models.JSONField(default=dict, blank=True, help_text=_("Subject-specific attributes like curriculum links"))
+    name = models.CharField(max_length=100, verbose_name=_("Name"))
+    type = models.ForeignKey(SubjectType, on_delete=models.PROTECT, related_name="subjects", verbose_name=_("Type"))
+    description = models.TextField(blank=True, verbose_name=_("Description"))
+    metadata = models.JSONField(
+        default=dict, blank=True, help_text=_("Subject-specific attributes like curriculum links"), verbose_name=_("Metadata")
+    )
 
     class Meta:
         unique_together = [["name", "type"]]
+        verbose_name = _("Subject")
+        verbose_name_plural = _("Subjects")
 
     def __str__(self):
         return f"{self.name} ({self.type.name})"
@@ -453,11 +456,13 @@ class SubjectOffering(BaseModel):
         metadata: Flexible storage for offering-specific attributes
     """
 
-    subject = models.ForeignKey(Subject, on_delete=models.CASCADE, related_name="offerings")
-    term = models.ForeignKey(Term, on_delete=models.CASCADE, related_name="subject_offerings")
-    teacher = models.ForeignKey(Member, on_delete=models.SET_NULL, null=True, blank=True, related_name="teaching_offerings")
-    max_students = models.PositiveIntegerField(default=0, help_text=_("0 means unlimited"))
-    eligible_groups = models.ManyToManyField(Group, related_name="eligible_offerings")
+    subject = models.ForeignKey(Subject, on_delete=models.CASCADE, related_name="offerings", verbose_name=_("Subject"))
+    term = models.ForeignKey(Term, on_delete=models.CASCADE, related_name="subject_offerings", verbose_name=_("Term"))
+    teacher = models.ForeignKey(
+        Member, on_delete=models.SET_NULL, null=True, blank=True, related_name="teaching_offerings", verbose_name=_("Teacher")
+    )
+    max_students = models.PositiveIntegerField(default=0, help_text=_("0 means unlimited"), verbose_name=_("Max students"))
+    eligible_groups = models.ManyToManyField(Group, related_name="eligible_offerings", verbose_name=_("Eligible groups"))
 
     # The enrollment event manages all enrollment periods
     enrollment_event = models.ForeignKey(
@@ -467,9 +472,14 @@ class SubjectOffering(BaseModel):
         related_name="subject_offerings",
         help_text=_("Enrollment event associated with this offering"),
         on_delete=models.SET_NULL,
+        verbose_name=_("Enrollment event"),
     )
 
-    metadata = models.JSONField(default=dict, blank=True, help_text=_("Offering-specific attributes"))
+    metadata = models.JSONField(default=dict, blank=True, help_text=_("Offering-specific attributes"), verbose_name=_("Metadata"))
+
+    class Meta:
+        verbose_name = _("Subject offering")
+        verbose_name_plural = _("Subject offerings")
 
     def __str__(self):
         return f"{self.subject.name} ({self.term.name})"
@@ -558,15 +568,17 @@ class MemberGroupAssignment(BaseModel):
         metadata: Flexible storage for assignment-specific attributes
     """
 
-    member = models.ForeignKey(Member, on_delete=models.CASCADE, related_name="group_assignments")
-    group = models.ForeignKey(Group, on_delete=models.CASCADE, related_name="member_assignments")
-    date_assigned = models.DateField(auto_now_add=True)
-    subject_offerings = models.ManyToManyField(SubjectOffering, blank=True, related_name="enrolled_members")
-    is_active = models.BooleanField(default=True)
-    metadata = models.JSONField(default=dict, blank=True, help_text=_("Assignment-specific attributes"))
+    member = models.ForeignKey(Member, on_delete=models.CASCADE, related_name="group_assignments", verbose_name=_("Member"))
+    group = models.ForeignKey(Group, on_delete=models.CASCADE, related_name="member_assignments", verbose_name=_("Group"))
+    date_assigned = models.DateField(auto_now_add=True, help_text=_("When this assignment happened"), verbose_name=_("Date assigned"))
+    subject_offerings = models.ManyToManyField(SubjectOffering, blank=True, related_name="enrolled_members", verbose_name=_("Subject offerings"))
+    is_active = models.BooleanField(default=True, verbose_name=_("Is active"))
+    metadata = models.JSONField(default=dict, blank=True, help_text=_("Assignment-specific attributes"), verbose_name=_("Metadata"))
 
     class Meta:
         unique_together = [["member", "group", "is_active"]]
+        verbose_name = _("Member group assignment")
+        verbose_name_plural = _("Member group assignments")
 
     def __str__(self):
         return f"{self.member} in {self.group}"
@@ -714,14 +726,22 @@ class ActivityType(BaseModel):
         metadata: Flexible attributes for this activity type
     """
 
-    name = models.CharField(max_length=50, unique=True)
-    description = models.TextField(blank=True)
-    is_selectable = models.BooleanField(default=False, help_text=_("Whether students can choose activities of this type"))
-    requires_attendance = models.BooleanField(default=True, help_text=_("Whether attendance should be tracked"))
-    metadata = models.JSONField(default=dict, blank=True, help_text=_("Activity type-specific attributes"))
+    name = models.CharField(max_length=50, unique=True, verbose_name=_("Name"))
+    description = models.TextField(blank=True, verbose_name=_("Description"))
+    is_selectable = models.BooleanField(
+        default=False, help_text=_("Whether students can choose activities of this type"), verbose_name=_("Is selectable")
+    )
+    requires_attendance = models.BooleanField(
+        default=True, help_text=_("Whether attendance should be tracked"), verbose_name=_("Requires attendance")
+    )
+    metadata = models.JSONField(default=dict, blank=True, help_text=_("Activity type-specific attributes"), verbose_name=_("Metadata"))
 
     def __str__(self):
         return self.name
+
+    class Meta:
+        verbose_name = _("Activity type")
+        verbose_name_plural = _("Activity types")
 
 
 class Activity(BaseModel):
@@ -740,18 +760,21 @@ class Activity(BaseModel):
         metadata: Flexible storage for activity-specific attributes
     """
 
-    name = models.CharField(max_length=100)
-    type = models.ForeignKey(ActivityType, on_delete=models.PROTECT, related_name="activities")
-    description = models.TextField(blank=True)
-    subject_offering = models.ForeignKey(SubjectOffering, on_delete=models.SET_NULL, null=True, blank=True, related_name="activities")
-    applicable_groups = models.ManyToManyField(Group, related_name="applicable_activities")
-    metadata = models.JSONField(default=dict, blank=True, help_text=_("Activity-specific attributes"))
+    name = models.CharField(max_length=100, verbose_name=_("Name"))
+    type = models.ForeignKey(ActivityType, on_delete=models.PROTECT, related_name="activities", verbose_name=_("Type"))
+    description = models.TextField(blank=True, verbose_name=_("Description"))
+    subject_offering = models.ForeignKey(
+        SubjectOffering, on_delete=models.SET_NULL, null=True, blank=True, related_name="activities", verbose_name=_("Subject offering")
+    )
+    applicable_groups = models.ManyToManyField(Group, related_name="applicable_activities", verbose_name=_("Applicable groups"))
+    metadata = models.JSONField(default=dict, blank=True, help_text=_("Activity-specific attributes"), verbose_name=_("Metadata"))
 
     def __str__(self):
         return self.name
 
     class Meta:
-        verbose_name_plural = "Activities"
+        verbose_name = _("Activity")
+        verbose_name_plural = _("Activities")
 
 
 class TimeSlot(BaseModel):
@@ -778,11 +801,11 @@ class TimeSlot(BaseModel):
         ("sunday", _("Sunday")),
     )
 
-    name = models.CharField(max_length=100)
-    day_of_week = models.CharField(max_length=10, choices=DAY_CHOICES)
-    time_start = models.TimeField()
-    time_end = models.TimeField()
-    metadata = models.JSONField(default=dict, blank=True, help_text=_("Time slot-specific attributes"))
+    name = models.CharField(max_length=100, verbose_name=_("Name"))
+    day_of_week = models.CharField(max_length=10, choices=DAY_CHOICES, verbose_name=_("Day of week"))
+    time_start = models.TimeField(verbose_name=_("Time start"))
+    time_end = models.TimeField(verbose_name=_("Time end"))
+    metadata = models.JSONField(default=dict, blank=True, help_text=_("Time slot-specific attributes"), verbose_name=_("Metadata"))
 
     def clean(self):
         if self.time_start >= self.time_end:
@@ -802,6 +825,10 @@ class TimeSlot(BaseModel):
     def __str__(self):
         return f"{self.name}: {self.get_day_of_week_display()} {self.time_start.strftime('%H:%M')} - {self.time_end.strftime('%H:%M')}"
 
+    class Meta:
+        verbose_name = _("Time slot")
+        verbose_name_plural = _("Time slots")
+
 
 class ScheduleTemplate(BaseModel):
     """
@@ -817,11 +844,15 @@ class ScheduleTemplate(BaseModel):
         metadata: Flexible storage for template-specific attributes
     """
 
-    name = models.CharField(max_length=100)
-    description = models.TextField(blank=True)
-    applicable_groups = models.ManyToManyField(Group, related_name="schedule_templates")
-    applicable_terms = models.ManyToManyField(Term, related_name="schedule_templates")
-    metadata = models.JSONField(default=dict, blank=True, help_text=_("Template-specific attributes"))
+    name = models.CharField(max_length=100, verbose_name=_("Name"))
+    description = models.TextField(blank=True, verbose_name=_("Description"))
+    applicable_groups = models.ManyToManyField(Group, related_name="schedule_templates", verbose_name=_("Applicable groups"))
+    applicable_terms = models.ManyToManyField(Term, related_name="schedule_templates", verbose_name=_("Applicable terms"))
+    metadata = models.JSONField(default=dict, blank=True, help_text=_("Template-specific attributes"), verbose_name=_("Metadata"))
+
+    class Meta:
+        verbose_name = _("Schedule template")
+        verbose_name_plural = _("Schedule templates")
 
     def __str__(self):
         return self.name
@@ -840,13 +871,15 @@ class ScheduleAssignment(BaseModel):
         metadata: Flexible storage for assignment-specific attributes
     """
 
-    template = models.ForeignKey(ScheduleTemplate, on_delete=models.CASCADE, related_name="assignments")
-    time_slot = models.ForeignKey(TimeSlot, on_delete=models.CASCADE, related_name="template_assignments")
-    activity = models.ForeignKey(Activity, on_delete=models.CASCADE, related_name="schedule_assignments")
-    metadata = models.JSONField(default=dict, blank=True, help_text=_("Assignment-specific attributes"))
+    template = models.ForeignKey(ScheduleTemplate, on_delete=models.CASCADE, related_name="assignments", verbose_name=_("Template"))
+    time_slot = models.ForeignKey(TimeSlot, on_delete=models.CASCADE, related_name="template_assignments", verbose_name=_("Time slot"))
+    activity = models.ForeignKey(Activity, on_delete=models.CASCADE, related_name="schedule_assignments", verbose_name=_("Activity"))
+    metadata = models.JSONField(default=dict, blank=True, help_text=_("Assignment-specific attributes"), verbose_name=_("Metadata"))
 
     class Meta:
         unique_together = [["template", "time_slot"]]
+        verbose_name = _("Schedule assignment")
+        verbose_name_plural = _("Schedule assignments")
 
     def __str__(self):
         return f"{self.activity} at {self.time_slot} in {self.template}"
@@ -866,14 +899,16 @@ class MemberSchedule(BaseModel):
         metadata: Flexible storage for schedule-specific attributes
     """
 
-    member = models.ForeignKey(Member, on_delete=models.CASCADE, related_name="schedules")
-    term = models.ForeignKey(Term, on_delete=models.CASCADE, related_name="member_schedules")
-    template = models.ForeignKey(ScheduleTemplate, on_delete=models.PROTECT, related_name="member_schedules")
-    is_custom = models.BooleanField(default=False)
-    metadata = models.JSONField(default=dict, blank=True, help_text=_("Schedule-specific attributes"))
+    member = models.ForeignKey(Member, on_delete=models.CASCADE, related_name="schedules", verbose_name=_("Member"))
+    term = models.ForeignKey(Term, on_delete=models.CASCADE, related_name="member_schedules", verbose_name=_("Term"))
+    template = models.ForeignKey(ScheduleTemplate, on_delete=models.PROTECT, related_name="member_schedules", verbose_name=_("Template"))
+    is_custom = models.BooleanField(default=False, verbose_name=_("Is custom"))
+    metadata = models.JSONField(default=dict, blank=True, help_text=_("Schedule-specific attributes"), verbose_name=_("Metadata"))
 
     class Meta:
         unique_together = [["member", "term"]]
+        verbose_name = _("Member schedule")
+        verbose_name_plural = _("Member schedules")
 
     def __str__(self):
         return f"{self.member}'s schedule for {self.term}"
@@ -894,15 +929,17 @@ class MemberScheduleOverride(BaseModel):
         metadata: Flexible storage for override-specific attributes
     """
 
-    member_schedule = models.ForeignKey(MemberSchedule, on_delete=models.CASCADE, related_name="overrides")
-    date = models.DateField(null=True, blank=True, help_text=_("Specific date (blank means recurring every week)"))
-    time_slot = models.ForeignKey(TimeSlot, on_delete=models.CASCADE, related_name="member_overrides")
-    activity = models.ForeignKey(Activity, on_delete=models.CASCADE, related_name="schedule_overrides")
-    reason = models.CharField(max_length=255, blank=True)
-    metadata = models.JSONField(default=dict, blank=True, help_text=_("Override-specific attributes"))
+    member_schedule = models.ForeignKey(MemberSchedule, on_delete=models.CASCADE, related_name="overrides", verbose_name=_("Member schedule"))
+    date = models.DateField(null=True, blank=True, help_text=_("Specific date (blank means recurring every week)"), verbose_name=_("Date"))
+    time_slot = models.ForeignKey(TimeSlot, on_delete=models.CASCADE, related_name="member_overrides", verbose_name=_("Time slot"))
+    activity = models.ForeignKey(Activity, on_delete=models.CASCADE, related_name="schedule_overrides", verbose_name=_("Activity"))
+    reason = models.CharField(max_length=255, blank=True, verbose_name=_("Reason"))
+    metadata = models.JSONField(default=dict, blank=True, help_text=_("Override-specific attributes"), verbose_name=_("Metadata"))
 
     class Meta:
         unique_together = [["member_schedule", "date", "time_slot"]]
+        verbose_name = _("Member schedule override")
+        verbose_name_plural = _("Member schedule overrides")
 
     def __str__(self):
         date_str = f" on {self.date}" if self.date else " (recurring)"
@@ -924,15 +961,21 @@ class SpecialDay(BaseModel):
         metadata: Flexible storage for special day-specific attributes
     """
 
-    name = models.CharField(max_length=100)
-    date = models.DateField()
-    affects_groups = models.ManyToManyField(Group, related_name="special_days", blank=True, help_text=_("Empty means all groups are affected"))
-    is_school_closed = models.BooleanField(default=False)
-    alternate_schedule = models.ForeignKey(ScheduleTemplate, on_delete=models.SET_NULL, null=True, blank=True, related_name="special_days")
-    metadata = models.JSONField(default=dict, blank=True, help_text=_("Special day-specific attributes"))
+    name = models.CharField(max_length=100, verbose_name=_("Name"))
+    date = models.DateField(verbose_name=_("Date"))
+    affects_groups = models.ManyToManyField(
+        Group, related_name="special_days", blank=True, help_text=_("Empty means all groups are affected"), verbose_name=_("Affects groups")
+    )
+    is_school_closed = models.BooleanField(default=False, verbose_name=_("Is school closed"))
+    alternate_schedule = models.ForeignKey(
+        ScheduleTemplate, on_delete=models.SET_NULL, null=True, blank=True, related_name="special_days", verbose_name=_("Alternate schedule")
+    )
+    metadata = models.JSONField(default=dict, blank=True, help_text=_("Special day-specific attributes"), verbose_name=_("Metadata"))
 
     class Meta:
         unique_together = [["name", "date"]]
+        verbose_name = _("Special day")
+        verbose_name_plural = _("Special days")
 
     def __str__(self):
         return f"{self.name} ({self.date})"
@@ -958,19 +1001,21 @@ class Attendance(BaseModel):
         metadata: Flexible storage for attendance-specific attributes
     """
 
-    member = models.ForeignKey(Member, on_delete=models.CASCADE, related_name="attendance_records")
-    date = models.DateField()
-    time_slot = models.ForeignKey(TimeSlot, on_delete=models.CASCADE, related_name="attendance_records")
-    activity = models.ForeignKey(Activity, on_delete=models.CASCADE, related_name="attendance_records")
-    attended = models.BooleanField(default=True)
-    early_dismissal_time = models.TimeField(null=True, blank=True)
-    late_arrival_time = models.TimeField(null=True, blank=True)
-    notes = models.TextField(blank=True)
-    recorded_by = models.ForeignKey(Member, on_delete=models.SET_NULL, null=True, related_name="recorded_attendance")
-    metadata = models.JSONField(default=dict, blank=True, help_text=_("Attendance-specific attributes"))
+    member = models.ForeignKey(Member, on_delete=models.CASCADE, related_name="attendance_records", verbose_name=_("Member"))
+    date = models.DateField(verbose_name=_("Date"))
+    time_slot = models.ForeignKey(TimeSlot, on_delete=models.CASCADE, related_name="attendance_records", verbose_name=_("Time slot"))
+    activity = models.ForeignKey(Activity, on_delete=models.CASCADE, related_name="attendance_records", verbose_name=_("Activity"))
+    attended = models.BooleanField(default=True, verbose_name=_("Attended"))
+    early_dismissal_time = models.TimeField(null=True, blank=True, verbose_name=_("Early dismissal time"))
+    late_arrival_time = models.TimeField(null=True, blank=True, verbose_name=_("Late arrival time"))
+    notes = models.TextField(blank=True, verbose_name=_("Notes"))
+    recorded_by = models.ForeignKey(Member, on_delete=models.SET_NULL, null=True, related_name="recorded_attendance", verbose_name=_("Recorded by"))
+    metadata = models.JSONField(default=dict, blank=True, help_text=_("Attendance-specific attributes"), verbose_name=_("Metadata"))
 
     class Meta:
         unique_together = [["member", "date", "time_slot"]]
+        verbose_name = _("Attendance record")
+        verbose_name_plural = _("Attendance records")
 
     def __str__(self):
         status = "attended" if self.attended else "absent from"
@@ -1069,9 +1114,13 @@ class EventType(BaseModel):
     Define tipos de eventos en el calendario académico.
     """
 
-    name = models.CharField(max_length=100, unique=True)
-    description = models.TextField(blank=True)
-    metadata = models.JSONField(default=dict, blank=True)
+    name = models.CharField(max_length=100, unique=True, verbose_name=_("Name"))
+    description = models.TextField(blank=True, verbose_name=_("Description"))
+    metadata = models.JSONField(default=dict, blank=True, verbose_name=_("Metadata"))
+
+    class Meta:
+        verbose_name = _("Event type")
+        verbose_name_plural = _("Event types")
 
     def __str__(self):
         return self.name
@@ -1085,18 +1134,30 @@ class Event(BaseModel):
     ceremonies, meetings, etc.
     """
 
-    name = models.CharField(max_length=100)
-    type = models.ForeignKey(EventType, on_delete=models.PROTECT, related_name="events")
+    name = models.CharField(max_length=100, verbose_name=_("Name"))
+    type = models.ForeignKey(EventType, on_delete=models.PROTECT, related_name="events", verbose_name=_("Type"))
     term = models.ForeignKey(
-        Term, on_delete=models.CASCADE, related_name="events", null=True, blank=True, help_text=_("Term this event is associated with")
+        Term,
+        on_delete=models.CASCADE,
+        related_name="events",
+        null=True,
+        blank=True,
+        help_text=_("Term this event is associated with"),
+        verbose_name=_("Term"),
     )
-    preview_date = models.DateTimeField(null=True, blank=True, help_text=_("When information about this event becomes visible"))
-    date_start = models.DateTimeField()
-    date_end = models.DateTimeField()
-    affects_groups = models.ManyToManyField(Group, blank=True, related_name="events")
-    affects_subjects = models.ManyToManyField(Subject, blank=True, related_name="events")
-    is_active = models.BooleanField(default=True)
-    metadata = models.JSONField(default=dict, blank=True)
+    preview_date = models.DateTimeField(
+        null=True, blank=True, help_text=_("When information about this event becomes visible"), verbose_name=_("Preview date")
+    )
+    date_start = models.DateTimeField(verbose_name=_("Start date"))
+    date_end = models.DateTimeField(verbose_name=_("End date"))
+    affects_groups = models.ManyToManyField(Group, blank=True, related_name="events", verbose_name=_("Affects groups"))
+    affects_subjects = models.ManyToManyField(Subject, blank=True, related_name="events", verbose_name=_("Affects subjects"))
+    is_active = models.BooleanField(default=True, verbose_name=_("Is active"))
+    metadata = models.JSONField(default=dict, blank=True, verbose_name=_("Metadata"))
+
+    class Meta:
+        verbose_name = _("Event")
+        verbose_name_plural = _("Events")
 
     def __str__(self):
         return f"{self.name} ({self.date_start} to {self.date_end})"

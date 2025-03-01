@@ -4,7 +4,7 @@ from django.db import migrations
 
 def migrate_cycles_to_groups(apps, schema_editor):
     """
-    Convert Cycle models to Group models with group_type="Cycle".
+    Convert Cycle models to Group models with group_type="Ciclo".
     """
     Cycle = apps.get_model("cayuman", "Cycle")
     Group = apps.get_model("smiles", "Group")
@@ -13,9 +13,9 @@ def migrate_cycles_to_groups(apps, schema_editor):
     cycle_to_group_map = {}
 
     for cycle in Cycle.objects.all():
-        group, created = Group.objects.get_or_create(
+        group, _ = Group.objects.get_or_create(
             name=cycle.name,
-            group_type="Cycle",
+            group_type="Ciclo",
             defaults={"description": cycle.description, "is_primary": True, "metadata": {"original_cycle_id": cycle.id}},  # Cycles are primary groups
         )
 
@@ -35,7 +35,7 @@ def reverse_cycles_to_groups(apps, schema_editor):
     Remove groups created from cycles.
     """
     Group = apps.get_model("smiles", "Group")
-    Group.objects.filter(group_type="Cycle").delete()
+    Group.objects.filter(group_type="Ciclo").delete()
 
 
 class Migration(migrations.Migration):

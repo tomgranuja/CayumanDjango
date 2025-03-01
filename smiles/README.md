@@ -28,14 +28,14 @@ Mientras que Cayuman fue construido con estructuras predefinidas (workshops, cyc
 
 ### Grupos (Group)
 
-**En Cayuman**: Estructuras fijas como "Cycles" (ciclos) con campos predefinidos.
+**En Cayuman**: Estructuras fijas como "Cycles" (ciclos) con campos predefinidos. Los cycles son los grupos en como se organiza a los estudiantes: Avellanos, Coigües, Mañios, etc.
 
 **En SMileS**:
 - El modelo `Group` reemplaza directamente al modelo `Cycle` de Cayuman.
-- Utiliza el campo `group_type="Cycle"` para identificar grupos que funcionan como ciclos en Cayuman.
+- Utiliza el campo `group_type="Ciclo"` para identificar grupos que funcionan como ciclos en Cayuman.
 - Incorpora fields adicionales como is_primary, properties (JSON) y metadata (JSON) para mayor flexibilidad.
 - Permite estructuras jerárquicas mediante la relación parent, posibilitando agrupaciones más complejas.
-- En la migración, cada Cycle se convierte en un Group con group_type="Cycle".
+- En la migración, cada Cycle se convierte en un Group con group_type="Ciclo".
 
 ### Períodos (Term)
 

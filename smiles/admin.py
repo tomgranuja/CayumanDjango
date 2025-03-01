@@ -27,10 +27,9 @@ from smiles.models import TimeSlot
 
 
 class TermAdmin(admin.ModelAdmin):
-    list_display = ("id", "name", "term_type", "preview_date", "enrollment_start", "enrollment_end", "date_start", "date_end", "active")
+    list_display = ("id", "name", "preview_date", "enrollment_start", "enrollment_end", "date_start", "date_end", "active")
     list_per_page = 20
-    search_fields = ["name", "term_type"]
-    list_filter = ["term_type"]
+    search_fields = ["name"]
 
     formfield_overrides = {
         django_models.JSONField: {"widget": JSONEditorWidget},

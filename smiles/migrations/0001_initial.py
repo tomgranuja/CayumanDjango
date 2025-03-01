@@ -124,11 +124,11 @@ class Migration(migrations.Migration):
                     ),
                 ),
                 (
-                    "properties",
+                    "metadata",
                     models.JSONField(
                         blank=True,
                         default=dict,
-                        help_text="Define properties specific to this subject type",
+                        help_text="Type-specific attributes",
                     ),
                 ),
             ],
@@ -151,29 +151,7 @@ class Migration(migrations.Migration):
                 ("created_at", models.DateTimeField(auto_now_add=True)),
                 ("updated_at", models.DateTimeField(auto_now=True)),
                 ("name", models.CharField(max_length=100)),
-                (
-                    "term_type",
-                    models.CharField(
-                        help_text="The type of term (e.g., Semester, Quarter)",
-                        max_length=50,
-                    ),
-                ),
                 ("description", models.TextField(blank=True)),
-                (
-                    "has_enrollment_period",
-                    models.BooleanField(
-                        default=False,
-                        help_text="Whether this term type has enrollment periods",
-                    ),
-                ),
-                (
-                    "properties",
-                    models.JSONField(
-                        blank=True,
-                        default=dict,
-                        help_text="Properties specific to this type of term",
-                    ),
-                ),
                 ("date_start", models.DateField()),
                 ("date_end", models.DateField()),
                 (
@@ -262,14 +240,6 @@ class Migration(migrations.Migration):
                     models.BooleanField(
                         default=False,
                         help_text="Whether members must belong to exactly one group of this type",
-                    ),
-                ),
-                (
-                    "properties",
-                    models.JSONField(
-                        blank=True,
-                        default=dict,
-                        help_text="Properties specific to this type of group",
                     ),
                 ),
                 (

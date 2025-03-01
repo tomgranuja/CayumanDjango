@@ -19,7 +19,7 @@ def migrate_periods_to_terms(apps, schema_editor):
     enrollment_type = EventType.objects.get(name="Enrollment")
 
     # Get all cycle groups
-    cycle_groups = Group.objects.filter(group_type="Cycle")
+    cycle_groups = Group.objects.filter(group_type="Ciclo")
 
     # Create a mapping to store old period ID to new term ID for later use
     period_to_term_map = {}
@@ -28,12 +28,10 @@ def migrate_periods_to_terms(apps, schema_editor):
         # Create the term
         term = Term.objects.create(
             name=period.name,
-            term_type="Workshop Period",
             description=period.description,
-            has_enrollment_period=True,
             date_start=period.date_start,
             date_end=period.date_end,
-            metadata={"original_period_id": period.id},
+            metadata={"original_period_id": period.id, "term_type": "Workshop Period"},
         )
 
         # Store the mapping for later use in other migrations
@@ -48,7 +46,7 @@ def migrate_periods_to_terms(apps, schema_editor):
             enrollment_end = period.enrollment_start.date() + datetime.timedelta(days=5)
 
         enrollment_periods.append(
-            {"name": "Regular", "start_date": period.enrollment_start.isoformat(), "end_date": enrollment_end.isoformat(), "group_types": ["Cycle"]}
+            {"name": "Regular", "start_date": period.enrollment_start.isoformat(), "end_date": enrollment_end.isoformat(), "group_types": ["Ciclo"]}
         )
 
         term.metadata["enrollment_periods"] = enrollment_periods
@@ -105,7 +103,7 @@ def migrate_periods_to_terms(apps, schema_editor):
             is_active=True,
             metadata={
                 "enrollment_period": "Regular",
-                "group_types": ["Cycle"],
+                "group_types": ["Ciclo"],
                 "original_period_data": {
                     "id": period.id,
                     "enrollment_start": period.enrollment_start.isoformat(),
@@ -136,8 +134,9 @@ def reverse_periods_to_terms(apps, schema_editor):
     # Delete all enrollment events
     Event.objects.filter(type=enrollment_type).delete()
 
-    # Delete all terms with term_type='Workshop Period'
-    Term.objects.filter(term_type="Workshop Period").delete()
+    # Delete all terms that were created from periods
+    # We use the metadata to identify them
+    Term.objects.filter(metadata__has_key="original_period_id").delete()
 
 
 class Migration(migrations.Migration):
