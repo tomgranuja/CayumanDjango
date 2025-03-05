@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-02-28 19:33-0300\n"
+"POT-Creation-Date: 2025-03-01 00:18-0300\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -23,7 +23,7 @@ msgstr ""
 msgid "Export Selected to CSV"
 msgstr "Exportar seleccionados a CSV"
 
-#: cayuman/admin.py:97 cayuman/models.py:271
+#: cayuman/admin.py:97 cayuman/models.py:262
 msgid "Full Name"
 msgstr "Nombre Completo"
 
@@ -37,7 +37,7 @@ msgstr "Es Profesor"
 
 #: cayuman/admin.py:112 cayuman/admin.py:250 cayuman/admin.py:492
 #: cayuman/migrations/0002_alter_cycle_options_alter_member_options_and_more.py:15
-#: cayuman/models.py:584 cayuman/models.py:764
+#: cayuman/models.py:575 cayuman/models.py:755
 #: cayuman/templates/admin/workshop_period_students.html:24
 msgid "Cycle"
 msgstr "Ciclo"
@@ -69,7 +69,7 @@ msgid "Timetable for %s during %s"
 msgstr "Horario para %s durante el %s"
 
 #: cayuman/admin.py:231 cayuman/admin.py:305 cayuman/admin.py:534
-#: smiles/admin.py:35 smiles/admin.py:190
+#: smiles/admin.py:38 smiles/admin.py:195
 #: smiles/templates/admin/subject_offering_enrolled_members.html:29
 msgid "Active"
 msgstr "Activo"
@@ -85,28 +85,28 @@ msgstr "Ver en el sitio"
 
 #: cayuman/admin.py:313
 #: cayuman/migrations/0002_alter_cycle_options_alter_member_options_and_more.py:15
-#: cayuman/models.py:585 cayuman/models.py:593
+#: cayuman/models.py:576 cayuman/models.py:584
 msgid "Cycles"
 msgstr "Ciclos"
 
 #: cayuman/admin.py:317
 #: cayuman/migrations/0002_alter_cycle_options_alter_member_options_and_more.py:29
-#: cayuman/models.py:361 cayuman/models.py:594
+#: cayuman/models.py:352 cayuman/models.py:585
 #: cayuman/templates/admin/student_cycle_workshop_periods.html:78
 msgid "Schedules"
-msgstr "Bloques Horarios"
+msgstr "Horarios"
 
-#: cayuman/admin.py:325 cayuman/models.py:592 smiles/admin.py:198
+#: cayuman/admin.py:325 cayuman/models.py:583 smiles/admin.py:203
 msgid "Max Students"
 msgstr "Cupo de estudiantes"
 
-#: cayuman/admin.py:329 cayuman/admin.py:338 smiles/admin.py:202
-#: smiles/admin.py:211
+#: cayuman/admin.py:329 cayuman/admin.py:338 smiles/admin.py:207
+#: smiles/admin.py:216
 msgid "Enrolled Students"
 msgstr "Estudiantes inscritos"
 
 #: cayuman/admin.py:333 cayuman/templates/enrollment.html:154
-#: smiles/admin.py:206
+#: smiles/admin.py:211
 msgid "overflow"
 msgstr "sobrecupo"
 
@@ -170,17 +170,17 @@ msgstr ""
 "La selección online de talleres ya no está habilitada. Si necesitas cambiar "
 "tus talleres por favor contacta a tus profesores."
 
-#: cayuman/forms.py:38 cayuman/models.py:260 smiles/forms.py:35
+#: cayuman/forms.py:38 cayuman/models.py:251 smiles/forms.py:36
 msgid "User must be either Student or Teacher, or a staff member"
 msgstr ""
 "Los usuarios deben pertenecer al grupo de estudiantes o profesores o ser "
 "miembros del staff"
 
-#: cayuman/forms.py:41 cayuman/models.py:263 smiles/forms.py:38
+#: cayuman/forms.py:41 cayuman/models.py:254 smiles/forms.py:39
 msgid "Student cannot be staff member"
 msgstr "Un estudiante no puede ser miembro del staff"
 
-#: cayuman/forms.py:44 cayuman/models.py:266 smiles/forms.py:41
+#: cayuman/forms.py:44 cayuman/models.py:257 smiles/forms.py:42
 msgid "User must not be both Student and Teacher"
 msgstr ""
 "Los usuarios no pueden ser miembros del grupo de estudiantes y profesores al "
@@ -190,12 +190,12 @@ msgstr ""
 msgid "There's already another workshop period overlapping with current one"
 msgstr "Ya existe otro taller por periodo colisionando con el actual"
 
-#: cayuman/forms.py:123 cayuman/models.py:947
+#: cayuman/forms.py:123 cayuman/models.py:938
 #, python-format
 msgid "Workshop period `%s` has reached its quota of students"
 msgstr "El taller `%s` ha alcanzado su número máximo de estudiantes"
 
-#: cayuman/forms.py:127 cayuman/models.py:952
+#: cayuman/forms.py:127 cayuman/models.py:943
 #, python-format
 msgid ""
 "Student `%(st)s` cannot be associated with workshop period `%(wp)s` because "
@@ -204,20 +204,20 @@ msgstr ""
 "El estudiante `%(st)s` no puede inscribirse en el taller `%(wp)s` porque no "
 "coinciden en los ciclos"
 
-#: cayuman/forms.py:137 cayuman/models.py:962
+#: cayuman/forms.py:137 cayuman/models.py:953
 #, python-format
 msgid "Workshop periods `%(w1)s` and `%(w2)s` have colliding schedules."
 msgstr "Los talleres `%(w1)s` y `%(w2)s` tienen una colisión de horario"
 
-#: cayuman/forms.py:151 cayuman/forms.py:166 smiles/forms.py:161
+#: cayuman/forms.py:151 cayuman/forms.py:166 smiles/forms.py:160
 msgid "RUT"
 msgstr "RUT"
 
-#: cayuman/forms.py:153 smiles/forms.py:163
+#: cayuman/forms.py:153 smiles/forms.py:162
 msgid "Use dash, no point (ex. 23456789-k)"
 msgstr "Sin puntos, con guión (ej. 23456789-k)"
 
-#: cayuman/forms.py:155 smiles/forms.py:165
+#: cayuman/forms.py:155 smiles/forms.py:164
 msgid "Password"
 msgstr "Contraseña"
 
@@ -254,182 +254,207 @@ msgstr ""
 "tarde o elige otro periodo usando el menú de arriba."
 
 #: cayuman/migrations/0002_alter_cycle_options_alter_member_options_and_more.py:19
-#: cayuman/models.py:233
+#: cayuman/models.py:224 smiles/migrations/0001_initial.py:575
+#: smiles/migrations/0001_initial.py:697
+#: smiles/migrations/0012_alter_attendance_options_alter_activity_created_at_and_more.py:72
+#: smiles/models.py:571 smiles/models.py:902 smiles/models.py:1004
 #: smiles/templates/admin/subject_offering_enrolled_members.html:26
 msgid "Member"
 msgstr "Miembro"
 
 #: cayuman/migrations/0002_alter_cycle_options_alter_member_options_and_more.py:19
-#: cayuman/models.py:234
+#: cayuman/models.py:225
 msgid "Members"
 msgstr "Miembros"
 
 #: cayuman/migrations/0002_alter_cycle_options_alter_member_options_and_more.py:23
-#: cayuman/models.py:553 cayuman/models.py:590
+#: cayuman/models.py:544 cayuman/models.py:581
 msgid "Period"
 msgstr "Periodo"
 
 #: cayuman/migrations/0002_alter_cycle_options_alter_member_options_and_more.py:23
-#: cayuman/models.py:554
+#: cayuman/models.py:545
 msgid "Periods"
 msgstr "Periodos"
 
 #: cayuman/migrations/0002_alter_cycle_options_alter_member_options_and_more.py:28
-#: cayuman/models.py:360 smiles/templates/smiles/subject_offering.html:14
+#: cayuman/models.py:351 smiles/templates/smiles/subject_offering.html:14
 msgid "Schedule"
 msgstr "Bloque Horario"
 
 #: cayuman/migrations/0002_alter_cycle_options_alter_member_options_and_more.py:37
-#: cayuman/models.py:850
+#: cayuman/models.py:841
 msgid "Students Cycle"
 msgstr "Estudiante por ciclo"
 
 #: cayuman/migrations/0002_alter_cycle_options_alter_member_options_and_more.py:38
-#: cayuman/models.py:851
+#: cayuman/models.py:842
 msgid "Students Cycles"
 msgstr "Estudiantes por ciclo"
 
 #: cayuman/migrations/0002_alter_cycle_options_alter_member_options_and_more.py:43
-#: cayuman/models.py:281 cayuman/models.py:589
+#: cayuman/models.py:272 cayuman/models.py:580
 #: cayuman/templates/admin/student_cycle_workshop_periods.html:76
 #: cayuman/templates/workshop_period.html:31
 msgid "Workshop"
 msgstr "Taller"
 
 #: cayuman/migrations/0002_alter_cycle_options_alter_member_options_and_more.py:43
-#: cayuman/models.py:282 cayuman/templates/base_internal.html:60
+#: cayuman/models.py:273 cayuman/templates/base_internal.html:60
 msgid "Workshops"
 msgstr "Talleres"
 
 #: cayuman/migrations/0002_alter_cycle_options_alter_member_options_and_more.py:48
-#: cayuman/models.py:662
+#: cayuman/models.py:653
 msgid "Workshop's Period"
 msgstr "Taller por periodo"
 
 #: cayuman/migrations/0002_alter_cycle_options_alter_member_options_and_more.py:49
-#: cayuman/models.py:663
+#: cayuman/models.py:654
 msgid "Workshops' Periods"
 msgstr "Talleres por periodo"
 
 #: cayuman/migrations/0002_alter_cycle_options_alter_member_options_and_more.py:61
-#: cayuman/models.py:305 smiles/models.py:800
-#: smiles/templates/smiles/subject_offerings.html:47
+#: cayuman/models.py:296 smiles/migrations/0001_initial.py:208
+#: smiles/models.py:795 smiles/templates/smiles/subject_offerings.html:47
 #: smiles/templates/smiles/weekly_schedule.html:35
 msgid "Monday"
 msgstr "Lunes"
 
 #: cayuman/migrations/0002_alter_cycle_options_alter_member_options_and_more.py:62
-#: cayuman/models.py:306 smiles/models.py:801
-#: smiles/templates/smiles/subject_offerings.html:48
+#: cayuman/models.py:297 smiles/migrations/0001_initial.py:209
+#: smiles/models.py:796 smiles/templates/smiles/subject_offerings.html:48
 #: smiles/templates/smiles/weekly_schedule.html:36
 msgid "Tuesday"
 msgstr "Martes"
 
 #: cayuman/migrations/0002_alter_cycle_options_alter_member_options_and_more.py:63
-#: cayuman/models.py:307 smiles/models.py:802
-#: smiles/templates/smiles/subject_offerings.html:49
+#: cayuman/models.py:298 smiles/migrations/0001_initial.py:210
+#: smiles/models.py:797 smiles/templates/smiles/subject_offerings.html:49
 #: smiles/templates/smiles/weekly_schedule.html:37
 msgid "Wednesday"
 msgstr "Miércoles"
 
 #: cayuman/migrations/0002_alter_cycle_options_alter_member_options_and_more.py:64
-#: cayuman/models.py:308 smiles/models.py:803
-#: smiles/templates/smiles/subject_offerings.html:50
+#: cayuman/models.py:299 smiles/migrations/0001_initial.py:211
+#: smiles/models.py:798 smiles/templates/smiles/subject_offerings.html:50
 #: smiles/templates/smiles/weekly_schedule.html:38
 msgid "Thursday"
 msgstr "Jueves"
 
 #: cayuman/migrations/0002_alter_cycle_options_alter_member_options_and_more.py:65
-#: cayuman/models.py:309 smiles/models.py:804
-#: smiles/templates/smiles/subject_offerings.html:51
+#: cayuman/models.py:300 smiles/migrations/0001_initial.py:212
+#: smiles/models.py:799 smiles/templates/smiles/subject_offerings.html:51
 #: smiles/templates/smiles/weekly_schedule.html:39
 msgid "Friday"
 msgstr "Viernes"
 
-#: cayuman/models.py:246
+#: cayuman/models.py:237
 msgid "Group is already assigned to this member"
 msgstr "El grupo ya está asignado a este miembro"
 
-#: cayuman/models.py:270 cayuman/models.py:422 cayuman/models.py:558
-#: smiles/models.py:95
+#: cayuman/models.py:261 cayuman/models.py:413 cayuman/models.py:549
+#: smiles/migrations/0001_initial.py:30 smiles/migrations/0001_initial.py:74
+#: smiles/migrations/0001_initial.py:98 smiles/migrations/0001_initial.py:129
+#: smiles/migrations/0001_initial.py:169 smiles/migrations/0001_initial.py:203
+#: smiles/migrations/0001_initial.py:252 smiles/migrations/0001_initial.py:311
+#: smiles/migrations/0001_initial.py:351 smiles/migrations/0001_initial.py:494
+#: smiles/migrations/0001_initial.py:617 smiles/models.py:57
+#: smiles/models.py:90 smiles/models.py:394 smiles/models.py:426
+#: smiles/models.py:729 smiles/models.py:763 smiles/models.py:804
+#: smiles/models.py:847 smiles/models.py:964 smiles/models.py:1117
+#: smiles/models.py:1137
 msgid "Name"
 msgstr "Nombre"
 
-#: cayuman/models.py:272 cayuman/models.py:423 cayuman/models.py:559
-#: smiles/models.py:97 smiles/templates/smiles/enrollment.html:134
+#: cayuman/models.py:263 cayuman/models.py:414 cayuman/models.py:550
+#: smiles/migrations/0001_initial.py:31 smiles/migrations/0001_initial.py:75
+#: smiles/migrations/0001_initial.py:99 smiles/migrations/0001_initial.py:130
+#: smiles/migrations/0001_initial.py:170 smiles/migrations/0001_initial.py:261
+#: smiles/migrations/0001_initial.py:312 smiles/migrations/0001_initial.py:495
+#: smiles/models.py:59 smiles/models.py:91 smiles/models.py:395
+#: smiles/models.py:428 smiles/models.py:730 smiles/models.py:765
+#: smiles/models.py:848 smiles/models.py:1118
+#: smiles/templates/smiles/enrollment.html:134
 #: smiles/templates/smiles/subject_offering.html:26
 msgid "Description"
 msgstr "Descripción"
 
-#: cayuman/models.py:312 smiles/templates/smiles/subject_offerings.html:44
+#: cayuman/models.py:303 smiles/templates/smiles/subject_offerings.html:44
 msgid "Day"
 msgstr "Día"
 
-#: cayuman/models.py:313
+#: cayuman/models.py:304
 msgid "Start time"
 msgstr "Hora de inicio"
 
-#: cayuman/models.py:314
+#: cayuman/models.py:305
 msgid "End time"
 msgstr "Hora de término"
 
-#: cayuman/models.py:327 smiles/models.py:817
+#: cayuman/models.py:318 smiles/models.py:812
 msgid "Start time must be before end time"
 msgstr "La hora de inicio debe ser anterior a la de término"
 
-#: cayuman/models.py:335
+#: cayuman/models.py:326
 msgid "There's already another schedule colliding with current one"
 msgstr "Ya existe otro bloque horario colisionando con el actual"
 
-#: cayuman/models.py:424 smiles/admin.py:39
+#: cayuman/models.py:415 smiles/admin.py:42
+#: smiles/migrations/0001_initial.py:358 smiles/models.py:1149
 msgid "Preview date"
 msgstr "Fecha de previsualización"
 
-#: cayuman/models.py:425 smiles/admin.py:44
+#: cayuman/models.py:416 smiles/admin.py:47
 msgid "Enrollment start date and time"
 msgstr "Fecha de inicio de pre-inscripción"
 
-#: cayuman/models.py:426 smiles/admin.py:66
+#: cayuman/models.py:417 smiles/admin.py:70
 msgid "Enrollment end date"
 msgstr "Fecha de fin de pre-inscripción"
 
-#: cayuman/models.py:427 smiles/models.py:100
+#: cayuman/models.py:418 smiles/migrations/0001_initial.py:171
+#: smiles/migrations/0001_initial.py:361 smiles/models.py:92
+#: smiles/models.py:1151
 msgid "Start date"
 msgstr "Fecha de inicio"
 
-#: cayuman/models.py:428 smiles/models.py:101
+#: cayuman/models.py:419 smiles/migrations/0001_initial.py:172
+#: smiles/migrations/0001_initial.py:362 smiles/models.py:93
+#: smiles/models.py:1152
 msgid "End date"
 msgstr "Fecha de término"
 
-#: cayuman/models.py:482
+#: cayuman/models.py:473
 msgid "Preview date must be before enrollment start date"
 msgstr ""
 "La fecha de previsualización debe ser anterior a la fecha inicial de pre-"
 "inscripción"
 
-#: cayuman/models.py:489 smiles/models.py:106
+#: cayuman/models.py:480 smiles/models.py:98
 msgid "Start date must be before end date"
 msgstr "La fecha de inicio debe ser anterior a la de término"
 
-#: cayuman/models.py:492
+#: cayuman/models.py:483
 msgid "Enrollment start date must be before enrollment end date"
 msgstr ""
 "La fecha de inicio de pre-inscripción debe ser anterior a la fecha final de "
 "pre-inscripción"
 
-#: cayuman/models.py:495
+#: cayuman/models.py:486
 msgid "Enrollment start date must be before start date"
 msgstr ""
 "La fecha de inicio de pre-inscripción debe ser anterior a la fecha de inicio"
 
-#: cayuman/models.py:501 cayuman/models.py:504
+#: cayuman/models.py:492 cayuman/models.py:495
 msgid ""
 "The starting and ending dates you chose are colliding with another period"
 msgstr ""
 "Las fechas de inicio y fin que elegiste colisionan con las de otro periodo"
 
-#: cayuman/models.py:591
+#: cayuman/models.py:582
 #: cayuman/templates/admin/student_cycle_workshop_periods.html:77
+#: smiles/migrations/0001_initial.py:461 smiles/models.py:462
 #: smiles/templates/smiles/enrollment.html:137
 #: smiles/templates/smiles/subject_offering.html:29
 #: smiles/templates/smiles/subject_offerings.html:86
@@ -437,43 +462,43 @@ msgstr ""
 msgid "Teacher"
 msgstr "Profesor"
 
-#: cayuman/models.py:611
+#: cayuman/models.py:602
 #, python-format
 msgid "Teacher must belong to the `%(g)s` group."
 msgstr "El profesor debe pertenecer al grupo `%(g)s`"
 
-#: cayuman/models.py:698 cayuman/models.py:737
+#: cayuman/models.py:689 cayuman/models.py:728
 #, python-format
 msgid "No studentcycle entry found for student `%(st)s` and period `%(p)s`"
 msgstr ""
 "El estudiante `%(st)s` no está asociado con un ciclo durante el periodo "
 "`%(p)s`"
 
-#: cayuman/models.py:732
+#: cayuman/models.py:723
 #, python-format
 msgid "No period found for date `%(d)s`"
 msgstr "No se encontraron periodos para la fecha `%(d)s`"
 
-#: cayuman/models.py:763
+#: cayuman/models.py:754
 #: cayuman/templates/admin/workshop_period_students.html:23
 msgid "Student"
 msgstr "Estudiante"
 
-#: cayuman/models.py:765
+#: cayuman/models.py:756
 msgid "Date joined"
 msgstr "Fecha de alta"
 
-#: cayuman/models.py:766
+#: cayuman/models.py:757
 #: cayuman/templates/admin/student_cycle_workshop_periods.html:11
 msgid "Workshop Periods"
 msgstr "Talleres por periodo"
 
-#: cayuman/models.py:778
+#: cayuman/models.py:769
 #, python-format
 msgid "Student must belong to the `%(g)s` group"
 msgstr "El estudiante debe pertenecer al grupo `%(g)s`"
 
-#: cayuman/models.py:933
+#: cayuman/models.py:924
 #, python-format
 msgid "Workshop period `%(wp)s` is already associated with this student"
 msgstr "El taller `%(wp)s` ya está asociado con este estudiante"
@@ -778,25 +803,30 @@ msgstr ""
 msgid "Your workshops have been saved"
 msgstr "Tus talleres han sido guardados"
 
-#: smiles/admin.py:136
+#: smiles/admin.py:139 smiles/migrations/0001_initial.py:371
+#: smiles/migrations/0001_initial.py:511 smiles/migrations/0001_initial.py:542
+#: smiles/models.py:427 smiles/models.py:764 smiles/models.py:1138
 msgid "Type"
 msgstr "Tipo"
 
-#: smiles/admin.py:143
+#: smiles/admin.py:147 smiles/migrations/0001_initial.py:293
+#: smiles/migrations/0001_initial.py:688 smiles/models.py:68
+#: smiles/models.py:572
 #: smiles/templates/admin/subject_offering_enrolled_members.html:27
 msgid "Group"
 msgstr "Grupo"
 
-#: smiles/admin.py:194
+#: smiles/admin.py:199 smiles/migrations/0001_initial.py:294
+#: smiles/models.py:69
 msgid "Groups"
 msgstr "Grupos"
 
-#: smiles/admin.py:264
+#: smiles/admin.py:269
 #, python-format
 msgid "Enrolled Members: %s"
 msgstr "Estudiantes inscritos: %s"
 
-#: smiles/forms.py:57
+#: smiles/forms.py:58
 msgid "Select the time slots for this subject offering"
 msgstr "Selecciona los bloques horarios para esta asignatura"
 
@@ -811,7 +841,7 @@ msgstr ""
 msgid "Select the subject offerings for this member"
 msgstr "Selecciona las clases para este estudiante"
 
-#: smiles/forms.py:141 smiles/forms.py:301
+#: smiles/forms.py:140 smiles/forms.py:299
 #, python-format
 msgid ""
 "Time slot conflict: %(time_slot)s is used by both %(offering1)s and "
@@ -820,187 +850,490 @@ msgstr ""
 "Conflicto de horario: %(time_slot)s es usado por %(offering1)s and "
 "%(offering2)s"
 
-#: smiles/forms.py:175
+#: smiles/forms.py:174
 msgid ""
 "Please enter a correct RUT and password. Note that both fields may be case-"
 "sensitive."
 msgstr "Por favor ingrese un RUT y password correctos."
 
-#: smiles/forms.py:209
+#: smiles/forms.py:208
 msgid "-- No selection --"
 msgstr "-- Sin selección --"
 
-#: smiles/forms.py:251
+#: smiles/forms.py:250
 #, python-format
 msgid "Only %d spots left!"
 msgstr "Solo %d cupo(s) disponible(s)!"
 
-#: smiles/forms.py:255 smiles/templates/smiles/enrollment.html:84
+#: smiles/forms.py:254 smiles/templates/smiles/enrollment.html:84
 #: smiles/templates/smiles/subject_offerings.html:100
 msgid "FULL"
 msgstr "COMPLETO"
 
-#: smiles/forms.py:283
+#: smiles/forms.py:282
 msgid "Invalid selection"
 msgstr "Selección inválida"
 
-#: smiles/forms.py:288
+#: smiles/forms.py:287
 msgid "This subject offering is full"
 msgstr "Esta clase está llena"
 
-#: smiles/models.py:60
-msgid "The type of group (e.g., Grade, Cycle, Team)"
-msgstr "Tipo de grupo (ej. Curso, Ciclo, etc.)"
-
-#: smiles/models.py:62
-msgid "Whether members must belong to exactly one group of this type"
-msgstr "Miembros deben pertenecer a exactamente un grupo de este tipo"
-
-#: smiles/models.py:63
-msgid "Properties specific to this type of group"
-msgstr "Propiedades específicas a este tipo de grupo"
-
-#: smiles/models.py:64
-msgid "Attributes specific to this group instance"
-msgstr "Atributos específicos de este grupo"
-
-#: smiles/models.py:96
-#, fuzzy
-#| msgid "Term"
-msgid "Term type"
-msgstr "Periodo"
-
-#: smiles/models.py:96
-msgid "The type of term (e.g., Semester, Quarter)"
-msgstr "Tipo de período (ej. Semestre, etc)"
-
-#: smiles/models.py:98
-msgid "Whether this term type has enrollment periods"
-msgstr "Los estudiantes pasan por un proceso de inscripción para este período"
-
-#: smiles/models.py:99
-msgid "Properties specific to this type of term"
-msgstr "Propiedades específicas para este tipo de periodo"
-
-#: smiles/models.py:102
-msgid "Attributes specific to this term instance"
-msgstr "Atributos específicos de este periodo"
-
-#: smiles/models.py:102
-msgid "Metadata"
-msgstr "Metadata"
-
-#: smiles/models.py:113
-msgid "This term overlaps with another term of the same type"
-msgstr "Este periodo se superpone con otro periodo del mismo tipo"
-
-#: smiles/models.py:120 smiles/templates/smiles/subject_offering.html:41
-msgid "Term"
-msgstr "Periodo"
-
-#: smiles/models.py:121
-#, fuzzy
-#| msgid "Term"
-msgid "Terms"
-msgstr "Periodos"
-
-#: smiles/models.py:430
-msgid "Whether students can choose subjects of this type"
-msgstr "Los estudiantes pueden elegir asignaturas de este tipo"
-
-#: smiles/models.py:431
-msgid "Define properties specific to this subject type"
-msgstr "Define propiedades específicas de este tipo de asignatura"
-
-#: smiles/models.py:457
-msgid "Subject-specific attributes like curriculum links"
-msgstr "Atributos específicos de esta asignatura tales como links a temarios"
-
-#: smiles/models.py:486
-msgid "0 means unlimited"
-msgstr "0: sin límites"
-
-#: smiles/models.py:495
-msgid "Enrollment event associated with this offering"
-msgstr "Evento de inscripción asociado a esta clase"
-
-#: smiles/models.py:499
-msgid "Offering-specific attributes"
-msgstr "Atributos específicos de esta clase"
-
-#: smiles/models.py:593 smiles/models.py:874
-msgid "Assignment-specific attributes"
-msgstr "Atributos específicos de esta asignatura"
-
-#: smiles/models.py:747
+#: smiles/migrations/0001_initial.py:36 smiles/models.py:732
 msgid "Whether students can choose activities of this type"
 msgstr "Los estudiantes pueden elegir actividades de este tipo"
 
-#: smiles/models.py:748
+#: smiles/migrations/0001_initial.py:37 smiles/migrations/0001_initial.py:136
+#: smiles/models.py:397 smiles/models.py:732
+msgid "Is selectable"
+msgstr "Puede ser elegido por los estudiantes"
+
+#: smiles/migrations/0001_initial.py:42 smiles/models.py:735
 msgid "Whether attendance should be tracked"
 msgstr "La asistencia debe ser registrada"
 
-#: smiles/models.py:749
+#: smiles/migrations/0001_initial.py:42 smiles/models.py:735
+msgid "Requires attendance"
+msgstr "Se registra asistencia"
+
+#: smiles/migrations/0001_initial.py:49 smiles/models.py:737
 msgid "Activity type-specific attributes"
 msgstr "Atributos específicos para este tipo de actividad"
 
-#: smiles/models.py:776
-msgid "Activity-specific attributes"
-msgstr "Atributos específicos de esta actividad"
+#: smiles/migrations/0001_initial.py:50 smiles/migrations/0001_initial.py:76
+#: smiles/migrations/0001_initial.py:106 smiles/migrations/0001_initial.py:145
+#: smiles/migrations/0001_initial.py:179 smiles/migrations/0001_initial.py:228
+#: smiles/migrations/0001_initial.py:276 smiles/migrations/0001_initial.py:319
+#: smiles/migrations/0001_initial.py:364 smiles/migrations/0001_initial.py:425
+#: smiles/migrations/0001_initial.py:502 smiles/migrations/0001_initial.py:566
+#: smiles/migrations/0001_initial.py:626 smiles/migrations/0001_initial.py:679
+#: smiles/migrations/0001_initial.py:740 smiles/migrations/0001_initial.py:807
+#: smiles/migrations/0012_alter_attendance_options_alter_activity_created_at_and_more.py:77
+#: smiles/models.py:63 smiles/models.py:94 smiles/models.py:399
+#: smiles/models.py:430 smiles/models.py:478 smiles/models.py:576
+#: smiles/models.py:737 smiles/models.py:770 smiles/models.py:808
+#: smiles/models.py:851 smiles/models.py:877 smiles/models.py:906
+#: smiles/models.py:937 smiles/models.py:973 smiles/models.py:1013
+#: smiles/models.py:1119 smiles/models.py:1156
+msgid "Metadata"
+msgstr "Metadata"
 
-#: smiles/models.py:805
+#: smiles/migrations/0001_initial.py:56 smiles/models.py:743
+msgid "Activity type"
+msgstr "Tipo de Actividad"
+
+#: smiles/migrations/0001_initial.py:57 smiles/models.py:744
+msgid "Activity types"
+msgstr "Tipos de Actividades"
+
+#: smiles/migrations/0001_initial.py:80 smiles/models.py:1122
+msgid "Event type"
+msgstr "Tipo de Evento"
+
+#: smiles/migrations/0001_initial.py:81 smiles/models.py:1123
+msgid "Event types"
+msgstr "Tipos de Eventos"
+
+#: smiles/migrations/0001_initial.py:105 smiles/models.py:430
+msgid "Subject-specific attributes like curriculum links"
+msgstr "Atributos específicos de esta asignatura tales como links a temarios"
+
+#: smiles/migrations/0001_initial.py:111 smiles/migrations/0001_initial.py:450
+#: smiles/models.py:435 smiles/models.py:459
+#: smiles/templates/smiles/enrollment.html:51
+msgid "Subject"
+msgstr "Asignatura"
+
+#: smiles/migrations/0001_initial.py:112 smiles/models.py:436
+msgid "Subjects"
+msgstr "Asignaturas"
+
+#: smiles/migrations/0001_initial.py:135 smiles/models.py:397
+msgid "Whether students can choose subjects of this type"
+msgstr "Los estudiantes pueden elegir asignaturas de este tipo"
+
+#: smiles/migrations/0001_initial.py:144 smiles/models.py:399
+msgid "Type-specific attributes"
+msgstr "Atributos específicos de este tipo"
+
+#: smiles/migrations/0001_initial.py:151 smiles/models.py:402
+msgid "Subject type"
+msgstr "Tipo de Asignatura"
+
+#: smiles/migrations/0001_initial.py:152 smiles/models.py:403
+msgid "Subject types"
+msgstr "Tipo de Asignatura"
+
+#: smiles/migrations/0001_initial.py:178 smiles/models.py:94
+msgid "Attributes specific to this term instance"
+msgstr "Atributos específicos de este periodo"
+
+#: smiles/migrations/0001_initial.py:185 smiles/migrations/0001_initial.py:391
+#: smiles/migrations/0001_initial.py:470 smiles/migrations/0001_initial.py:593
+#: smiles/models.py:112 smiles/models.py:460 smiles/models.py:903
+#: smiles/models.py:1146 smiles/templates/smiles/subject_offering.html:41
+msgid "Term"
+msgstr "Periodo"
+
+#: smiles/migrations/0001_initial.py:186 smiles/models.py:113
+msgid "Terms"
+msgstr "Periodos"
+
+#: smiles/migrations/0001_initial.py:213 smiles/models.py:800
 msgid "Saturday"
 msgstr "Sábado"
 
-#: smiles/models.py:806
-#, fuzzy
-#| msgid "Monday"
+#: smiles/migrations/0001_initial.py:214 smiles/models.py:801
 msgid "Sunday"
-msgstr "Lunes"
+msgstr "Domingo"
 
-#: smiles/models.py:813
+#: smiles/migrations/0001_initial.py:217 smiles/models.py:805
+msgid "Day of week"
+msgstr "Día de la Semana"
+
+#: smiles/migrations/0001_initial.py:220 smiles/models.py:806
+msgid "Time start"
+msgstr "Hora de inicio"
+
+#: smiles/migrations/0001_initial.py:221 smiles/models.py:807
+msgid "Time end"
+msgstr "Hora de término"
+
+#: smiles/migrations/0001_initial.py:227 smiles/models.py:808
 msgid "Time slot-specific attributes"
 msgstr "Atributos específicos de este bloque horario"
 
-#: smiles/models.py:824
-msgid "This time slot overlaps with another time slot on the same day"
-msgstr "Este bloque horario se superpone con otro bloque del mismo día"
+#: smiles/migrations/0001_initial.py:234 smiles/migrations/0001_initial.py:767
+#: smiles/migrations/0001_initial.py:834
+#: smiles/migrations/0012_alter_attendance_options_alter_activity_created_at_and_more.py:92
+#: smiles/models.py:829 smiles/models.py:875 smiles/models.py:934
+#: smiles/models.py:1006
+msgid "Time slot"
+msgstr "Bloque Horario"
 
-#: smiles/models.py:852
+#: smiles/migrations/0001_initial.py:235 smiles/models.py:830
+msgid "Time slots"
+msgstr "Bloques Horarios"
+
+#: smiles/migrations/0001_initial.py:256 smiles/models.py:58
+msgid "The type of group (e.g., Grade, Cycle, Team)"
+msgstr "Tipo de grupo (ej. Curso, Ciclo, etc.)"
+
+#: smiles/migrations/0001_initial.py:258 smiles/models.py:58
+msgid "Group type"
+msgstr "Tipo de Grupo"
+
+#: smiles/migrations/0001_initial.py:266 smiles/models.py:61
+msgid "Whether members must belong to exactly one group of this type"
+msgstr "Miembros deben pertenecer a exactamente un grupo de este tipo"
+
+#: smiles/migrations/0001_initial.py:267 smiles/models.py:61
+msgid "Is primary"
+msgstr "Es primario"
+
+#: smiles/migrations/0001_initial.py:275 smiles/models.py:63
+msgid "Attributes specific to this group instance"
+msgstr "Atributos específicos de este grupo"
+
+#: smiles/migrations/0001_initial.py:287 smiles/models.py:64
+msgid "Parent"
+msgstr "Padre"
+
+#: smiles/migrations/0001_initial.py:318 smiles/models.py:851
 msgid "Template-specific attributes"
 msgstr "Atributos específicos de esta plantilla"
 
-#: smiles/models.py:901
-msgid "Schedule-specific attributes"
-msgstr "Atributos específicos de este bloque horario"
+#: smiles/migrations/0001_initial.py:324 smiles/migrations/0001_initial.py:516
+#: smiles/models.py:769 smiles/models.py:849
+msgid "Applicable groups"
+msgstr "Grupos relacionados"
 
-#: smiles/models.py:926
-msgid "Specific date (blank means recurring every week)"
-msgstr "Fecha específica (dejar en blanca para hacerlo recurrente cada semana)"
+#: smiles/migrations/0001_initial.py:328 smiles/models.py:850
+msgid "Applicable terms"
+msgstr "Periodos relacionados"
 
-#: smiles/models.py:930
-msgid "Override-specific attributes"
-msgstr "Atributos específicos para esta personalización"
+#: smiles/migrations/0001_initial.py:333 smiles/models.py:854
+msgid "Schedule template"
+msgstr "Plantilla de Horario"
 
-#: smiles/models.py:957
-msgid "Empty means all groups are affected"
-msgstr "Dejar vacío para que todos los grupos sean afectados"
+#: smiles/migrations/0001_initial.py:334 smiles/models.py:855
+msgid "Schedule templates"
+msgstr "Plantillas de Horario"
 
-#: smiles/models.py:960
-msgid "Special day-specific attributes"
-msgstr "Atributos específicos de feriados"
+#: smiles/migrations/0001_initial.py:356 smiles/models.py:1149
+msgid "When information about this event becomes visible"
+msgstr "Cuando la información de este evento se vuelve visible"
 
-#: smiles/models.py:998
-msgid "Attendance-specific attributes"
-msgstr "Atributos específicos de asistencia"
+#: smiles/migrations/0001_initial.py:363 smiles/migrations/0001_initial.py:672
+#: smiles/models.py:575 smiles/models.py:1155
+msgid "Is active"
+msgstr "está activo"
 
-#: smiles/models.py:1119
+#: smiles/migrations/0001_initial.py:376 smiles/migrations/0001_initial.py:636
+#: smiles/models.py:967 smiles/models.py:1153
+msgid "Affects groups"
+msgstr "Grupos relacionados"
+
+#: smiles/migrations/0001_initial.py:380 smiles/models.py:1154
+msgid "Affects subjects"
+msgstr "Asignaturas relacionadas"
+
+#: smiles/migrations/0001_initial.py:386 smiles/models.py:1145
 msgid "Term this event is associated with"
 msgstr "Periodo con el que este evento está asociado"
 
-#: smiles/models.py:1121
-msgid "When information about this event becomes visible"
-msgstr "Cuando la información de este evento se vuelve visible"
+#: smiles/migrations/0001_initial.py:397 smiles/models.py:1159
+msgid "Event"
+msgstr "Evento"
+
+#: smiles/migrations/0001_initial.py:398 smiles/models.py:1160
+msgid "Events"
+msgstr "Eventos"
+
+#: smiles/migrations/0001_initial.py:417 smiles/models.py:464
+msgid "0 means unlimited"
+msgstr "0: sin límites"
+
+#: smiles/migrations/0001_initial.py:417 smiles/models.py:464
+msgid "Max students"
+msgstr "Cupo de estudiantes"
+
+#: smiles/migrations/0001_initial.py:424 smiles/models.py:478
+msgid "Offering-specific attributes"
+msgstr "Atributos específicos de esta clase"
+
+#: smiles/migrations/0001_initial.py:430 smiles/models.py:465
+msgid "Eligible groups"
+msgstr "Grupos elegibles"
+
+#: smiles/migrations/0001_initial.py:436 smiles/models.py:473
+msgid "Enrollment event associated with this offering"
+msgstr "Evento de inscripción asociado a esta clase"
+
+#: smiles/migrations/0001_initial.py:441 smiles/models.py:475
+msgid "Enrollment event"
+msgstr "Evento de inscripción"
+
+#: smiles/migrations/0001_initial.py:476 smiles/migrations/0001_initial.py:526
+#: smiles/models.py:481 smiles/models.py:767
+msgid "Subject offering"
+msgstr "Clase"
+
+#: smiles/migrations/0001_initial.py:477 smiles/migrations/0001_initial.py:706
+#: smiles/models.py:482 smiles/models.py:574
+msgid "Subject offerings"
+msgstr "Clases"
+
+#: smiles/migrations/0001_initial.py:501 smiles/models.py:770
+msgid "Activity-specific attributes"
+msgstr "Atributos específicos de esta actividad"
+
+#: smiles/migrations/0001_initial.py:531 smiles/models.py:777
+msgid "Activities"
+msgstr "Actividades"
+
+#: smiles/migrations/0001_initial.py:532 smiles/migrations/0001_initial.py:749
+#: smiles/migrations/0001_initial.py:816
+#: smiles/migrations/0012_alter_attendance_options_alter_activity_created_at_and_more.py:42
+#: smiles/models.py:776 smiles/models.py:876 smiles/models.py:935
+#: smiles/models.py:1007
+msgid "Activity"
+msgstr "Actividad"
+
+#: smiles/migrations/0001_initial.py:559 smiles/models.py:905
+msgid "Is custom"
+msgstr "es personalizado"
+
+#: smiles/migrations/0001_initial.py:565 smiles/models.py:906
+msgid "Schedule-specific attributes"
+msgstr "Atributos específicos de este bloque horario"
+
+#: smiles/migrations/0001_initial.py:584 smiles/migrations/0001_initial.py:758
+#: smiles/models.py:874 smiles/models.py:904
+msgid "Template"
+msgstr "Plantilla"
+
+#: smiles/migrations/0001_initial.py:599 smiles/migrations/0001_initial.py:825
+#: smiles/models.py:910 smiles/models.py:932
+msgid "Member schedule"
+msgstr "Horario de estudiante"
+
+#: smiles/migrations/0001_initial.py:600 smiles/models.py:911
+msgid "Member schedules"
+msgstr "Horarios de estudiantes"
+
+#: smiles/migrations/0001_initial.py:618 smiles/migrations/0001_initial.py:797
+#: smiles/migrations/0012_alter_attendance_options_alter_activity_created_at_and_more.py:57
+#: smiles/models.py:933 smiles/models.py:965 smiles/models.py:1005
+msgid "Date"
+msgstr "Fecha"
+
+#: smiles/migrations/0001_initial.py:619 smiles/models.py:969
+msgid "Is school closed"
+msgstr "La escuela está cerrada"
+
+#: smiles/migrations/0001_initial.py:625 smiles/models.py:973
+msgid "Special day-specific attributes"
+msgstr "Atributos específicos de feriados"
+
+#: smiles/migrations/0001_initial.py:633 smiles/models.py:967
+msgid "Empty means all groups are affected"
+msgstr "Dejar vacío para que todos los grupos sean afectados"
+
+#: smiles/migrations/0001_initial.py:647 smiles/models.py:971
+msgid "Alternate schedule"
+msgstr "Horario parcial"
+
+#: smiles/migrations/0001_initial.py:653 smiles/models.py:977
+msgid "Special day"
+msgstr "Día especial"
+
+#: smiles/migrations/0001_initial.py:654 smiles/models.py:978
+msgid "Special days"
+msgstr "Días especiales"
+
+#: smiles/migrations/0001_initial.py:671
+#: smiles/migrations/0012_alter_attendance_options_alter_activity_created_at_and_more.py:137
+#: smiles/models.py:573
+msgid "Date assigned"
+msgstr "Fecha de asignación"
+
+#: smiles/migrations/0001_initial.py:678 smiles/migrations/0001_initial.py:739
+#: smiles/models.py:576 smiles/models.py:877
+msgid "Assignment-specific attributes"
+msgstr "Atributos específicos de esta asignatura"
+
+#: smiles/migrations/0001_initial.py:712 smiles/models.py:580
+msgid "Member group assignment"
+msgstr "Estudiante por grupo"
+
+#: smiles/migrations/0001_initial.py:713 smiles/models.py:581
+msgid "Member group assignments"
+msgstr "Estudiantes por grupo"
+
+#: smiles/migrations/0001_initial.py:773 smiles/models.py:881
+msgid "Schedule assignment"
+msgstr "Horario por actividad"
+
+#: smiles/migrations/0001_initial.py:774 smiles/models.py:882
+msgid "Schedule assignments"
+msgstr "Horarios por actividad"
+
+#: smiles/migrations/0001_initial.py:795 smiles/models.py:933
+msgid "Specific date (blank means recurring every week)"
+msgstr "Fecha específica (dejar en blanco para hacerlo recurrente cada semana)"
+
+#: smiles/migrations/0001_initial.py:800 smiles/models.py:936
+msgid "Reason"
+msgstr "Razón"
+
+#: smiles/migrations/0001_initial.py:806 smiles/models.py:937
+msgid "Override-specific attributes"
+msgstr "Atributos específicos para esta personalización"
+
+#: smiles/migrations/0001_initial.py:840 smiles/models.py:941
+msgid "Member schedule override"
+msgstr "Horario personal"
+
+#: smiles/migrations/0001_initial.py:841 smiles/models.py:942
+msgid "Member schedule overrides"
+msgstr "Personalización de horario"
+
+#: smiles/migrations/0012_alter_attendance_options_alter_activity_created_at_and_more.py:17
+#: smiles/models.py:1017
+msgid "Attendance record"
+msgstr "Registro de asistencia"
+
+#: smiles/migrations/0012_alter_attendance_options_alter_activity_created_at_and_more.py:17
+#: smiles/models.py:1018
+msgid "Attendance records"
+msgstr "Registros de asistencia"
+
+#: smiles/migrations/0012_alter_attendance_options_alter_activity_created_at_and_more.py:22
+#: smiles/migrations/0012_alter_attendance_options_alter_activity_created_at_and_more.py:32
+#: smiles/migrations/0012_alter_attendance_options_alter_activity_created_at_and_more.py:52
+#: smiles/migrations/0012_alter_attendance_options_alter_activity_created_at_and_more.py:102
+#: smiles/migrations/0012_alter_attendance_options_alter_activity_created_at_and_more.py:112
+#: smiles/migrations/0012_alter_attendance_options_alter_activity_created_at_and_more.py:122
+#: smiles/migrations/0012_alter_attendance_options_alter_activity_created_at_and_more.py:132
+#: smiles/migrations/0012_alter_attendance_options_alter_activity_created_at_and_more.py:147
+#: smiles/migrations/0012_alter_attendance_options_alter_activity_created_at_and_more.py:157
+#: smiles/migrations/0012_alter_attendance_options_alter_activity_created_at_and_more.py:167
+#: smiles/migrations/0012_alter_attendance_options_alter_activity_created_at_and_more.py:177
+#: smiles/migrations/0012_alter_attendance_options_alter_activity_created_at_and_more.py:187
+#: smiles/migrations/0012_alter_attendance_options_alter_activity_created_at_and_more.py:197
+#: smiles/migrations/0012_alter_attendance_options_alter_activity_created_at_and_more.py:207
+#: smiles/migrations/0012_alter_attendance_options_alter_activity_created_at_and_more.py:217
+#: smiles/migrations/0012_alter_attendance_options_alter_activity_created_at_and_more.py:227
+#: smiles/migrations/0012_alter_attendance_options_alter_activity_created_at_and_more.py:237
+#: smiles/models.py:34
+msgid "Created at"
+msgstr "Creado en"
+
+#: smiles/migrations/0012_alter_attendance_options_alter_activity_created_at_and_more.py:27
+#: smiles/migrations/0012_alter_attendance_options_alter_activity_created_at_and_more.py:37
+#: smiles/migrations/0012_alter_attendance_options_alter_activity_created_at_and_more.py:97
+#: smiles/migrations/0012_alter_attendance_options_alter_activity_created_at_and_more.py:107
+#: smiles/migrations/0012_alter_attendance_options_alter_activity_created_at_and_more.py:117
+#: smiles/migrations/0012_alter_attendance_options_alter_activity_created_at_and_more.py:127
+#: smiles/migrations/0012_alter_attendance_options_alter_activity_created_at_and_more.py:142
+#: smiles/migrations/0012_alter_attendance_options_alter_activity_created_at_and_more.py:152
+#: smiles/migrations/0012_alter_attendance_options_alter_activity_created_at_and_more.py:162
+#: smiles/migrations/0012_alter_attendance_options_alter_activity_created_at_and_more.py:172
+#: smiles/migrations/0012_alter_attendance_options_alter_activity_created_at_and_more.py:182
+#: smiles/migrations/0012_alter_attendance_options_alter_activity_created_at_and_more.py:192
+#: smiles/migrations/0012_alter_attendance_options_alter_activity_created_at_and_more.py:202
+#: smiles/migrations/0012_alter_attendance_options_alter_activity_created_at_and_more.py:212
+#: smiles/migrations/0012_alter_attendance_options_alter_activity_created_at_and_more.py:222
+#: smiles/migrations/0012_alter_attendance_options_alter_activity_created_at_and_more.py:232
+#: smiles/migrations/0012_alter_attendance_options_alter_activity_created_at_and_more.py:242
+#: smiles/models.py:35
+msgid "Updated at"
+msgstr "Actualizado en"
+
+#: smiles/migrations/0012_alter_attendance_options_alter_activity_created_at_and_more.py:47
+#: smiles/models.py:1008
+msgid "Attended"
+msgstr "Atendió"
+
+#: smiles/migrations/0012_alter_attendance_options_alter_activity_created_at_and_more.py:62
+#: smiles/models.py:1009
+msgid "Early dismissal time"
+msgstr "Hora de retiro anticipada"
+
+#: smiles/migrations/0012_alter_attendance_options_alter_activity_created_at_and_more.py:67
+#: smiles/models.py:1010
+msgid "Late arrival time"
+msgstr "Hora de llegada atrasada"
+
+#: smiles/migrations/0012_alter_attendance_options_alter_activity_created_at_and_more.py:77
+#: smiles/models.py:1013
+msgid "Attendance-specific attributes"
+msgstr "Atributos específicos de asistencia"
+
+#: smiles/migrations/0012_alter_attendance_options_alter_activity_created_at_and_more.py:82
+#: smiles/models.py:1011
+msgid "Notes"
+msgstr "Notas"
+
+#: smiles/migrations/0012_alter_attendance_options_alter_activity_created_at_and_more.py:87
+#: smiles/models.py:1012
+msgid "Recorded by"
+msgstr "Guardado por"
+
+#: smiles/migrations/0012_alter_attendance_options_alter_activity_created_at_and_more.py:137
+#: smiles/models.py:573
+msgid "When this assignment happened"
+msgstr "Cuando ocurrió esta asignación"
+
+#: smiles/models.py:105
+#, fuzzy
+#| msgid "This term overlaps with another term of the same type"
+msgid "This term overlaps with another term"
+msgstr "Este periodo se superpone con otro periodo del mismo tipo"
+
+#: smiles/models.py:819
+msgid "This time slot overlaps with another time slot on the same day"
+msgstr "Este bloque horario se superpone con otro bloque del mismo día"
 
 #: smiles/templates/admin/subject_offering_enrolled_members.html:15
 #, fuzzy
@@ -1022,7 +1355,7 @@ msgstr "No hay estudiantes inscritos en esta clase"
 #, fuzzy
 #| msgid "Members"
 msgid "members"
-msgstr "Miembros"
+msgstr "miembros"
 
 #: smiles/templates/smiles/enrollment.html:5
 #: smiles/templates/smiles/enrollment.html:11
@@ -1032,7 +1365,7 @@ msgstr "Miembros"
 #, fuzzy
 #| msgid "Enroll"
 msgid "Enrollment"
-msgstr "Pre-Inscripción"
+msgstr "Inscripción"
 
 #: smiles/templates/smiles/enrollment.html:12
 msgid "Select your subjects for this term"
@@ -1068,10 +1401,6 @@ msgstr ""
 #: smiles/templates/smiles/enrollment.html:50
 msgid "Time Slot"
 msgstr "Bloque Horario"
-
-#: smiles/templates/smiles/enrollment.html:51
-msgid "Subject"
-msgstr "Asignatura"
 
 #: smiles/templates/smiles/enrollment.html:73
 msgid "No selection"
@@ -1149,7 +1478,7 @@ msgstr "Tu Grupo"
 #, fuzzy
 #| msgid "Current"
 msgid "Current Term"
-msgstr "Activo"
+msgstr "Periodo actual"
 
 #: smiles/templates/smiles/home.html:41
 #: smiles/templates/smiles/weekly_schedule.html:26
@@ -1162,13 +1491,13 @@ msgstr "Bloque Horario"
 #, fuzzy
 #| msgid "Your weekly schedule is empty"
 msgid "View your weekly schedule for the current term."
-msgstr "Tu horario está vacío"
+msgstr "Revisa tu horario semanal para este periodo."
 
 #: smiles/templates/smiles/home.html:43
 #, fuzzy
 #| msgid "Schedule"
 msgid "View Schedule"
-msgstr "Bloque Horario"
+msgstr "Ver Horario"
 
 #: smiles/templates/smiles/home.html:51
 #: smiles/templates/smiles/subject_offerings.html:5
@@ -1178,7 +1507,7 @@ msgstr "Asignaturas Disponibles"
 
 #: smiles/templates/smiles/home.html:52
 msgid "Browse available subjects for the current term."
-msgstr "Revisa las asignaturas disponibles para este el actual periodo."
+msgstr "Revisa las asignaturas disponibles para este periodo."
 
 #: smiles/templates/smiles/home.html:53
 msgid "Browse Subjects"
@@ -1188,7 +1517,7 @@ msgstr "Revisa las asignaturas"
 #, fuzzy
 #| msgid "Enrollment end date"
 msgid "Enrollment Open"
-msgstr "Fecha de fin de pre-inscripción"
+msgstr "Inscripción abierta"
 
 #: smiles/templates/smiles/home.html:62
 msgid ""
@@ -1202,13 +1531,13 @@ msgstr ""
 #, fuzzy
 #| msgid "Enroll"
 msgid "Enroll Now"
-msgstr "Pre-Inscripción"
+msgstr "Inscríbete ahora"
 
 #: smiles/templates/smiles/home.html:67
 #, fuzzy
 #| msgid "Enrollment end date"
 msgid "Enrollment Coming Soon"
-msgstr "Fecha de fin de pre-inscripción"
+msgstr "La inscripción se abrirá pronto"
 
 #: smiles/templates/smiles/home.html:68
 #: smiles/templates/smiles/subject_offerings.html:32
@@ -1224,16 +1553,16 @@ msgstr ""
 #, fuzzy
 #| msgid "Enrollment end date"
 msgid "Enrollment will open on"
-msgstr "Fecha de fin de pre-inscripción"
+msgstr "La inscripción se abrirá el"
 
 #: smiles/templates/smiles/home.html:74
 #, fuzzy
 #| msgid "No active period"
 msgid "No active term found."
-msgstr "No hay periodo activo"
+msgstr "No hay periodo activo."
 
-#: smiles/templates/smiles/home.html:79 smiles/views.py:52 smiles/views.py:92
-#: smiles/views.py:173 smiles/views.py:197 smiles/views.py:249
+#: smiles/templates/smiles/home.html:79 smiles/views.py:54 smiles/views.py:98
+#: smiles/views.py:179 smiles/views.py:203 smiles/views.py:255
 #, fuzzy
 #| msgid ""
 #| "Your student account is not associated with any Cycle. Please ask your "
@@ -1255,7 +1584,7 @@ msgstr "Tipo de Asignatura"
 
 #: smiles/templates/smiles/subject_offering.html:62
 msgid "Eligible Groups"
-msgstr "Grupos que puedes seleccionar"
+msgstr "Grupos elegibles"
 
 #: smiles/templates/smiles/subject_offering.html:66
 msgid "All groups"
@@ -1265,7 +1594,7 @@ msgstr "Todos los grupos"
 #, fuzzy
 #| msgid "Enrollment end date"
 msgid "Enrollment Status"
-msgstr "Fecha de fin de pre-inscripción"
+msgstr "Estado de Inscripción"
 
 #: smiles/templates/smiles/subject_offering.html:72
 msgid "Open"
@@ -1284,7 +1613,7 @@ msgstr "Bloques restantes"
 #, fuzzy
 #| msgid "Full Name"
 msgid "Full"
-msgstr "Nombre Completo"
+msgstr "Completo"
 
 #: smiles/templates/smiles/subject_offering.html:90
 msgid "Enroll in this Subject"
@@ -1294,13 +1623,13 @@ msgstr "Inscríbete en esta asignatura"
 #, fuzzy
 #| msgid "Schedule"
 msgid "Back to Schedule"
-msgstr "Bloque Horario"
+msgstr "Vuelve al horario"
 
 #: smiles/templates/smiles/subject_offerings.html:12
 #, fuzzy
 #| msgid "No workshops available for this period"
 msgid "Browse available subjects for this term"
-msgstr "No hay talleres disponibles para este periodo"
+msgstr "Revisa los talleres disponibles para este periodo"
 
 #: smiles/templates/smiles/subject_offerings.html:27
 msgid "Enrollment is currently open for this term."
@@ -1319,7 +1648,7 @@ msgstr "Todos los Días"
 #, fuzzy
 #| msgid "Timetable"
 msgid "Time"
-msgstr "Horario"
+msgstr "Hora"
 
 #: smiles/templates/smiles/subject_offerings.html:57
 msgid "All Times"
@@ -1373,13 +1702,13 @@ msgstr "No hay asignaturas para tus términos de búsqueda."
 #, fuzzy
 #| msgid "%(name)s's Weekly Schedule"
 msgid "Weekly Schedule"
-msgstr "Talleres Semanales de %(name)s"
+msgstr "Horario Semanal"
 
 #: smiles/templates/smiles/weekly_schedule.html:12
 #, fuzzy
 #| msgid "Your weekly schedule is empty"
 msgid "Your weekly schedule for this term"
-msgstr "Tu horario está vacío"
+msgstr "Tu horario semanal para este periodo"
 
 #: smiles/templates/smiles/weekly_schedule.html:80
 msgid "You don't have any subjects scheduled for this term."
@@ -1393,7 +1722,7 @@ msgstr "Puedes inscribirte en asignaturas presionando el botón de abajo."
 #, fuzzy
 #| msgid "Enrolled Students"
 msgid "Enroll in Subjects"
-msgstr "Estudiantes inscritos"
+msgstr "Inscríbete en Asignaturas"
 
 #: smiles/templates/smiles/weekly_schedule.html:93
 msgid "Your Subjects"
@@ -1403,33 +1732,49 @@ msgstr "Tus Asignaturas"
 #, fuzzy
 #| msgid "Complete my enrollment"
 msgid "Change Enrollment"
-msgstr "Completar mi pre-registro"
+msgstr "Cambiar Inscripción"
 
-#: smiles/views.py:151
+#: smiles/views.py:157
 msgid "This feature is not yet implemented"
 msgstr "Esta característica aún no ha sido implementada"
 
-#: smiles/views.py:168
+#: smiles/views.py:174
 #, fuzzy
 msgid "No active term found"
 msgstr "No hay periodo activo"
 
-#, fuzzy
-#~ msgid "Enrollment Start"
-#~ msgstr "Fecha de fin de pre-inscripción"
+msgid "Properties specific to this type of group"
+msgstr "Propiedades específicas a este tipo de grupo"
+
+msgid "The type of term (e.g., Semester, Quarter)"
+msgstr "Tipo de período (ej. Semestre, etc)"
+
+msgid "Whether this term type has enrollment periods"
+msgstr ""
+"Este periodo tiene un evento de inscripción"
+
+msgid "Properties specific to this type of term"
+msgstr "Propiedades específicas para este tipo de periodo"
+
+msgid "Define properties specific to this subject type"
+msgstr "Define propiedades específicas de este tipo de asignatura"
 
 #, fuzzy
-#~ msgid "Enrollment End"
-#~ msgstr "Fecha de fin de pre-inscripción"
+msgid "Enrollment Start"
+msgstr "Fecha de inicio de inscripción"
+
+#, fuzzy
+msgid "Enrollment End"
+msgstr "Fecha de fin de inscripción"
 
 #, python-format
-#~ msgid "Students: %s"
-#~ msgstr "Estudiantes: %s"
+msgid "Students: %s"
+msgstr "Estudiantes: %s"
 
 #, python-format
-#~ msgid "%(name)s from %(d1)s to %(d2)s"
-#~ msgstr "%(name)s desde %(d1)s hasta %(d2)s"
+msgid "%(name)s from %(d1)s to %(d2)s"
+msgstr "%(name)s desde %(d1)s hasta %(d2)s"
 
-#~ msgctxt "login submit"
-#~ msgid "Log In"
-#~ msgstr "Ingresar"
+msgctxt "login submit"
+msgid "Log In"
+msgstr "Ingresar"

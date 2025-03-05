@@ -3,6 +3,7 @@ import datetime
 
 from django.db import migrations
 from django.utils import timezone
+from django.utils.translation import gettext_lazy as _
 
 
 def migrate_periods_to_terms(apps, schema_editor):
@@ -16,10 +17,10 @@ def migrate_periods_to_terms(apps, schema_editor):
     Group = apps.get_model("smiles", "Group")
 
     # Get the Enrollment event type
-    enrollment_type = EventType.objects.get(name="Enrollment")
+    enrollment_type = EventType.objects.get(name=_("Enrollment"))
 
     # Get all cycle groups
-    cycle_groups = Group.objects.filter(group_type="Ciclo")
+    cycle_groups = Group.objects.filter(group_type=_("Cycle"))
 
     # Create a mapping to store old period ID to new term ID for later use
     period_to_term_map = {}
@@ -31,7 +32,7 @@ def migrate_periods_to_terms(apps, schema_editor):
             description=period.description,
             date_start=period.date_start,
             date_end=period.date_end,
-            metadata={"original_period_id": period.id, "term_type": "Workshop Period"},
+            metadata={"original_period_id": period.id, "term_type": _("Workshop Period")},
         )
 
         # Store the mapping for later use in other migrations
@@ -46,7 +47,12 @@ def migrate_periods_to_terms(apps, schema_editor):
             enrollment_end = period.enrollment_start.date() + datetime.timedelta(days=5)
 
         enrollment_periods.append(
-            {"name": "Regular", "start_date": period.enrollment_start.isoformat(), "end_date": enrollment_end.isoformat(), "group_types": ["Ciclo"]}
+            {
+                "name": "Regular",
+                "start_date": period.enrollment_start.isoformat(),
+                "end_date": enrollment_end.isoformat(),
+                "group_types": [_("Cycle")],
+            }
         )
 
         term.metadata["enrollment_periods"] = enrollment_periods
@@ -58,7 +64,7 @@ def migrate_periods_to_terms(apps, schema_editor):
         term.save()
 
         # Create enrollment event for this term
-        event_name = f"Enrollment {term.name}"
+        event_name = _(f"Enrollment {term.name}")
 
         # Use preview date or enrollment start date
         preview_date = period.preview_date if period.preview_date else period.enrollment_start
@@ -102,8 +108,8 @@ def migrate_periods_to_terms(apps, schema_editor):
             date_end=enrollment_end_datetime,
             is_active=True,
             metadata={
-                "enrollment_period": "Regular",
-                "group_types": ["Ciclo"],
+                "enrollment_period": _("Regular"),
+                "group_types": [_("Cycle")],
                 "original_period_data": {
                     "id": period.id,
                     "enrollment_start": period.enrollment_start.isoformat(),
@@ -129,7 +135,7 @@ def reverse_periods_to_terms(apps, schema_editor):
     EventType = apps.get_model("smiles", "EventType")
 
     # Get the Enrollment event type
-    enrollment_type = EventType.objects.get(name="Enrollment")
+    enrollment_type = EventType.objects.get(name=_("Enrollment"))
 
     # Delete all enrollment events
     Event.objects.filter(type=enrollment_type).delete()

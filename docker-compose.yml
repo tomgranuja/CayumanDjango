@@ -39,7 +39,7 @@ services:
           sleep 2
         done &&
         # Migration temporarily disabled to use migrate.sh script instead
-        poetry run python manage.py migrate &&
+        # poetry run python manage.py migrate &&
         poetry run python manage.py runserver 0.0.0.0:9000
       "
 
